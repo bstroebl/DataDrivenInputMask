@@ -9,10 +9,10 @@
 
 
 [general]
-name=Data-driven Input Mask
-qgisMinimumVersion=1.0
-description=Applies a data-driven input mask to any PostGIS-Layer
-version=0.1
+name=Data-Driven Input Mask
+qgisMinimumVersion=1.7
+description=Opens a data-driven input mask for any PostgreSQL Layer
+version=0.1.0
 
 # end of mandatory metadata
 
@@ -27,7 +27,7 @@ tags=
 homepage=
 tracker=
 repository=
-icon=icon.png
+icon=ogo_kij.png
 # experimental flag
 experimental=False
 

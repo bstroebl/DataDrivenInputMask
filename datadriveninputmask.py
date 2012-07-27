@@ -20,62 +20,52 @@
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore,  QtGui
 from qgis.core import *
-# Initialize Qt resources from file resources.py
-import resources_rc
-# Import the code for the dialog
-from datadriveninputmaskdialog import DataDrivenInputMaskDialog
+
+from ddui import DdManager
+
 
 class DataDrivenInputMask:
 
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
-        # Create the dialog and keep reference
-        self.dlg = DataDrivenInputMaskDialog()
         # initialize plugin directory
-        self.plugin_dir = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/datadriveninputmask"
+        self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/datadriveninputmask"
+        self.dDManager = DdManager(self.iface)
         # initialize locale
         localePath = ""
-        locale = QSettings().value("locale/userLocale").toString()[0:2]
-       
-        if QFileInfo(self.plugin_dir).exists():
+        locale = QtCore.QSettings().value("locale/userLocale").toString()[0:2]
+
+        if QtCore.QFileInfo(self.plugin_dir).exists():
             localePath = self.plugin_dir + "/i18n/datadriveninputmask_" + locale + ".qm"
 
-        if QFileInfo(localePath).exists():
-            self.translator = QTranslator()
+        if QtCore.QFileInfo(localePath).exists():
+            self.translator = QtCore.QTranslator()
             self.translator.load(localePath)
 
             if qVersion() > '4.3.3':
-                QCoreApplication.installTranslator(self.translator)
-   
+                QtCore.QCoreApplication.installTranslator(self.translator)
+
 
     def initGui(self):
         # Create action that will start plugin configuration
-        self.action = QAction(QIcon(":/plugins/datadriveninputmask/icon.png"), \
-            u"Initialize Layer", self.iface.mainWindow())
+        self.action = QtGui.QAction(u"Initialize Layer", self.iface.mainWindow())
         # connect the action to the run method
-        QObject.connect(self.action, SIGNAL("triggered()"), self.run)
+        QtCore.QObject.connect(self.action, QtCore.SIGNAL("triggered()"), self.run)
 
         # Add toolbar button and menu item
-        self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu(u"&Initialize Layer", self.action)
+        self.iface.addPluginToMenu(u"&Data-dirven Input Mask", self.action)
 
     def unload(self):
         # Remove the plugin menu item and icon
-        self.iface.removePluginMenu(u"&Initialize Layer",self.action)
-        self.iface.removeToolBarIcon(self.action)
+        self.iface.removePluginMenu(u"&Data-dirven Input Mask",self.action)
 
     # run method that performs all the real work
     def run(self):
-        # show the dialog
-        self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result == 1:
-            # do something useful (delete the line containing pass and
-            # substitute with your code)
-            pass
+        layer = self.iface.activeLayer()
+        feature = layer.selectedFeatures()[0]
+
+        if feature:
+            self.dDManager.showFeatureForm(layer,  feature)

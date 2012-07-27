@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- DataDrivenDialog
+ DataDrivenInputMask
                                  A QGIS plugin
  Applies a data-driven input mask to any PostGIS-Layer
-                             -------------------
+                              -------------------
         begin                : 2012-06-21
-        copyright            : (C) 2012 by Bernhard Ströbl / Kommunale Immobilien Jena
+        copyright            : (C) 2012 by Bernhard Strรถbl / Kommunale Immobilien Jena
         email                : bernhard.stroebl@jena.de
  ***************************************************************************/
 
@@ -20,28 +20,8 @@
  ***************************************************************************/
 """
 
-from PyQt4 import QtGui
-
-# create the dialog
-class DdDialog(QtGui.QDialog):
-    def __init__(self,  iface,  ui,  layer,  feature,  db):
-        QtGui.QDialog.__init__(self)
-        # Set up the user interface from Designer.
-        self.iface = iface
-        self.ui = ui
-        #QtGui.QMessageBox.information(None, "", str(self.ui))
-        self.layer = layer
-        self.feature = feature
-        self.db = db
-        self.ui.setupUi(self,  self.db)
-        okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
-        okBtn.setEnabled(self.layer.isEditable())
-        self.initialize()
-
-    def initialize(self):
-        self.ui.initialize(self.layer,  self.feature,  self.db)
-
-    def accept(self):
-        if self.ui.checkInput():
-            self.ui.save(self.layer,  self.feature,  self.db)
-            self.done(1)
+class DdError(Exception):
+    def __init__(self,  value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)

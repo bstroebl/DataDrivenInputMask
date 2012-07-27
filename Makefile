@@ -1,13 +1,13 @@
 #/***************************************************************************
 # DataDrivenInputMask
-# 
+#
 # Applies a data-driven input mask to any PostGIS-Layer
 #                             -------------------
 #        begin                : 2012-06-21
 #        copyright            : (C) 2012 by Bernhard Ströbl / Kommunale Immobilien Jena
 #        email                : bernhard.stroebl@jena.de
 # ***************************************************************************/
-# 
+#
 #/***************************************************************************
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
@@ -20,33 +20,34 @@
 # CONFIGURATION
 PLUGIN_UPLOAD = $(CURDIR)/plugin_upload.py
 
-# Makefile for a PyQGIS plugin 
+# Makefile for a PyQGIS plugin
 
 # translation
-SOURCES = datadriveninputmask.py ui_datadriveninputmask.py __init__.py datadriveninputmaskdialog.py
+SOURCES = datadriveninputmask.py __init__.py DataDrivenUi/dddialog.py DataDrivenUi/ddui.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
-TRANSLATIONS = 
+TRANSLATIONS =
 
 # global
 
 PLUGINNAME = datadriveninputmask
 
-PY_FILES = datadriveninputmask.py datadriveninputmaskdialog.py __init__.py
+PY_FILES = datadriveninputmask.py ui_datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py
 
-EXTRAS = icon.png 
+EXTRAS = metadata.txt
 
 UI_FILES = ui_datadriveninputmask.py
 
-RESOURCE_FILES = resources_rc.py
+#RESOURCE_FILES = resources_rc.py
 
 HELP = help/build/html
 
 default: compile
 
-compile: $(UI_FILES) $(RESOURCE_FILES)
+#compile: $(UI_FILES) $(RESOURCE_FILES)
+compile: $(UI_FILES)
 
-%_rc.py : %.qrc
-	pyrcc4 -o $*_rc.py  $<
+#%_rc.py : %.qrc
+#	pyrcc4 -o $*_rc.py  $<
 
 %.py : %.ui
 	pyuic4 -o $@ $<
@@ -59,9 +60,10 @@ compile: $(UI_FILES) $(RESOURCE_FILES)
 # $HOME/.qgis/python/plugins
 deploy: compile doc transcompile
 	mkdir -p $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
+	mkdir -p $(HOME)/.qgis/python/plugins/$(PLUGINNAME)/DataDrivenUi
 	cp -vf $(PY_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vf $(UI_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
-	cp -vf $(RESOURCE_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
+	#cp -vf $(RESOURCE_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vf $(EXTRAS) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vfr i18n $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vfr $(HELP) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)/help
@@ -78,12 +80,12 @@ derase:
 
 # The zip target deploys the plugin and creates a zip file with the deployed
 # content. You can then upload the zip file on http://plugins.qgis.org
-zip: deploy dclean 
+zip: deploy dclean
 	rm -f $(PLUGINNAME).zip
 	cd $(HOME)/.qgis/python/plugins; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME)
 
-# Create a zip package of the plugin named $(PLUGINNAME).zip. 
-# This requires use of git (your plugin development directory must be a 
+# Create a zip package of the plugin named $(PLUGINNAME).zip.
+# This requires use of git (your plugin development directory must be a
 # git repository).
 # To use, pass a valid commit or tag as follows:
 #   make package VERSION=Version_0.3.2
@@ -113,5 +115,5 @@ clean:
 	rm $(UI_FILES) $(RESOURCE_FILES)
 
 # build documentation with sphinx
-doc: 
+doc:
 	cd help; make html
