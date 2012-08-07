@@ -25,7 +25,7 @@ PLUGIN_UPLOAD = $(CURDIR)/plugin_upload.py
 # translation
 SOURCES = datadriveninputmask.py __init__.py DataDrivenUi/dddialog.py DataDrivenUi/ddui.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
-TRANSLATIONS =
+TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
 # global
 

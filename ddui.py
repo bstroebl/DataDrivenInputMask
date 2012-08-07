@@ -22,9 +22,22 @@
 # Import the PyQt and QGIS libraries
 from PyQt4 import QtCore,  QtGui,  QtSql
 from qgis.core import *
-from dderror import DdError
+from dderror import DdError,  DbError
 from ddattribute import *
 from dddialog import DdDialog
+
+class DdFormHelper:
+    def __init__(self, thisDialog, layerId, featureId):
+        self.thisDialog = thisDialog
+        self.layerId = layerId
+        self.featureId = featureId
+        #qgsApp = QtCore.QCoreApplication.instance()
+
+        self.prntWidget = self.thisDialog.parentWidget()
+        QtGui.QMessageBox.information(None,  "",  str(self.prntWidget))
+
+def ddFormInit(dialog, layerId, featureId):
+    dialog.setProperty("helper", DdFormHelper(dialog, layerId, featureId))
 
 class DdManager(object):
     def __init__(self,  iface):
@@ -37,15 +50,17 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer):
+    def initLayer(self,  layer,  skip = [],  labels = {}):
         '''api method initLayer: initialize the layer with a data-driven input mask'''
         if 0 != layer.type():   # not a vector layer
-            raise DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a vector layer:", None,
+            DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a vector layer:", None,
                                                            QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
+            return None
         else:
             if QtCore.QString(u'PostgreSQL') != layer.dataProvider().storageType().left(10) :
-                raise DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer:", None,
+                DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer:", None,
                                                                QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
+                return None
             else:
                 db = self.__createDb(layer)
                 layerSrc = self.__analyzeSource(layer)
@@ -57,11 +72,12 @@ class DdManager(object):
                 thisTable.oid = self.__getOid(thisTable,  db)
 
                 if not self.__isTable(thisTable,  db):
-                    raise DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table:", None,
+                    DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table:", None,
                                                                        QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
+                    return None
 
-                ddui = DataDrivenUi()
-                ui = ddui.createUi(thisTable,  db)
+                ddui = DataDrivenUi(self.iface)
+                ui = ddui.createUi(thisTable,  db,  skip,  labels)
                 self.ddLayers[layer.id()] = [thisTable,  db,  ui]
                 self.__connectSignals(layer)
                 #TODO: Action in Layer einbauen
@@ -77,12 +93,14 @@ class DdManager(object):
         #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
         db = layerValues[1]
         ui = layerValues[2]
-        dlg = DdDialog(self.iface,  ui,  layer,  feature,  db)
+        dlg = DdDialog(self,  ui,  layer,  feature,  db)
         dlg.show()
         result = dlg.exec_()
 
         if result == 1:
             layer.setModified()
+
+        return result
 
     def setUi(self,  layer,  ui):
         '''api method to exchange the default ui with a custom ui'''
@@ -109,6 +127,54 @@ class DdManager(object):
         ui = layerValues[2]
         self.ddLayers[layer.id()] = [thisTable,  db,  ui]
 
+    def findPostgresLayer(self, db,  ddTable):
+        layerList = self.iface.legendInterface().layers()
+        procLayer = None # ini
+
+        for layer in layerList:
+            if isinstance(layer, QgsVectorLayer):
+                src = layer.source()
+
+                if src.contains(ddTable.tableName) and \
+                    src.contains(db.databaseName()) and \
+                    src.contains(db.hostName()):
+                    procLayer = layer
+                    break
+
+        return procLayer
+
+    def loadPostGISLayer(self,  db, ddTable, displayName = None,
+        geomColumn = QtCore.QString(), whereClause = None, keyColumn = None):
+
+        if not displayName:
+            displayName = ddTable.schemaName + "." + ddTable.tableName
+
+        uri = QgsDataSourceURI()
+        thisPort = db.port()
+
+        if thisPort == -1:
+            thisPort = 5432
+
+        # set host name, port, database name, username and password
+        uri.setConnection(db.hostName(), str(thisPort), db.databaseName(), db.userName(), db.password())
+        # set database schema, table name, geometry column and optionaly subset (WHERE clause)
+
+        uri.setDataSource(ddTable.schemaName, ddTable.tableName, geomColumn)
+
+        if whereClause:
+            uri.setSql(whereClause)
+
+        if keyColumn:
+            uri.setKeyColumn(keyColumn)
+        vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres")
+        QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+        return vlayer
+
+    def quit(self):
+        for ddLayer in self.ddLayers.values():
+            db = ddLayer[1]
+            self.__disconnectDb(db)
+
     #Slots
     def editingStarted(self):
         layer = self.iface.activeLayer()
@@ -119,8 +185,9 @@ class DdManager(object):
             self.setDb(layer,  db)
 
         if not db.transaction():
-            raise DdError(str(QtGui.QApplication.translate("DdError", "Error starting transaction on DB ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + "%s %s" % db.hostName(),  db.databaseName()))
+            DdError(str(QtGui.QApplication.translate("DdError", "Error starting transaction on DB ", None,
+                                                           QtGui.QApplication.UnicodeUTF8) + "%s" % str(db.databaseName())))
+            return None
 
     def editingStopped(self):
         layer = self.iface.activeLayer()
@@ -128,12 +195,14 @@ class DdManager(object):
 
         if layer.isModified():
             if not db.rollback():
-                raise DdError(str(QtGui.QApplication.translate("DdError", "Error rolling back transaction on DB ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + "%s %s" % db.hostName(),  db.databaseName()))
+                DdError(str(QtGui.QApplication.translate("DdError", "Error rolling back transaction on DB ", None,
+                                                           QtGui.QApplication.UnicodeUTF8) + "%s %s" % str(db.hostName()),  str(db.databaseName())))
+                return None
         else:
             if not db.commit():
-                raise DdError(str(QtGui.QApplication.translate("DdError", "Error committing transaction on DB ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + "%s %s" % db.hostName(),  db.databaseName()))
+                DdError(str(QtGui.QApplication.translate("DdError", "Error committing transaction on DB ", None,
+                                                           QtGui.QApplication.UnicodeUTF8) + "%s %s" % str(db.hostName()),  str(db.databaseName())))
+                return None
 
         # better keep the connection, if too many connections exist we must change this
         #self.__disconnectDb(db)
@@ -161,7 +230,7 @@ class DdManager(object):
                     break
                 query.finish()
         else:
-            self.__raiseDbError(query)
+            DbError(query)
 
         return oid
 
@@ -183,7 +252,7 @@ class DdManager(object):
                 query.finish()
                 return True
         else:
-            self.__raiseDbError(query)
+            DbError(query)
             return False
 
     def __connectSignals(self,  layer):
@@ -204,9 +273,9 @@ class DdManager(object):
 
         return result
 
-    def __connectDb(self,  host,  database,  port,  username,  passwd):
+    def __connectDb(self,  qSqlDatabaseName,  host,  database,  port,  username,  passwd):
         '''connect to the PostgreSQL DB'''
-        db = QtSql.QSqlDatabase.addDatabase ("QPSQL")
+        db = QtSql.QSqlDatabase.addDatabase ("QPSQL",  qSqlDatabaseName)
         db.setHostName(host)
         db.setPort(port)
         db.setDatabaseName(database)
@@ -215,7 +284,7 @@ class DdManager(object):
         ok = db.open()
 
         if not ok:
-            raise DdError(str(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None, QtGui.QApplication.UnicodeUTF8) + " %s"% database))
+            DdError(str(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None, QtGui.QApplication.UnicodeUTF8) + " %s"% database))
             return None
         else:
             return db
@@ -223,7 +292,7 @@ class DdManager(object):
     def __createDb(self,  layer):
         '''create a QtSql.QSqlDatabase object  for the DB-connection this layer comes from'''
         layerSrc = self.__analyzeSource(layer)
-        db = self.__connectDb(layerSrc[QtCore.QString(u"host")],  layerSrc[QtCore.QString(u"dbname")],
+        db = self.__connectDb(layer.id(),  layerSrc[QtCore.QString(u"host")],  layerSrc[QtCore.QString(u"dbname")],
             layerSrc[QtCore.QString(u"port")].toInt()[0],  layerSrc[QtCore.QString(u"user")],
             layerSrc[QtCore.QString(u"password")])
         return db
@@ -238,14 +307,16 @@ class DataDrivenUi(object):
     '''when subclassing this class, you want to rewrite createUi and use DdManager's setUi
     method to apply your custom ui to the layer'''
 
-    def __init__(self):
-        pass
+    def __init__(self,  iface):
+        self.iface = iface
 
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {"polygon_has_eigenschaft": "testlabel"}):
-        '''creates a default ui for this table (DdTable instance)'''
+    def createUi(self,  thisTable,  db,  skip = [],  labels = {}):
+        '''creates a default ui for this table (DdTable instance)
+        skip is an array with field names to not show
+        labels is a dict with entries: "fieldname": "label"'''
 
         ddTables = []
 
@@ -286,17 +357,17 @@ class DataDrivenUi(object):
                 if nextAtt:
                     continue # skip it
 
-                if anAttribute.type == "text" or anAttribute.type == "n2m":
+                if anAttribute.type == "text" or anAttribute.type == "n2m" or anAttribute.type == "table":
                     needsToolBox = True
                     largeAttributes.append(anAttribute)
                 else:
                     oneLineAttributes.append(anAttribute)
 
-            #QtGui.QMessageBox.information(None, "needsToolBox",  str(needsToolBox))
+                #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
             ddFormWidget = DdFormWidget(thisTable.tableName,  needsToolBox)
 
             for anAttribute in oneLineAttributes:
-
+                #QtGui.QMessageBox.information(None, "oneLineAttribute",  anAttribute.name)
                 if anAttribute.isFK:
                     ddInputWidget = DdComboBox(anAttribute)
                 else:
@@ -315,6 +386,7 @@ class DataDrivenUi(object):
                 ddFormWidget.addInputWidget(ddInputWidget)
 
             for anAttribute in largeAttributes:
+                #QtGui.QMessageBox.information(None, "largeAttribute",  anAttribute.name)
                 if anAttribute.type == "text":
                     ddInputWidget = DdTextEdit(anAttribute)
                 elif anAttribute.type == "n2m":
@@ -322,11 +394,9 @@ class DataDrivenUi(object):
                     if anAttribute.subType == "list":
                         ddInputWidget = DdN2mListWidget(anAttribute)
                     elif anAttribute.subType == "tree":
-                        #ddInputWidget = DdN2mTreeWidget(anAttribute)
-                        pass
-                    elif anAttribute.subType == "table":
-                        #ddInputWidget = DdN2mTableWidget(anAttribute)
-                        pass
+                        ddInputWidget = DdN2mTreeWidget(anAttribute)
+                elif anAttribute.type == "table":
+                    ddInputWidget = DdN2mTableWidget(anAttribute)
 
                 ddFormWidget.addInputWidget(ddInputWidget)
 
@@ -363,7 +433,7 @@ class DataDrivenUi(object):
                     break
                 query.finish()
         else:
-            self.raiseDbError(query)
+            DbError(query)
 
         return parentTable
 
@@ -372,7 +442,7 @@ class DataDrivenUi(object):
         n2mAttributes = []
         pkQuery = QtSql.QSqlQuery(db)
         sPkQuery = "SELECT array_length(pk.conkey, 1), att.attname, att.attnum, c.oid as table_oid,n.nspname,c.relname, f.numfields, COALESCE(d.description,'') as comment \
-            FROM pg_attribute att \
+                FROM pg_attribute att \
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'f') fk ON att.attrelid = fk.conrelid AND att.attnum = ANY (fk.conkey) \
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'p') pk ON pk.conrelid = fk.conrelid \
                 JOIN pg_class c ON fk.conrelid = c.oid \
@@ -383,8 +453,8 @@ class DataDrivenUi(object):
                      WHERE attnum > 0 \
                         AND attisdropped = false \
                      GROUP BY attrelid) f ON c.oid = f.attrelid \
-            WHERE fk.confrelid = :oid \
-                AND :attNum = ANY(fk.confkey)"
+                WHERE fk.confrelid = :oid \
+                    AND :attNum = ANY(fk.confkey)"
         pkQuery.prepare(sPkQuery)
         pkQuery.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         pkQuery.bindValue(":attNum", QtCore.QVariant(attNum))
@@ -401,6 +471,8 @@ class DataDrivenUi(object):
                 numFields = pkQuery.value(6).toInt()[0]
                 relationComment = pkQuery.value(7).toString()
 
+                ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
+
                 if numPkFields == 1:
                     subType = "table"
                 elif numPkFields > 1:
@@ -408,19 +480,19 @@ class DataDrivenUi(object):
                         # get the related table i.e. the table where the other FK field is the PK
                         relatedQuery = QtSql.QSqlQuery(db)
                         sRelatedQuery = "SELECT c.oid, n.nspname, c.relname, att.attname \
-            FROM pg_constraint con \
-                JOIN pg_class c ON con.confrelid = c.oid \
-                JOIN pg_namespace n ON c.relnamespace = n.oid \
-                JOIN (\
-                    SELECT * \
-                    FROM pg_attribute \
-                    WHERE attnum > 0 \
-                        AND attisdropped = false \
-                        AND attnum != :attNum1 \
-                  ) att ON con.conrelid = att.attrelid \
-            WHERE conrelid = :relationOid \
-                AND contype = 'f' \
-                AND :attNum2 != ANY(conkey)"
+                            FROM pg_constraint con \
+                                JOIN pg_class c ON con.confrelid = c.oid \
+                                JOIN pg_namespace n ON c.relnamespace = n.oid \
+                                JOIN (\
+                                    SELECT * \
+                                    FROM pg_attribute \
+                                    WHERE attnum > 0 \
+                                        AND attisdropped = false \
+                                        AND attnum != :attNum1 \
+                                    ) att ON con.conrelid = att.attrelid \
+                            WHERE conrelid = :relationOid \
+                                AND contype = 'f' \
+                                AND :attNum2 != ANY(conkey)"
                         # we do not want the table where we came from in the results, therefore :attNum != ANY(conkey)
                         relatedQuery.prepare(sRelatedQuery)
                         relatedQuery.bindValue(":relationOid", QtCore.QVariant(relationOid))
@@ -438,6 +510,7 @@ class DataDrivenUi(object):
                                 relatedSchema = relatedQuery.value(1).toString()
                                 relatedTable = relatedQuery.value(2).toString()
                                 relationRelatedIdField = relatedQuery.value(3).toString()
+                                ddRelatedTable = DdTable(relatedOid,  relatedSchema,  relatedTable)
                             relatedQuery.finish()
 
                             relatedFieldsQuery = QtSql.QSqlQuery(db)
@@ -455,6 +528,8 @@ class DataDrivenUi(object):
                                 relatedDisplayCandidate = None
                                 relatedDisplayField = None
                                 i = 0
+
+                                fieldList = []
 
                                 while relatedFieldsQuery.next():
                                     relatedAttName = relatedFieldsQuery.value(0).toString()
@@ -479,6 +554,8 @@ class DataDrivenUi(object):
                                         if relatedAttNotNull and not relatedDisplayField: # we use the first one
                                             relatedDisplayField = relatedAttName
 
+                                    fieldList.append(relatedAttName)
+
                                 relatedFieldsQuery.finish()
 
                                 if not relatedDisplayCandidate: # there wa sno string field
@@ -486,33 +563,34 @@ class DataDrivenUi(object):
 
                                 if not relatedDisplayField: # there was no notNull string field
                                     relatedDisplayField = relatedDisplayCandidate
-
-                                if subType == "list":
-
-                                    try:
-                                        attLabel = labels[str(relationTable)]
-                                    except KeyError:
-                                        attLabel = None
-                                        QtGui.QMessageBox.information(None, "KeyError", relationTable)
-
-                                    ddAtt = DdN2mAttribute(DdTable(relationOid,  relationSchema,  relationTable),  \
-                                                           DdTable(relatedOid,  relatedSchema,  relatedTable),  subType,  relationComment,  attLabel,  \
-                                                           relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField)
-
-                                n2mAttributes.append(ddAtt)
                             else:
-                                self.raiseDbError(relatedFieldsQuery)
+                                DbError(relatedFieldsQuery)
                         else:
-                            self.raiseDbError(relatedQuery)
+                            DbError(relatedQuery)
 
                     elif numFields > 2:
                         subType = "table"
+
+                try:
+                    attLabel = labels[str(relationTable)]
+                except KeyError:
+                    attLabel = None
+
+                if subType == "table":
+                    attributes = self.getAttributes(ddRelationTable,  db,  {})
+                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes)
+                else:
+                    ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
+                                       subType,  relationComment,  attLabel,  \
+                                       relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList)
+
+                n2mAttributes.append(ddAtt)
+
             pkQuery.finish()
         else:
-            self.raiseDbError(pkQuery)
+            DbError(pkQuery)
 
         return n2mAttributes
-
 
     def getAttributes(self,  thisTable, db,  labels):
         ''' query the DB and create DdAttributes'''
@@ -547,9 +625,6 @@ class DataDrivenUi(object):
                     if not self.isSupportedType(attTyp):
                         continue
 
-                    if attHasDefault:
-                        attDefault = attDefault.split("::")[0]
-
                     attConstraint = query.value(9).toString()
                     constrainedAttNums = query.value(10).toList()
                     isPK = QtCore.QString("p") # PrimaryKey
@@ -580,7 +655,7 @@ class DataDrivenUi(object):
 
                 query.finish()
         else:
-            self.raiseDbError(query)
+            DbError(query)
 
         return ddAttributes
 
@@ -649,7 +724,7 @@ class DataDrivenUi(object):
 
             query.finish()
         else:
-            self.raiseDbError(query)
+            DbError(query)
 
         return foreignKeys
 
@@ -680,12 +755,6 @@ class DataDrivenUi(object):
         # att.attisdropped = false -- skip deleted columns
         return sQuery
 
-    def raiseDbError(self,  query):
-        raise DdError(unicode(QtGui.QApplication.translate("DBError", "Database Error:", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + \
-                                                               QtCore.QString("%1 \n %2").arg(query.lastError().text()).arg(query.lastQuery())))
-
-
 class DdWidget(object):
     '''abstract class'''
 
@@ -707,10 +776,8 @@ class DdWidget(object):
     def save(self,  layer,  feature,  db):
         raise NotImplementedError("Should have implemented save")
 
-    def raiseDbError(self,  query):
-        raise DdError(unicode(QtGui.QApplication.translate("DBError", "Database Error:", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + \
-                                                               QtCore.QString("%1 \n %2").arg(query.lastError().text()).arg(query.lastQuery())))
+    def discard(self):
+        pass
 
 class DdDialogWidget(DdWidget):
     def __init__(self):
@@ -726,11 +793,12 @@ class DdDialogWidget(DdWidget):
         self.mainTab = QtGui.QTabWidget(DataDrivenInputMask)
         self.mainTab.setObjectName("mainTab")
         DataDrivenInputMask.setObjectName("DataDrivenInputMask")
+        #FIXME: wieder einschalten
         DataDrivenInputMask.setWindowModality(QtCore.Qt.ApplicationModal)
         #DataDrivenInputMask.resize(400, 487)
 
         for i in range(len(self.forms)):
-            aTab = QtGui.QWidget()
+            aTab = QtGui.QWidget(self.mainTab)
             aTab.setObjectName("tab" + str(i))
             aForm = self.forms[i]
 
@@ -775,6 +843,10 @@ class DdDialogWidget(DdWidget):
         for aForm in self.forms:
             aForm.save(layer,  feature,  db)
 
+    def discard(self):
+        for aForm in self.forms:
+            aForm.discard()
+
 class DdFormWidget(DdWidget):
     '''class arranges its input widgets either in a QToolBox or int the DdDialogWidget's current tab'''
     def __init__(self,  tabName, hasToolBox = False):
@@ -788,64 +860,39 @@ class DdFormWidget(DdWidget):
 
     def setupUi(self,  parent,  db):
         #QtGui.QMessageBox.information(None, "DdFormWidget setupUi", parent.objectName())
+        sorted = False
+        labels = []
+        for ddInputWidget in self.inputWidgets:
+            labels.append(ddInputWidget.getLabel())
+
+        if sorted:
+            labels.sort()
+
         if self.hasToolBox:
-            self.toolBox = QtGui.QToolBox(parent)
-            self.toolBox.setObjectName(parent.objectName() + "_toolBox")
-            hasPendingPage = False
+            scrollArea = QtGui.QScrollArea(parent)
+            scrollArea.setWidgetResizable(True)
+            scrollArea.setObjectName(parent.objectName() + "_scrollArea")
+            scrollAreaWidgetContents = QtGui.QWidget(parent)
+            scrollAreaWidgetContents.setObjectName(parent.objectName() + "_scrollAreaWidgetContents")
+            formLayout = QtGui.QFormLayout(scrollAreaWidgetContents)
 
-            for i in range(len(self.inputWidgets)):
-                ddInputWidget = self.inputWidgets[i]
+            for label in labels:
+                for anWidget in self.inputWidgets:
+                    if anWidget.getLabel() == label:
+                        ddInputWidget = anWidget
+                        break
                 #QtGui.QMessageBox.information(None, "",  str(ddInputWidget))
-                typ = ddInputWidget.attribute.type
+                ddInputWidget.setupUi(scrollAreaWidgetContents,  db)
 
-                if typ == "n2m" or typ == "text":
-                    if hasPendingPage:
-                        # add a page if threre is one pending
-                        self.__addToolBoxPage(toolBoxPage,  firstAttName,  lastAttName)
-                        hasPendingPage = False
-
-                    toolBoxPage = QtGui.QWidget() # create a new toolBoxPage
-                    #toolBoxPage.setGeometry(QtCore.QRect(0, 0, 360, 326))
-                    toolBoxPage.setObjectName(self.toolBox.objectName() + "_page" + str(i))
-                    gridLayout= QtGui.QGridLayout(toolBoxPage)
-                    gridLayout.setObjectName(self.toolBox.objectName() + "_gridLayout")
-                    ddInputWidget.setupUi(toolBoxPage,  db)
-                    self.toolBox.addItem(toolBoxPage,  ddInputWidget.getLabel())
-                else:
-                    #QtGui.QMessageBox.information(None, str(i), ddInputWidget.attribute.name)
-                    if i % 5 == 0 and i  != 0:
-                        #QtGui.QMessageBox.information(None, "add toolBoxPage", ddInputWidget.attribute.name)
-                        self.__addToolBoxPage(toolBoxPage,  firstAttName,  lastAttName) # add the current page to the toolBox
-                        hasPendingPage = False
-                    if i % 5 == 0:
-                        toolBoxPage = QtGui.QWidget() # create a new toolBoxPage
-                        #toolBoxPage.setGeometry(QtCore.QRect(0, 0, 360, 326))
-                        toolBoxPage.setObjectName(self.toolBox.objectName() + "_page" + str(i))
-                        formLayout = QtGui.QFormLayout(toolBoxPage)
-                        formLayout.setObjectName(self.toolBox.objectName() + "_formLayout")
-                        hasPendingPage = True
-                        #firstAttName = ddInputWidget.attribute.name
-                        firstAttName = ddInputWidget.getLabel()
-
-                    lastAttName = ddInputWidget.getLabel()
-                    ddInputWidget.setupUi(toolBoxPage,  db)
-
-            if hasPendingPage:
-                self.__addToolBoxPage(toolBoxPage,  firstAttName,  lastAttName)
-
-            parent.layout().addWidget(self.toolBox)
-            self.toolBox.setCurrentIndex(0)
+            scrollArea.setWidget(scrollAreaWidgetContents)
+            parent.layout().addWidget(scrollArea)
         else:
-            for i in range(len(self.inputWidgets)):
-                ddInputWidget = self.inputWidgets[i]
+            for label in labels:
+                for anWidget in self.inputWidgets:
+                    if anWidget.getLabel() == label:
+                        ddInputWidget = anWidget
+                        break
                 ddInputWidget.setupUi(parent,  db)
-
-    def __addToolBoxPage(self,  toolBoxPage,  firstAttName,  lastAttName):
-        if firstAttName == lastAttName:
-            newName = firstAttName
-        else:
-            newName = firstAttName + " ... " + lastAttName
-        self.toolBox.addItem(toolBoxPage,  newName)
 
     def addInputWidget(self,  ddInputWidget):
         #QtGui.QMessageBox.information(None,  "addInputWidget",  ddInputWidget.attribute.name)
@@ -868,6 +915,10 @@ class DdFormWidget(DdWidget):
         for anInputWidget in self.inputWidgets:
             anInputWidget.save(layer,  feature,  db)
 
+    def discard(self):
+        for anInputWidget in self.inputWidgets:
+            anInputWidget.discard()
+
 class DdInputWidget(DdWidget):
     '''abstract super class for all input widgets'''
     def __init__(self,  attribute):
@@ -881,6 +932,16 @@ class DdInputWidget(DdWidget):
         labelString = self.attribute.getLabel()
 
         return labelString
+
+    def createLabel(self,  parent):
+        labelString = self.getLabel()
+
+        if self.attribute.notNull:
+            labelString = labelString + "*" # mark attribute as must
+
+        label = QtGui.QLabel(labelString,  parent)
+        label.setObjectName("lbl" + parent.objectName() + self.attribute.name)
+        return label
 
     def getMaxValueFromTable(self,  schemaName,  tableName,  db):
         query = QtSql.QSqlQuery(db)
@@ -901,7 +962,7 @@ class DdInputWidget(DdWidget):
             query.finish()
 
         else:
-            self.raiseDbError(query)
+            DbError(query)
 
 class DdLineEdit(DdInputWidget):
     '''abstract class for all Input Widgets that can be represented in one line,
@@ -920,26 +981,14 @@ class DdLineEdit(DdInputWidget):
         if it is a new feature the default value is returned
         default implementation for a QLineEdit'''
 
-        if feature.id() >= 0:
-            fieldIndex = self.getFieldIndex(layer)
-            thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
-        else: # new feature
+        fieldIndex = self.getFieldIndex(layer)
+        thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
+
+        if feature.id() < 0 and thisValue.isEmpty(): # new feature
             if self.attribute.hasDefault:
-                thisValue = self.attribute.default.toString()
-            else:
-                thisValue = QtCore.QString()
+                thisValue = QtCore.QString(self.attribute.default)
 
         return thisValue
-
-    def createLabel(self,  parent):
-        labelString = self.getLabel()
-
-        if self.attribute.notNull:
-            labelString = labelString + "*" # mark attribute as must
-
-        label = QtGui.QLabel(labelString,  parent)
-        label.setObjectName("lbl" + parent.objectName() + self.attribute.name)
-        return label
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QLineEdit(parent) # defaultInputWidget
@@ -974,8 +1023,8 @@ class DdLineEdit(DdInputWidget):
         thisValue = self.getValue()
 
         if self.attribute.notNull and thisValue.isEmpty():
-            QtGui.QMessageBox.warning(None, "",  str(QtGui.QApplication.translate("DdWarning", "Field must not be empty: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + " %s"% str(self.label.text())))
+            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
+                                                           QtGui.QApplication.UnicodeUTF8) )
             return False
         else:
             return True
@@ -987,9 +1036,9 @@ class DdLineEdit(DdInputWidget):
             fieldIndex = self.attribute.num
 
         if fieldIndex == -1:
-            raise DdError(str(QtGui.QApplication.translate("DdError", "Field not found in layer:", None,
+            DdError(str(QtGui.QApplication.translate("DdError", "Field not found in layer:", None,
                                                            QtGui.QApplication.UnicodeUTF8)) + " %s"% str(self.attribute.name))
-
+            return None
         return fieldIndex
 
     def save(self,  layer,  feature,  db):
@@ -1007,15 +1056,15 @@ class DdLineEditInt(DdLineEdit):
         return "<ddui.DdLineEditInt %s>" % str(self.attribute.name)
 
     def getFeatureValue(self,  layer,  feature,  db):
-        if feature.id() >= 0:
-            fieldIndex = self.getFieldIndex(layer)
-            thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
-        else: # new feature
+        fieldIndex = self.getFieldIndex(layer)
+        thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
+
+        if feature.id() < 0 and thisValue.isEmpty(): # new feature and no value set
             if self.attribute.hasDefault:
-                thisValue = self.attribute.default.toString()
+                thisValue = QtCore.QString(self.attribute.default)
             else:
                 if self.attribute.isPK :
-                        thisValue = QtCore.QString(self.getMaxValueFromTable(self.attribute.schemaName,  self.attribute.tableName,  db) + 1)
+                        thisValue = QtCore.QString(self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1)
                 else:
                     thisValue = QtCore.QString()
 
@@ -1051,18 +1100,6 @@ class DdLineEditInt(DdLineEdit):
         if not  isInt:
             self.setValidator()
 
-    def save(self,  layer,  feature,  db):
-        thisValue = self.getValue()
-
-        if self.attribute.hasDefault:
-            isInt = thisValue.toInt()[1]
-
-            if not isInt and thisValue == self.attribute.default:
-                thisValue = QtCore.QString()
-
-        fieldIndex = self.getFieldIndex(layer)
-        layer.changeAttributeValue(feature.id(),  fieldIndex,  QtCore.QVariant(thisValue),  False)
-
 class DdLineEditDouble(DdLineEdit):
     '''QLineEdit for an IntegerValue'''
 
@@ -1073,14 +1110,35 @@ class DdLineEditDouble(DdLineEdit):
     def __str__(self):
         return "<ddui.DdLineEditDouble %s>" % str(self.attribute.name)
 
+    def getValue(self):
+        thisValue = self.inputWidget.text()
+
+        if thisValue.isEmpty():
+            thisValue = None
+        else:
+            loc = QtCore.QLocale.system()
+            thisDouble = loc.toDouble(thisValue)
+
+            if thisDouble[1]:
+                thisValue = thisDouble[0].toString()
+            else:
+                thisValue = None
+
+        return thisValue
+
     def setValidator(self):
         validator = QtGui.QDoubleValidator(self.inputWidget)
+        validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+        validator.setLocale(QtCore.QLocale.system())
         self.inputWidget.setValidator(validator)
 
-    def __textChanged(self,  newText):
-        if not newText.toDouble()[1]:
-            newValue = newText.replace(QtCore.QString(","),  QtCore.QString("."))
-            self.setValue(newValue)
+    def __textChanged(self,  thisValue):
+        loc = QtCore.QLocale.system()
+        thisDouble = loc.toDouble(thisValue)
+
+        if not thisDouble[1]:
+            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input in Field is not a double according to local settings! ", None,
+                                                           QtGui.QApplication.UnicodeUTF8))
 
     def setupUi(self,  parent,  db):
         #QtGui.QMessageBox.information(None,  "DdLineEditFloat",  "setupUi " + self.attribute.name)
@@ -1105,13 +1163,13 @@ class DdLineEditChar(DdLineEdit):
             size = thisValue.size()
 
             if size > self.attribute.length:
-                QtGui.QMessageBox.warning(None, "",  str(QtGui.QApplication.translate("DdWarning", "Input in Field is too long: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + " %s"% str(self.label.text())))
+                QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input in Field is too long! ", None,
+                                                           QtGui.QApplication.UnicodeUTF8) )
                 return False
 
             if self.attribute.type == "char" and size != self.attribute.length:
-                QtGui.QMessageBox.warning(None, "",  str(QtGui.QApplication.translate("DdWarning", "Input in Field is too short: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + " %s"% str(self.label.text())))
+                QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input in Field is too short!", None,
+                                                           QtGui.QApplication.UnicodeUTF8) )
                 return False
 
         return ok
@@ -1128,25 +1186,21 @@ class DdComboBox(DdLineEdit):
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a value representing the value in this field for this feature'''
 
-        if feature.id() >= 0:
-            fieldIndex = self.getFieldIndex(layer)
+        fieldIndex = self.getFieldIndex(layer)
 
-            if self.attribute.isTypeInt():
-                thisValue = feature.attributeMap().get(fieldIndex,  -9999).toInt()[0]
-            elif self.attribute.isTypeChar():
-                thisValue = feature.attributeMap().get(fieldIndex,  "-9999").toString()
+        if self.attribute.isTypeInt():
+            thisValue = feature.attributeMap().get(fieldIndex,  -9999).toInt()[0]
 
-        else: # new feature
-            if self.attribute.hasDefault:
-                if self.attribute.isTypeInt():
+            if  feature.id() < 0 and thisValue == -9999: # new feature and no value set
+                if self.attribute.hasDefault:
                     thisValue = QtCore.QVariant(self.attribute.default).toInt()[0]
-                elif self.attribute.isTypeChar():
+
+        elif self.attribute.isTypeChar():
+            thisValue = feature.attributeMap().get(fieldIndex,  "-9999").toString()
+
+            if  featurte.id() < 0 and thisValue == QtCore.QString("-9999"): # new feature and no value set
+                if self.attribute.hasDefault:
                     thisValue = QtCore.QVariant(self.attribute.default).toString()
-            else:
-                if self.attribute.isTypeInt():
-                    thisValue = -9999
-                elif self.attribute.isTypeChar():
-                    thisValue = QtCore.QString("-9999")
 
         return thisValue
 
@@ -1185,7 +1239,7 @@ class DdComboBox(DdLineEdit):
 
             query.finish()
         else:
-            self.raiseDbError(query)
+            DbError(query)
 
     def setValue(self,  thisValue):
         if not thisValue:
@@ -1201,6 +1255,8 @@ class DdComboBox(DdLineEdit):
 
         if QtCore.QString("-9999") == thisValue.toString(): # Null selected
             thisValue = None
+        else:
+            thisValue = thisValue.toString()
 
         return thisValue
 
@@ -1224,19 +1280,17 @@ class DdDateEdit(DdLineEdit):
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a QDate representing the value in this field for this feature'''
 
-        if feature.id() >= 0:
-            fieldIndex = self.getFieldIndex(layer)
-            thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
+        fieldIndex = self.getFieldIndex(layer)
+        thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
 
-            if thisValue.isEmpty():
-                thisValue = None
-            else:
-                thisValue = feature.attributeMap().get(fieldIndex,  "").toDate()
-        else: # new feature
+        if thisValue.isEmpty():
+            thisValue = None
+        else:
+            thisValue = feature.attributeMap().get(fieldIndex,  "").toDate()
+
+        if feature.id() < 0 and not thisValue: # new feature and no value set
             if self.attribute.hasDefault:
                 thisValue = QtCore.QVariant(self.attribute.default).toDate()
-            else:
-                thisValue = None
 
         return thisValue
 
@@ -1269,21 +1323,19 @@ class DdCheckBox(DdLineEdit):
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a boolean representing the value in this field for this feature'''
 
-        if feature.id() >= 0:
-            fieldIndex = self.getFieldIndex(layer)
-            thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
+        fieldIndex = self.getFieldIndex(layer)
+        thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
 
-            if thisValue.isEmpty():
-                thisValue = None
-            elif thisValue == QtCore.QString("f") or thisValue == QtCore.QString("false") or thisValue == QtCore.QString("False"):
-                thisValue = False
-            else:
-                thisValue = True
-        else: # new feature
+        if thisValue.isEmpty():
+            thisValue = None
+        elif thisValue == QtCore.QString("f") or thisValue == QtCore.QString("false") or thisValue == QtCore.QString("False"):
+            thisValue = False
+        else:
+            thisValue = True
+
+        if feature.id() < 0 and not thisValue: # new feature and no value set
             if self.attribute.hasDefault:
                 thisValue = QtCore.QVariant(self.attribute.default).toBool()
-            else:
-                thisValue = None
 
         return thisValue
 
@@ -1346,14 +1398,26 @@ class DdTextEdit(DdLineEdit):
 
         return thisValue
 
-class DdN2mListWidget(DdInputWidget):
-    '''a clickable tree widget for simple n2m relations'''
-
+class DdN2mWidget(DdInputWidget):
     def __init__(self,  attribute):
         DdInputWidget.__init__(self,  attribute)
 
+    def setupUi(self,  parent,  db):
+        '''setup the label and add the inputWidget to parents formLayout'''
+        label = self.createLabel(parent)
+        self.inputWidget = self.createInputWidget(parent)
+        self.inputWidget.setToolTip(self.attribute.comment)
+        parent.layout().addRow(label)
+        parent.layout().addRow(self.inputWidget)
+
+class DdN2mListWidget(DdN2mWidget):
+    '''a clickable tree widget for simple n2m relations'''
+
+    def __init__(self,  attribute):
+        DdN2mWidget.__init__(self,  attribute)
+
     def __str__(self):
-        return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
+        return "<ddui.DdN2mListWidget %s>" % str(self.attribute.name)
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QListWidget(parent) # defaultInputWidget
@@ -1380,13 +1444,7 @@ class DdN2mListWidget(DdInputWidget):
                 self.inputWidget.addItem(parentItem)
             query.finish()
         else:
-            self.raiseDbError(query)
-
-    def setupUi(self,  parent,  db):
-        '''setup the label and add the inputWidget to parents formLayout'''
-        self.inputWidget = self.createInputWidget(parent)
-        self.inputWidget.setToolTip(self.attribute.comment)
-        parent.layout().addWidget(self.inputWidget)
+            DbError(query)
 
     def save(self,  layer,  feature,  db):
         featureId = feature.id()
@@ -1400,6 +1458,11 @@ class DdN2mListWidget(DdInputWidget):
                 item = self.inputWidget.item(i)
 
                 if item.checkState() == 2:
+                    if featureId < 0:
+                        QtGui.QMessageBox.information(None,  "",  QtGui.QApplication.translate("DdInfo", "n-to-m relation for new feature cannot be saved",
+                                                                                              None, QtGui.QApplication.UnicodeUTF8) )
+                        break
+
                     itemId = item.id
                     insertQuery = QtSql.QSqlQuery(db)
                     insertQuery.prepare(self.attribute.insertStatement)
@@ -1410,11 +1473,313 @@ class DdN2mListWidget(DdInputWidget):
                     if insertQuery.isActive():
                         insertQuery.finish()
                     else:
-                        self.raiseDbError(insertQuery)
+                        DbError(insertQuery)
 
             deleteQuery.finish()
         else:
-            self.raiseDbError(deleteQuery)
+            DbError(deleteQuery)
+
+class DdN2mTreeWidget(DdN2mWidget):
+    '''a clickable tree widget for simple n2m relations'''
+
+    def __init__(self,  attribute):
+        DdN2mWidget.__init__(self,  attribute)
+
+    def __str__(self):
+        return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
+
+    def createInputWidget(self,  parent):
+        inputWidget = QtGui.QTreeWidget(parent)
+        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget.setHeaderHidden(True)
+        inputWidget.setColumnCount(1)
+        inputWidget.setObjectName("tre" + parent.objectName() + self.attribute.name)
+        return inputWidget
+
+    def initialize(self,  layer,  feature,  db):
+        query = QtSql.QSqlQuery(db)
+        query.prepare(self.attribute.displayStatement)
+        query.bindValue(":featureId", QtCore.QVariant(feature.id()))
+        query.exec_()
+
+        if query.isActive():
+            self.inputWidget.clear()
+
+            while query.next(): # returns false when all records are done
+                parentId = int(query.value(0).toString())
+                parent = unicode(query.value(1).toString())
+                checked = int(query.value(2).toString())
+                #QtGui.QMessageBox.information(None,"debug",str(parentId) + ": " + parent + " checked = " + str(checked))
+                parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
+                parentItem.id = parentId
+                parentItem.setCheckState(0,  checked)
+                parentItem.setText(0,  QtCore.QString(parent))
+
+                for i in range(len(self.attribute.fieldList)):
+                    val = query.value(i + 3)
+
+                    if val.isValid():
+                        childItem = QtGui.QTreeWidgetItem(parentItem)
+                        childItem.setText(0,  val.toString())
+                        parentItem.addChild(childItem)
+                    else: # no more fields left
+                        break
+
+                parentItem.setExpanded(False)
+                self.inputWidget.addTopLevelItem(parentItem)
+            query.finish()
+        else:
+            DbError(query)
+
+    def save(self,  layer,  feature,  db):
+        featureId = feature.id()
+        deleteQuery = QtSql.QSqlQuery(db)
+        deleteQuery.prepare(self.attribute.deleteStatement)
+        deleteQuery.bindValue(":featureId", QtCore.QVariant(featureId))
+        deleteQuery.exec_()
+
+        if deleteQuery.isActive():
+            for i in range(self.inputWidget.topLevelItemCount()):
+                item = self.inputWidget.topLevelItem(i)
+
+                if item.checkState(0) == 2:
+                    if featureId < 0:
+                        QtGui.QMessageBox.information(None,  "",  QtGui.QApplication.translate("DdInfo", "n-to-m relation for new feature cannot be saved",
+                                                                                              None, QtGui.QApplication.UnicodeUTF8) )
+                        break
+
+                    itemId = item.id
+                    insertQuery = QtSql.QSqlQuery(db)
+                    insertQuery.prepare(self.attribute.insertStatement)
+                    insertQuery.bindValue(":featureId", QtCore.QVariant(featureId))
+                    insertQuery.bindValue(":itemId", QtCore.QVariant(itemId))
+                    insertQuery.exec_()
+
+                    if insertQuery.isActive():
+                        insertQuery.finish()
+                    else:
+                        DbError(insertQuery)
+
+            deleteQuery.finish()
+        else:
+            DbError(deleteQuery)
+
+class DdN2mTableWidget(DdN2mWidget):
+    '''a table'''
+
+    def __init__(self,  attribute):
+        DdN2mWidget.__init__(self,  attribute)
+        self.fkValues = {}
+
+    def __str__(self):
+        return "<ddui.DdN2mTableWidget %s>" % str(self.attribute.name)
+
+    def createInputWidget(self,  parent):
+        inputWidget = QtGui.QTableWidget(parent)
+        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget.setColumnCount(len(self.attribute.attributes))
+        fieldNames =  []
+
+        for anAtt in self.attribute.attributes:
+            fieldNames.append(anAtt.name)
+        horizontalHeaders = QtCore.QStringList(fieldNames)
+
+        inputWidget.setHorizontalHeaderLabels(horizontalHeaders)
+        inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        inputWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget.setSortingEnabled(True)
+        inputWidget.cellDoubleClicked.connect(self.doubleClick)
+        inputWidget.itemSelectionChanged.connect(self.selectionChanged)
+        inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
+        return inputWidget
+
+    def createFeature(self, fid = None):
+        if fid:
+            newFeature = QgsFeature(fid)
+        else:
+            newFeature = QgsFeature() # gid wird automatisch vergeben
+
+        # create attributes with null values
+        for att in self.tableLayer.pendingAllAttributesList():
+            newFeature.addAttribute(att, QtCore.QVariant())
+
+        return newFeature
+
+    def initialize(self,  layer,  feature,  db):
+        #self.inputWidget.clear()
+        self.featureId = feature.id()
+
+        if self.featureId < 0:
+            self.forEdit = False
+        else:
+            self.forEdit = self.parentDialog.forEdit
+            # read the values for any foreignKeys
+            for anAtt in self.attribute.attributes:
+                if anAtt.isFK:
+                    values = {}
+                    query = QtSql.QSqlQuery(db)
+                    query.prepare(anAtt.queryForCbx)
+                    query.exec_()
+
+                    if query.isActive():
+                        while query.next(): # returns false when all records are done
+                            sValue = QtCore.QString(query.value(0).toString())
+                            keyValue = query.value(1).toString()
+                            values[keyValue] = sValue
+                        query.finish()
+                    else:
+                        DbError(query)
+
+                    self.fkValues[anAtt.name] = values
+
+            # reduce the features in self.tableLayer to those related to feature
+            subsetString = QtCore.QString(str(self.attribute.subsetString))
+            subsetString.append(QtCore.QString(str(self.featureId)))
+            self.tableLayer.setSubsetString(subsetString)
+            self.tableLayer.reload()
+            # display the features in the QTableWidget
+            self.tableLayer.removeSelection()
+            self.tableLayer.invertSelection()
+
+            for aFeat in self.tableLayer.selectedFeatures():
+                self.appendRow(aFeat)
+
+            self.tableLayer.removeSelection()
+
+            if self.forEdit:
+                self.forEdit = self.tableLayer.startEditing()
+
+                if not self.forEdit:
+                    QtGui.QMessageBox.Warning(None,  "", str(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited:", None,
+                                                               QtGui.QApplication.UnicodeUTF8)) + " %s" % str(self.tableLayer.name()))
+
+        self.addButton.setEnabled(self.forEdit)
+
+    def fillRow(self, thisRow, thisFeature):
+        #QtGui.QMessageBox.information(None,'',str(thisRow))
+        attMap = thisFeature.attributeMap()
+
+        for i in range(len(self.attribute.attributes)):
+            anAtt = self.attribute.attributes[i]
+            aValue = attMap.get(self.tableLayer.fieldNameIndex(anAtt.name),  "").toString()
+
+            if anAtt.isFK:
+                values = self.fkValues[anAtt.name]
+                aValue = values[aValue]
+
+            item = QtGui.QTableWidgetItem(aValue)
+
+            if i == 0:
+                item.feature = thisFeature
+
+            self.inputWidget.setItem(thisRow, i, item)
+
+    def appendRow(self, thisFeature):
+        thisRow = self.inputWidget.rowCount() # identical with index of row to be appended as row indices are 0 based
+        self.inputWidget.setRowCount(thisRow + 1) # append a row
+        self.fillRow(thisRow, thisFeature)
+
+    def save(self,  layer,  feature,  db):
+        if self.tableLayer.isEditable():
+            if self.tableLayer.isModified():
+                if not self.tableLayer.commitChanges():
+                    DdError(str(QtGui.QApplication.translate("DdError", "Could not save changes to layer:", None,
+                                                               QtGui.QApplication.UnicodeUTF8) + " %s"% self.tableLayer.name()))
+                    return None
+            else:
+                self.discard()
+
+    def discard(self):
+        if self.tableLayer.isEditable():
+            if not self.tableLayer.rollBack():
+                DdError(str(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
+                                                   QtGui.QApplication.UnicodeUTF8) + " %s"% self.tableLayer.name()))
+                return None
+
+    def setupUi(self,  parent,  db):
+        frame = QtGui.QFrame(parent)
+        frame.setFrameShape(QtGui.QFrame.StyledPanel)
+        frame.setFrameShadow(QtGui.QFrame.Raised)
+        frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
+        label = self.createLabel(frame)
+        self.inputWidget = self.createInputWidget(frame)
+        self.inputWidget.setToolTip(self.attribute.comment)
+        verticalLayout = QtGui.QVBoxLayout(frame)
+        verticalLayout.setObjectName("vlayout" + parent.objectName() + self.attribute.name)
+        horizontalLayout = QtGui.QHBoxLayout( )
+        horizontalLayout.setObjectName("hlayout" + parent.objectName() + self.attribute.name)
+        horizontalLayout.addWidget(label)
+        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        horizontalLayout.addItem(spacerItem)
+        self.addButton = QtGui.QPushButton(QtGui.QApplication.translate("DdInput", "Add", None,
+                                                           QtGui.QApplication.UnicodeUTF8) ,  frame)
+        self.removeButton = QtGui.QPushButton(QtGui.QApplication.translate("DdInput", "Remove", None,
+                                                           QtGui.QApplication.UnicodeUTF8) ,  frame)
+        self.addButton.clicked.connect(self.add)
+        self.removeButton.clicked.connect(self.remove)
+        self.removeButton.setEnabled(False)
+        horizontalLayout.addWidget(self.addButton)
+        horizontalLayout.addWidget(self.removeButton)
+        verticalLayout.addLayout(horizontalLayout)
+        verticalLayout.addWidget(self.inputWidget)
+        parent.layout().addRow(frame)
+        pParent = parent
+
+        while (True):
+            pParent = pParent.parentWidget()
+            #QtGui.QMessageBox.information(None, "pParent",  str(parent) + "" + str(pParent))
+
+            if isinstance(pParent,  DdDialog):
+                self.parentDialog = pParent
+                break
+
+        # find the layer in the project
+        self.tableLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.table)
+
+        if not self.tableLayer:
+            # load the layer into the project
+            self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
+
+        # create a DdUi for the layer without the featurreIdField
+        self.parentDialog.ddManager.initLayer(self.tableLayer)
+
+    # SLOTS
+    def selectionChanged(self):
+        self.removeButton.setEnabled(len(self.inputWidget.selectedItems()) > 0)
+
+    def doubleClick(self,  thisRow,  thisColumn):
+        featureItem = self.inputWidget.item(thisRow,  0)
+        thisFeature = featureItem.feature
+        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
+
+        if result == 1: # user clicked OK
+            # make sure user did not change parentFeatureId
+            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId),  False)
+            # refresh thisFeature with the new values
+            self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
+            self.fillRow(thisRow,  thisFeature)
+
+    def add(self):
+        thisFeature = self.createFeature()
+        # set the parentFeature's id
+        thisFeature.changeAttribute(self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId))
+
+        if self.tableLayer.addFeature(thisFeature,  False):
+            result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
+
+            if result == 1: # user clicked OK
+                self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
+                self.appendRow(thisFeature)
+            else:
+                self.tableLayer.deleteFeature(thisFeature.id())
+
+    def remove(self):
+        thisRow = self.inputWidget.currentRow()
+        featureItem = self.inputWidget.takeItem(thisRow,  0)
+        thisFeature = featureItem.feature
+        self.tableLayer.deleteFeature(thisFeature.id())
+        self.inputWidget.removeRow(thisRow)
 
 class DdPushButton(DdInputWidget):
     '''abstract class, needs subclassing'''
@@ -1442,6 +1807,5 @@ class DdPushButton(DdInputWidget):
     def save(self,  layer,  feature,  db):
         '''must be implemented in child class'''
         pass
-
 
 

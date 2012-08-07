@@ -19,8 +19,26 @@
  *                                                                         *
  ***************************************************************************/
 """
+from PyQt4 import QtGui,  QtSql,  QtCore
 
-class DdError(Exception):
+class DdError(object):
+    def __init__(self,  value):
+        self.value = value
+        QtGui.QMessageBox.warning(None, "DdError",  value)
+    def __str__(self):
+        return repr(self.value)
+
+class DbError(object):
+    def __init__(self,  query):
+        self.query = query
+        QtGui.QMessageBox.warning(None, "DBError",  unicode(QtGui.QApplication.translate("DBError", "Database Error:", None,
+                                                               QtGui.QApplication.UnicodeUTF8) + \
+                                                               QtCore.QString("%1 \n %2").arg(query.lastError().text()).arg(query.lastQuery())))
+        raise FatalError("DBError exiting")
+    def __str__(self):
+        return repr(self.query.lastError())
+
+class FatalError(Exception):
     def __init__(self,  value):
         self.value = value
     def __str__(self):
