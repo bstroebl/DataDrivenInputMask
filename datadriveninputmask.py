@@ -27,7 +27,6 @@ from dderror import DdError
 from ddui import DdManager
 import os.path, sys
 
-
 class DataDrivenInputMask:
 
     def __init__(self, iface):
@@ -35,7 +34,9 @@ class DataDrivenInputMask:
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/datadriveninputmask"
-        self.ddManager = DdManager(self.iface)
+        ddManager = DdManager(self.iface)
+        self.app = QgsApplication.instance()
+        self.app.ddManager = ddManager
         # initialize locale
         localePath = ""
         locale = QtCore.QSettings().value("locale/userLocale").toString()[0:2]
@@ -80,7 +81,7 @@ class DataDrivenInputMask:
 
     def unload(self):
         # Remove the plugin menu item and icon
-        self.ddManager.quit()
+        self.app.ddManager.quit()
         #QtGui.QMessageBox.information(None, "", "unload")
         self.iface.removePluginMenu(u"&Data-dirven Input Mask",self.action)
         self.iface.removePluginMenu(u"&Data-dirven Input Mask",self.actionSel)
@@ -92,7 +93,7 @@ class DataDrivenInputMask:
             DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a vector layer:", None,
                                                            QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
         else:
-            self.ddManager.initLayer(layer)
+            self.app.ddManager.initLayer(layer)
 
     def runSel(self):
         layer = self.iface.activeLayer()
@@ -104,8 +105,7 @@ class DataDrivenInputMask:
 
             if len(sel) > 0:
                 feature = sel[0]
-                self.ddManager.showFeatureForm(layer,  feature)
+                self.app.ddManager.showFeatureForm(layer,  feature)
             else:
                 DdError(unicode(QtGui.QApplication.translate("DdError", "No selection in layer:", None,
                                                                QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
-

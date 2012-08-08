@@ -28,16 +28,60 @@ from dddialog import DdDialog
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
-        self.thisDialog = thisDialog
-        self.layerId = layerId
-        self.featureId = featureId
-        #qgsApp = QtCore.QCoreApplication.instance()
+        app = QgsApplication.instance()
+        ddManager = app.ddManager
+        lIface = ddManager.iface.legendInterface()
 
-        self.prntWidget = self.thisDialog.parentWidget()
-        QtGui.QMessageBox.information(None,  "",  str(self.prntWidget))
+        for aLayer in lIface.layers():
+            if aLayer.id() == layerId:
+                #QtGui.QMessageBox.information(None,  "", aLayer.name())
+                #thisDialog.hide()
+                feat = QgsFeature()
+
+                if aLayer.featureAtId(featureId,  feat,  False,  True):
+                    result = ddManager.showFeatureForm(aLayer,  feat)
+                    QtGui.QMessageBox.information(None,  "", str(thisDialog))
+                    thisDialog.setVisible(False)
+                    if result == 1:
+                        thisDialog.accept()
+                    else:
+                        thisDialog.reject()
+                break
+
+        #self.prntWidget = self.thisDialog.parentWidget()
+        #QtGui.QMessageBox.information(None,  "",  str(self.prntWidget))
+
+def ddFormInit1(dialog, layerId, featureId):
+    dialog.setProperty("helper", DdFormHelper(dialog, layerId, featureId))
 
 def ddFormInit(dialog, layerId, featureId):
-    dialog.setProperty("helper", DdFormHelper(dialog, layerId, featureId))
+    app = QgsApplication.instance()
+    ddManager = app.ddManager
+    lIface = ddManager.iface.legendInterface()
+
+    for aLayer in lIface.layers():
+        if aLayer.id() == layerId:
+            #QtGui.QMessageBox.information(None,  "", aLayer.name())
+            #thisDialog.hide()
+            feat = QgsFeature()
+
+            if aLayer.featureAtId(featureId,  feat,  False,  True):
+                try:
+                    layerValues = ddManager.ddLayers[aLayer.id()]
+                except KeyError:
+                    ddManager.initLayer(aLayer)
+                    layerValues = ddManager.ddLayers[aLayer.id()]
+
+                #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
+                db = layerValues[1]
+                ui = layerValues[2]
+                dlg = DdDialog(ddManager,  ui,  aLayer,  feat,  db,  dialog)
+                dlg.show()
+                result = dlg.exec_()
+
+                if result == 1:
+                    layer.setModified()
+
 
 class DdManager(object):
     def __init__(self,  iface):
@@ -80,7 +124,19 @@ class DdManager(object):
                 ui = ddui.createUi(thisTable,  db,  skip,  labels)
                 self.ddLayers[layer.id()] = [thisTable,  db,  ui]
                 self.__connectSignals(layer)
-                #TODO: Action in Layer einbauen
+
+                #create action for Layer
+                createAction = True
+                for i in range(layer.actions().size()):
+                    act = layer.actions().at(i)
+
+                    if act.name() == QtCore.QString(u'showDdForm'):
+                        createAction = False
+                        break
+
+                if createAction:
+                    layer.actions().addAction(1,  QtCore.QString(u'showDdForm'), # actionType 1: Python
+                                         QtCore.QString("app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);"))
 
     def showFeatureForm(self,  layer,  feature):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature'''
@@ -101,6 +157,13 @@ class DdManager(object):
             layer.setModified()
 
         return result
+
+    def showDdForm(self,  fid):
+        layer = self.iface.activeLayer()
+        feat = QgsFeature()
+
+        if layer.featureAtId(fid,  feat,  False,  True):
+            self.showFeatureForm(layer,  feat)
 
     def setUi(self,  layer,  ui):
         '''api method to exchange the default ui with a custom ui'''
@@ -347,6 +410,7 @@ class DataDrivenUi(object):
 
             # loop through the attributes and get one-line types (QLineEdit, QComboBox) first
             for anAttribute in ddAttributes:
+                #QtGui.QMessageBox.information(None, "att",  anAttribute.name)
                 nextAtt = False
                  #check if this attribute is supposed to be skipped
                 for skipName in skip:
@@ -447,15 +511,17 @@ class DataDrivenUi(object):
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'p') pk ON pk.conrelid = fk.conrelid \
                 JOIN pg_class c ON fk.conrelid = c.oid \
                 JOIN pg_namespace n ON c.relnamespace = n.oid \
-                LEFT JOIN pg_description d ON c.oid = d.objoid \
+                LEFT JOIN pg_description d ON c.oid = d.objoid AND 0 = d.objsubid \
                 JOIN(SELECT attrelid, count(attrelid) as numfields \
                      FROM pg_attribute \
                      WHERE attnum > 0 \
                         AND attisdropped = false \
                      GROUP BY attrelid) f ON c.oid = f.attrelid \
                 WHERE fk.confrelid = :oid \
-                    AND :attNum = ANY(fk.confkey)"
+                    AND :attNum = ANY(fk.confkey) "
+                    #  0 = d.objsubid: comment on table only, not on its columns
         pkQuery.prepare(sPkQuery)
+        #QtGui.QMessageBox.information(None, str(attNum), str(thisTable.oid))
         pkQuery.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         pkQuery.bindValue(":attNum", QtCore.QVariant(attNum))
         pkQuery.exec_()
@@ -470,7 +536,7 @@ class DataDrivenUi(object):
                 relationTable = pkQuery.value(5).toString()
                 numFields = pkQuery.value(6).toInt()[0]
                 relationComment = pkQuery.value(7).toString()
-
+                #QtGui.QMessageBox.information(None, "relationFeatureIdField", relationFeatureIdField)
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
 
                 if numPkFields == 1:
@@ -627,7 +693,7 @@ class DataDrivenUi(object):
 
                     attConstraint = query.value(9).toString()
                     constrainedAttNums = query.value(10).toList()
-                    isPK = QtCore.QString("p") # PrimaryKey
+                    isPK = attConstraint == QtCore.QString("p") # PrimaryKey
 
                     if attIsChild:
                         continue
@@ -638,7 +704,14 @@ class DataDrivenUi(object):
                         try:
                             attLabel = labels[str(attName)]
                         except KeyError:
-                            attLabel = fk[2]
+                            attLabel = attName + " (" + fk[2] + ")"
+
+                        fkComment = fk[3]
+                        if attComment.isEmpty():
+                            attComment = fkComment
+                        else:
+                            if not fkComment.isEmpty():
+                                attComment = attComment + "\n(" + fkComment + ")"
 
                         ddAtt = DdFkLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, attDefault,  attHasDefault,  fk[1],  attLabel)
                     except KeyError:
@@ -672,29 +745,35 @@ class DataDrivenUi(object):
 
     def getForeignKeys(self,  thisTable, db):
         '''querys this table's foreign keys and returns a dict
-        attnum: [QString: Type of the lookup field, QString: sql to query lookup values, QString: Name of the value field in the lookup table]'''
+        attnum: [QString: Type of the lookup field, QString: sql to query lookup values, QString: Name of the value field in the lookup table, QString: Comment on lookup table]'''
         query = QtSql.QSqlQuery(db)
         sQuery = "SELECT \
-        att.attnum, \
-        t.typname as typ, \
-        CAST(valatt.attnotnull as integer) as notnull, \
-        valatt.attname, \
-        ((((((('SELECT ' || quote_ident(valatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ';' AS sql_key, \
-        ((((((('SELECT ' || quote_ident(refatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ';' AS default_sql \
-        FROM pg_attribute att \
-        JOIN (SELECT * FROM pg_constraint WHERE contype = 'f') con ON att.attrelid = con.conrelid AND att.attnum = ANY (con.conkey) \
-        JOIN pg_class c ON con.confrelid = c.oid \
-        JOIN pg_namespace ns ON c.relnamespace = ns.oid \
-        JOIN pg_attribute refatt ON con.confrelid = refatt.attrelid AND con.confkey[1] = refatt.attnum \
-        JOIN pg_attribute valatt ON con.confrelid = valatt.attrelid \
-        JOIN pg_type t ON valatt.atttypid = t.oid \
-        WHERE att.attnum > 0 \
-        AND att.attisdropped = false \
-        AND valatt.attnum > 0 \
-        AND valatt.attisdropped = false \
-        AND valatt.attnum != con.confkey[1] \
-        AND att.attrelid = :oid \
-        ORDER BY att.attnum, valatt.attnum"
+                att.attnum, \
+                t.typname as typ, \
+                CAST(valatt.attnotnull as integer) as notnull, \
+                valatt.attname, \
+                ((((((('SELECT ' || quote_ident(valatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ';' AS sql_key, \
+                ((((((('SELECT ' || quote_ident(refatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ';' AS default_sql, \
+                COALESCE(d.description, '') as comment, \
+                COALESCE(valcon.contype, 'x') as valcontype \
+            FROM pg_attribute att \
+                JOIN (SELECT * FROM pg_constraint WHERE contype = 'f') con ON att.attrelid = con.conrelid AND att.attnum = ANY (con.conkey) \
+                JOIN pg_class c ON con.confrelid = c.oid \
+                JOIN pg_namespace ns ON c.relnamespace = ns.oid \
+                JOIN pg_attribute refatt ON con.confrelid = refatt.attrelid AND con.confkey[1] = refatt.attnum \
+                JOIN pg_attribute valatt ON con.confrelid = valatt.attrelid \
+                LEFT JOIN pg_constraint valcon ON valatt.attrelid = valcon.conrelid AND valatt.attnum = ANY (valcon.conkey)\
+                JOIN pg_type t ON valatt.atttypid = t.oid \
+                LEFT JOIN pg_description d ON con.confrelid = d.objoid AND 0 = d.objsubid \
+            WHERE att.attnum > 0 \
+                AND att.attisdropped = false \
+                AND valatt.attnum > 0 \
+                AND valatt.attisdropped = false \
+                AND att.attrelid = :oid \
+            ORDER BY att.attnum, valatt.attnum"
+        # Query returns all fields in the lookup table for each attnum
+        # JOIN valcon  in order to not display any fields that are FKs themsselves
+        # add "AND valatt.attnum != con.confkey[1]"  if you want to keep PKs out
         query.prepare(sQuery)
         query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         query.exec_()
@@ -709,18 +788,24 @@ class DataDrivenUi(object):
                 valAttName = query.value(3).toString()
                 keySql = query.value(4).toString()
                 defaultSql = query.value(5).toString()
-                #QtGui.QMessageBox.information(None, "",  str(attNum) + ": " + fieldType + " " + valAttName + " " + keySql)
+                comment = query.value(6).toString()
+                contype = query.value(7).toString()
+
+                if contype == QtCore.QString("f"):
+                    continue
+
+               # QtGui.QMessageBox.information(None, "",  str(attNum) + ": " + fieldType + " " + valAttName + " " + keySql)
                 try:
                     fk = foreignKeys[attNum]
                     if fk[0] != QtCore.QString("varchar"): # we do not already have a varchar field as value field
                     # find a field with a suitable type
                         if notNull and (fieldType == QtCore.QString("varchar") or fieldType == QtCore.QString("char")):
-                            foreignKeys[attNum] = [fieldType,  keySql,  valAttName]
+                            foreignKeys[attNum] = [fieldType,  keySql,  valAttName,  comment]
                 except KeyError:
                     if notNull and (fieldType == QtCore.QString("varchar") or fieldType == QtCore.QString("char")):
                         foreignKeys[attNum] = [fieldType,  keySql,  valAttName]
                     else: # put the first in
-                        foreignKeys[attNum] = [fieldType,  defaultSql,  valAttName]
+                        foreignKeys[attNum] = [fieldType,  defaultSql,  valAttName,  comment]
 
             query.finish()
         else:
@@ -1059,15 +1144,12 @@ class DdLineEditInt(DdLineEdit):
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature.attributeMap().get(fieldIndex,  "").toString()
 
-        if feature.id() < 0 and thisValue.isEmpty(): # new feature and no value set
+        if (feature.id() < 0) and (thisValue.isEmpty()): # new feature and no value set
             if self.attribute.hasDefault:
                 thisValue = QtCore.QString(self.attribute.default)
             else:
                 if self.attribute.isPK :
-                        thisValue = QtCore.QString(self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1)
-                else:
-                    thisValue = QtCore.QString()
-
+                    thisValue = QtCore.QString(self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1)
         return thisValue
 
     def setValidator(self):
@@ -1265,6 +1347,7 @@ class DdComboBox(DdLineEdit):
         #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
         self.label = self.createLabel(parent)
         self.inputWidget = self.createInputWidget(parent)
+        self.inputWidget.setToolTip(self.attribute.comment)
         self.fill(db)
         parent.layout().addRow(self.label,  self.inputWidget)
 
@@ -1613,7 +1696,7 @@ class DdN2mTableWidget(DdN2mWidget):
         if self.featureId < 0:
             self.forEdit = False
         else:
-            self.forEdit = self.parentDialog.forEdit
+            self.forEdit = layer.isEditable()
             # read the values for any foreignKeys
             for anAtt in self.attribute.attributes:
                 if anAtt.isFK:
@@ -1724,6 +1807,7 @@ class DdN2mTableWidget(DdN2mWidget):
         verticalLayout.addLayout(horizontalLayout)
         verticalLayout.addWidget(self.inputWidget)
         parent.layout().addRow(frame)
+
         pParent = parent
 
         while (True):
@@ -1741,6 +1825,7 @@ class DdN2mTableWidget(DdN2mWidget):
             # load the layer into the project
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 
+        #QtGui.QMessageBox.information(None, "tableLayer",  self.tableLayer.name())
         # create a DdUi for the layer without the featurreIdField
         self.parentDialog.ddManager.initLayer(self.tableLayer)
 

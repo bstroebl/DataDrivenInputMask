@@ -107,110 +107,116 @@ class DdFkLayerAttribute(DdLayerAttribute):
     def __str__(self):
         return "<ddattribute.DdFkLayerAttribute %s>" % str(self.name)
 
+class DdTableAttribute(DdAttribute):
+    '''attribute for a relationTable'''
+    def __init__(self,  relationTable, comment ,  label,   \
+                 relationFeatureIdField,  attributes):
+        DdAttribute.__init__(self,  relationTable,  "table",  False,  relationTable.tableName,  comment,  label)
+        self.relationFeatureIdField = relationFeatureIdField
+        self.attributes = attributes # an array with DdAttributes
+
+        for anAtt in self.attributes:
+            if anAtt.name == self.relationFeatureIdField:
+                self.attributes.remove(anAtt)
+                break
+
+        # init statements
+        self.setSubsetString()
+
+    def buildSubsetString(self,  relationFeatureIdField):
+        ''''''
+        subsetString = QtCore.QString("\"").append(relationFeatureIdField).append("\" = ")
+        return subsetString
+
+    def setSubsetString(self,  subsetString = None):
+        if not subsetString:
+            subsetString = self.buildSubsetString(self.relationFeatureIdField)
+
+        self.subsetString = subsetString
+
+
 class DdN2mAttribute(DdAttribute):
     '''attribute for a n2m relation, subtype can be list, tree or table
     relationTable and relatedTable are DdTable objects'''
     def __init__(self,  relationTable,  relatedTable,  subType,  comment ,  label,   \
-                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField):
+                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = []):
         DdAttribute.__init__(self,  relationTable,  "n2m",  False,  relationTable.tableName,  comment,  label)
         self.subType = QtCore.QString(subType)
-        self.relationTable = relationTable
         self.relatedTable = relatedTable
         self.relationFeatureIdField = relationFeatureIdField
         self.relationRelatedIdField = relationRelatedIdField
         self.relatedIdField = relatedIdField
         self.relatedDisplayField = relatedDisplayField
+        self.fieldList = fieldList # an array with fields names
         # init statements
         self.setDisplayStatement()
         self.setInsertStatement()
         self.setDeleteStatement()
-        self.setUpdateStatement()
+
 
     def __str__(self):
         return "<ddattribute.DdN2mAttribute %s>" % str(self.name)
 
     def buildDisplayStatement(self,  relationSchema,  relationTable, relatedSchema,  relatedTable,  relationFeatureIdField, \
-                              relatedIdField,  relatedDisplayField,  relationRelatedIdField):
+                              relatedIdField,  relatedDisplayField,  relationRelatedIdField,  fieldList):
         ''''''
-        if self.subType == QtCore.QString("list"):
-            #SELECT disp."id", disp."eigenschaft", CASE COALESCE(lnk."polygon_gid", 0) WHEN 0 THEN 0 ELSE 2 END as checked
-            #FROM "alchemy"."eigenschaft" disp
-            #LEFT JOIN (SELECT * FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId) lnk ON disp."id" = lnk."eigenschaft_id"
-            #ORDER BY disp."eigenschaft"
-            displayStatement = QtCore.QString("SELECT disp.\"").append(relatedIdField).append("\", disp.\"").append(relatedDisplayField).append("\", ")
-            displayStatement.append("CASE COALESCE(lnk.\"").append(relationFeatureIdField).append("\", 0) WHEN 0 THEN 0 ELSE 2 END as checked")
-            displayStatement.append(" FROM \"").append(relatedSchema).append("\".\"").append(relatedTable).append("\" disp")
-            displayStatement.append(" LEFT JOIN (SELECT * FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
-            displayStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId) lnk")
-            displayStatement.append(" ON disp.\"").append(relatedIdField).append("\" = lnk.\"") .append(relationRelatedIdField).append("\"")
-            displayStatement.append( " ORDER BY disp.\"").append(relatedDisplayField).append("\"")
-        elif self.subType ==  QtCore.QString("tree"):
-            displayStatement = QtCore.QString()
-        elif self.subType ==  QtCore.QString("table"):
-            displayStatement = QtCore.QString()
+
+        displayStatement = QtCore.QString("SELECT disp.\"").append(relatedIdField).append("\", disp.\"").append(relatedDisplayField).append("\",")
+        displayStatement.append(" CASE COALESCE(lnk.\"").append(relationFeatureIdField).append("\", 0) WHEN 0 THEN 0 ELSE 2 END as checked")
+
+        # for "list"  this is how it is supposed to look like
+        #SELECT disp."id", disp."eigenschaft", CASE COALESCE(lnk."polygon_gid", 0) WHEN 0 THEN 0 ELSE 2 END as checked
+        #FROM "alchemy"."eigenschaft" disp
+        #LEFT JOIN (SELECT * FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId) lnk ON disp."id" = lnk."eigenschaft_id"
+        #ORDER BY disp."eigenschaft"
+
+        if self.subType ==  QtCore.QString("tree"):
+            for aField in fieldList:
+                displayStatement.append(", \'").append(aField).append(": \' || disp.\"").append(aField).append("\"")
+
+        displayStatement.append(" FROM \"").append(relatedSchema).append("\".\"").append(relatedTable).append("\" disp")
+        displayStatement.append(" LEFT JOIN (SELECT * FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
+        displayStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId) lnk")
+        displayStatement.append(" ON disp.\"").append(relatedIdField).append("\" = lnk.\"") .append(relationRelatedIdField).append("\"")
+        displayStatement.append( " ORDER BY disp.\"").append(relatedDisplayField).append("\"")
 
         return displayStatement
 
-    def buildInsertStatement(self,  relationSchema,  relationTable,  relationFeatureIdField,  relationRelatedIdField):
-        if self.subType == QtCore.QString("list"):
-            # INSERT INTO "alchemy"."polygon_has_eigenschaft"("polygon_gid", "eigenschaft_id") VALUES (:featureId, :itemId)
-            insertStatement = QtCore.QString("INSERT INTO \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
-            insertStatement.append("(\"").append(relationFeatureIdField).append("\", \"").append(relationRelatedIdField).append("\")")
-            insertStatement.append(" VALUES (:featureId, :itemId)")
-        elif self.subType ==  QtCore.QString("tree"):
-            insertStatement = QtCore.QString()
-        elif self.subType ==  QtCore.QString("table"):
-            insertStatement = QtCore.QString()
+    def buildInsertStatement(self,  relationSchema,  relationTable,  relationFeatureIdField,  relationRelatedIdField,  fieldList):
+        # INSERT INTO "alchemy"."polygon_has_eigenschaft"("polygon_gid", "eigenschaft_id") VALUES (:featureId, :itemId)
+        insertStatement = QtCore.QString("INSERT INTO \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
+        insertStatement.append("(\"").append(relationFeatureIdField).append("\", \"").append(relationRelatedIdField).append("\")")
+        insertStatement.append(" VALUES (:featureId, :itemId)")
 
         return insertStatement
 
     def buildDeleteStatement(self,  relationSchema,  relationTable, relationFeatureIdField):
-        if self.subType == QtCore.QString("list"):
-            # DELETE FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId
-            deleteStatement = QtCore.QString("DELETE FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
-            deleteStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId")
-        elif self.subType ==  QtCore.QString("tree"):
-            deleteStatement = QtCore.QString()
-        elif self.subType ==  QtCore.QString("table"):
-            deleteStatement = QtCore.QString()
+        # DELETE FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId
+        deleteStatement = QtCore.QString("DELETE FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
+        deleteStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId")
 
         return deleteStatement
 
-    def buildUpdateStatement(self,  relationSchema,  relationTable, relationFeatureIdField):
-        if self.subType == QtCore.QString("list"):
-            updateStatement = QtCore.QString()
-        elif self.subType ==  QtCore.QString("tree"):
-            updateStatement = QtCore.QString()
-        elif self.subType ==  QtCore.QString("table"):
-            updateStatement = QtCore.QString()
-
-        return updateStatement
-
     def setDisplayStatement(self,  displayStatement = None):
         if not displayStatement:
-            displayStatement = self.buildDisplayStatement(self.relationTable.schemaName,  self.relationTable.tableName, self.relatedTable.schemaName,  \
+            displayStatement = self.buildDisplayStatement(self.table.schemaName,  self.table.tableName, self.relatedTable.schemaName,  \
                                                           self.relatedTable.tableName, self.relationFeatureIdField, self.relatedIdField,  self.relatedDisplayField,  \
-                                                          self.relationRelatedIdField)
+                                                          self.relationRelatedIdField,  self.fieldList)
 
         self.displayStatement = displayStatement
 
     def setInsertStatement(self,  insertStatement = None):
         if not insertStatement:
-            insertStatement = self.buildInsertStatement(self.relationTable.schemaName,  self.relationTable.tableName, self.relationFeatureIdField, self.relationRelatedIdField)
+            insertStatement = self.buildInsertStatement(self.table.schemaName,  self.table.tableName, self.relationFeatureIdField, self.relationRelatedIdField,  self.fieldList)
 
         self.insertStatement = insertStatement
 
     def setDeleteStatement(self,  deleteStatement = None):
         if not deleteStatement:
-            deleteStatement = self.buildDeleteStatement(self.relationTable.schemaName,  self.relationTable.tableName, self.relationFeatureIdField)
+            deleteStatement = self.buildDeleteStatement(self.table.schemaName,  self.table.tableName, self.relationFeatureIdField)
 
         self.deleteStatement = deleteStatement
 
-    def setUpdateStatement(self,  updateStatement = None):
-        if not updateStatement:
-            updateStatement = self.buildUpdateStatement(self.relationTable.schemaName,  self.relationTable.tableName, self.relationFeatureIdField)
-
-        self.updateStatement = updateStatement
 
 class DdPushButtonAttribute(DdAttribute):
 

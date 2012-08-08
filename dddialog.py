@@ -24,8 +24,8 @@ from PyQt4 import QtGui
 
 # create the dialog
 class DdDialog(QtGui.QDialog):
-    def __init__(self,  ddManager,  ui,  layer,  feature,  db):
-        QtGui.QDialog.__init__(self)
+    def __init__(self,  ddManager,  ui,  layer,  feature,  db,  parent = None):
+        QtGui.QDialog.__init__(self,  parent)
         # Set up the user interface from Designer.
         self.ddManager = ddManager
         self.ui = ui
