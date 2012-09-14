@@ -83,6 +83,7 @@ derase:
 zip: deploy dclean
 	rm -f $(PLUGINNAME).zip
 	cd $(HOME)/.qgis/python/plugins; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME)
+	mv $(CURDIR)/$(PLUGINNAME).zip /data/plugins
 
 # Create a zip package of the plugin named $(PLUGINNAME).zip.
 # This requires use of git (your plugin development directory must be a

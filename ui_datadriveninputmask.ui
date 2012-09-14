@@ -20,9 +20,12 @@
    <item>
     <widget class="QTabWidget" name="mainTab">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
+      <property name="toolTip">
+       <string>tabtooltip</string>
+      </property>
       <attribute name="title">
        <string>Tab 1</string>
       </attribute>

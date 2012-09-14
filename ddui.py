@@ -114,6 +114,10 @@ class DdManager(object):
                 #QtGui.QMessageBox.information(None, "",  schema + '.' + table)
                 thisTable = DdTable(schemaName = schema,  tableName = table)
                 thisTable.oid = self.__getOid(thisTable,  db)
+                comment = self.__getComment(thisTable,  db)
+
+                if comment:
+                    thisTable.comment = comment
 
                 if not self.__isTable(thisTable,  db):
                     DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table:", None,
@@ -271,6 +275,31 @@ class DdManager(object):
         #self.__disconnectDb(db)
         #self.setDb(layer,  None)
 
+    def __getComment(self,  thisTable,  db):
+        ''' query the DB to get a table's comment'''
+        query = QtSql.QSqlQuery(db)
+        sQuery = "SELECT description FROM pg_description \
+        WHERE objoid = :oid AND objsubid = 0"
+        # objsubid = 0 is the table, objsubid > 0 are comments on fields
+        query.prepare(sQuery)
+        query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
+        query.exec_()
+
+        comment = None
+
+        if query.isActive():
+            if query.size() == 0:
+                query.finish()
+            else:
+                while query.next():
+                    comment = query.value(0).toString()
+                    break
+                query.finish()
+        else:
+            DbError(query)
+
+        return comment
+
     def __getOid(self,  thisTable,  db):
         ''' query the DB to get a table's oid'''
         query = QtSql.QSqlQuery(db)
@@ -381,20 +410,14 @@ class DataDrivenUi(object):
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"'''
 
-        ddTables = []
-
-        while True: # use a loop to query all parent tables
-            if thisTable.oid:
-                ddTables.append(thisTable)
-                thisTable = self.getParent(thisTable,  db)
-            else:
-                break
+        ddTables = self.getParents(thisTable,  db)
 
         ui = DdDialogWidget()
 
         # now loop through all tables
         while len(ddTables) > 0:
             thisTable = ddTables.pop()
+            QtGui.QMessageBox.information(None, "pop",  thisTable.tableName)
             ddAttributes = self.getAttributes(thisTable, db,  labels)
 
             for anAtt in ddAttributes:
@@ -428,7 +451,7 @@ class DataDrivenUi(object):
                     oneLineAttributes.append(anAttribute)
 
                 #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
-            ddFormWidget = DdFormWidget(thisTable.tableName,  needsToolBox)
+            ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
 
             for anAttribute in oneLineAttributes:
                 #QtGui.QMessageBox.information(None, "oneLineAttribute",  anAttribute.name)
@@ -469,7 +492,8 @@ class DataDrivenUi(object):
         return ui
 
     def getParent(self,  thisTable,  db):
-        ''' query the DB to get a table's parent if any'''
+        ''' deprecated'''
+        #Problem: eine Tabelle kann mehrere Eltern haben
 
         query = QtSql.QSqlQuery(db)
         sQuery = "SELECT c.oid, n.nspname, c.relname \
@@ -501,6 +525,61 @@ class DataDrivenUi(object):
 
         return parentTable
 
+    def getParents(self,  thisTable,  db):
+        ''' query the DB to get a table's parents if any'''
+
+        query = QtSql.QSqlQuery(db)
+        sQuery = "SELECT c.oid, n.nspname, c.relname, COALESCE(d.description, '') \
+        FROM pg_inherits i \
+        JOIN pg_class c ON i.inhparent = c.oid \
+        JOIN pg_namespace n ON c.relnamespace = n.oid \
+        LEFT JOIN (SELECT * FROM pg_description WHERE objsubid = 0) d ON c.oid = d.objoid \
+        WHERE i.inhrelid = :oid"
+        query.prepare(sQuery)
+        query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
+        query.exec_()
+
+        parents = []
+
+        if query.isActive():
+            if query.size() == 0:
+                query.finish()
+            else:
+                while query.next():
+                    oid = query.value(0).toInt()[0]
+                    schema = query.value(1).toString()
+                    table = query.value(2).toString()
+                    comment = query.value(3).toString()
+                    parentTable = DdTable(oid,  schema,  table,  comment)
+
+                    # no duplicates
+                    notFound = True
+                    for aParent in parents:
+                        if aParent.oid == oid:
+                            notFound = False
+                            break
+
+                    if notFound:
+                        parents.append(parentTable)
+
+                        # get the parentTable's parents
+                        parentsParents = self.getParents(parentTable,  db)
+
+                        for aParentsParent in parentsParents:
+                            notFound = True
+                            for aParent in parents:
+                                if aParent.oid == aParentsParent.oid:
+                                    notFound = False
+                                    break
+
+                            if notFound:
+                                parents.append(aParentsParent)
+                query.finish()
+        else:
+            DbError(query)
+
+        return parents
+
     def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels):
         # find those tables where our pk is a fk
         n2mAttributes = []
@@ -521,7 +600,7 @@ class DataDrivenUi(object):
                     AND :attNum = ANY(fk.confkey) "
                     #  0 = d.objsubid: comment on table only, not on its columns
         pkQuery.prepare(sPkQuery)
-        #QtGui.QMessageBox.information(None, str(attNum), str(thisTable.oid))
+        QtGui.QMessageBox.information(None, str(attNum), str(thisTable.oid))
         pkQuery.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         pkQuery.bindValue(":attNum", QtCore.QVariant(attNum))
         pkQuery.exec_()
@@ -536,7 +615,7 @@ class DataDrivenUi(object):
                 relationTable = pkQuery.value(5).toString()
                 numFields = pkQuery.value(6).toInt()[0]
                 relationComment = pkQuery.value(7).toString()
-                #QtGui.QMessageBox.information(None, "relationFeatureIdField", relationFeatureIdField)
+                QtGui.QMessageBox.information(None, "relationFeatureIdField", relationFeatureIdField)
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
 
                 if numPkFields == 1:
@@ -569,6 +648,7 @@ class DataDrivenUi(object):
                         if relatedQuery.isActive():
                             if relatedQuery.size() != 1:
                                 relatedQuery.finish()
+                                QtGui.QMessageBox.information(None, "relatedQuery.size()", str(relatedQuery.size()))
                                 continue
 
                             while relatedQuery.next():
@@ -579,6 +659,7 @@ class DataDrivenUi(object):
                                 ddRelatedTable = DdTable(relatedOid,  relatedSchema,  relatedTable)
                             relatedQuery.finish()
 
+                            QtGui.QMessageBox.information(None, "relatedQuery", relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
                             relatedFieldsQuery = QtSql.QSqlQuery(db)
                             relatedFieldsQuery.prepare(self.__attributeQuery("att.attnum"))
                             relatedFieldsQuery.bindValue(":oid", QtCore.QVariant(relatedOid))
@@ -878,9 +959,7 @@ class DdDialogWidget(DdWidget):
         self.mainTab = QtGui.QTabWidget(DataDrivenInputMask)
         self.mainTab.setObjectName("mainTab")
         DataDrivenInputMask.setObjectName("DataDrivenInputMask")
-        #FIXME: wieder einschalten
         DataDrivenInputMask.setWindowModality(QtCore.Qt.ApplicationModal)
-        #DataDrivenInputMask.resize(400, 487)
 
         for i in range(len(self.forms)):
             aTab = QtGui.QWidget(self.mainTab)
@@ -894,7 +973,10 @@ class DdDialogWidget(DdWidget):
 
             tabLayout.setObjectName("tabLayout" + str(i))
             aForm.setupUi(aTab,  db)
-            self.mainTab.addTab(aTab,  aForm.tabName)
+            self.mainTab.addTab(aTab,  aForm.ddTable.tableName)
+
+            if not aForm.ddTable.comment.isEmpty():
+                aTab.setToolTip(aForm.ddTable.comment)
 
         self.layout.addWidget(self.mainTab)
         self.buttonBox = QtGui.QDialogButtonBox(DataDrivenInputMask)
@@ -934,9 +1016,9 @@ class DdDialogWidget(DdWidget):
 
 class DdFormWidget(DdWidget):
     '''class arranges its input widgets either in a QToolBox or int the DdDialogWidget's current tab'''
-    def __init__(self,  tabName, hasToolBox = False):
+    def __init__(self,  ddTable, hasToolBox = False):
         DdWidget.__init__(self)
-        self.tabName = tabName
+        self.ddTable = ddTable
         self.hasToolBox = hasToolBox
         self.inputWidgets = []
 
@@ -1131,6 +1213,24 @@ class DdLineEdit(DdInputWidget):
         fieldIndex = self.getFieldIndex(layer)
         layer.changeAttributeValue(feature.id(),  fieldIndex,  QtCore.QVariant(thisValue),  False)
 
+class QInt64Validator(QtGui.QValidator):
+    def __init__(self,  parent = None):
+        QtGui.QValidator.__init__(self,  parent)
+        self.min = -9223372036854775808
+        self.max = 9223372036854775807
+
+    def validate(self, input, pos):
+        thisValue = input.toLongLong()
+
+        if thisValue[1]: # boolean
+            thisLong = thisValue[0]
+            if self.min < thisLong and self.max > thisLong:
+                return QtGui.QValidator.Acceptable,  pos
+            else:
+                return QtGui.QValidator.Invalid,  pos
+        else:
+            return QtGui.QValidator.Invalid,  pos
+
 class DdLineEditInt(DdLineEdit):
     '''QLineEdit for an IntegerValue'''
 
@@ -1156,14 +1256,14 @@ class DdLineEditInt(DdLineEdit):
         if self.attribute.type == QtCore.QString("int2"):
             min = -32768
             max = 32767
+            validator = QtGui.QIntValidator(min,  max,  self.inputWidget)
         elif self.attribute.type == QtCore.QString("int4"):
             min = -2147483648
             max = 2147483647
+            validator = QtGui.QIntValidator(min,  max,  self.inputWidget)
         elif self.attribute.type == QtCore.QString("int8"):
-            min = -9223372036854775808
-            max = 9223372036854775807
+            validator = QInt64Validator(self.inputWidget)
 
-        validator = QtGui.QIntValidator(min,  max,  self.inputWidget)
         self.inputWidget.setValidator(validator)
 
     def setupUi(self,  parent,  db):
@@ -1174,8 +1274,11 @@ class DdLineEditInt(DdLineEdit):
         thisValue = self.getFeatureValue(layer,  feature,  db)
         isInt = thisValue.toInt()[1]
 
-        if not  isInt: # could be a serial, i.e. a nextval(sequence) expression
-            self.inputWidget.setValidator(None) # remove the validator
+        if not  isInt: # could be a Longlong, or a serial, i.e. a nextval(sequence) expression
+            isInt = thisValue.toLongLong()[1]
+
+            if not  isInt:
+                self.inputWidget.setValidator(None) # remove the validator
 
         self.setValue(thisValue)
 
@@ -1202,7 +1305,7 @@ class DdLineEditDouble(DdLineEdit):
             thisDouble = loc.toDouble(thisValue)
 
             if thisDouble[1]:
-                thisValue = thisDouble[0].toString()
+                thisValue = QtCore.QString(str(thisDouble[0]))
             else:
                 thisValue = None
 
@@ -1449,6 +1552,16 @@ class DdCheckBox(DdLineEdit):
             thisValue = True
 
         return thisValue
+
+    def checkInput(self):
+        thisValue = self.getValue()
+
+        if self.attribute.notNull and thisValue == None:
+            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
+                                                           QtGui.QApplication.UnicodeUTF8) )
+            return False
+        else:
+            return True
 
 class DdTextEdit(DdLineEdit):
     '''QTextEdit  for a date field'''
@@ -1825,7 +1938,7 @@ class DdN2mTableWidget(DdN2mWidget):
             # load the layer into the project
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 
-        #QtGui.QMessageBox.information(None, "tableLayer",  self.tableLayer.name())
+        QtGui.QMessageBox.information(None, "tableLayer",  self.tableLayer.name())
         # create a DdUi for the layer without the featurreIdField
         self.parentDialog.ddManager.initLayer(self.tableLayer)
 
