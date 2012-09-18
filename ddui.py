@@ -410,7 +410,9 @@ class DataDrivenUi(object):
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"'''
 
-        ddTables = self.getParents(thisTable,  db)
+        ddTables = [thisTable]
+        parents = self.getParents(thisTable,  db)
+        ddTables = ddTables + parents
 
         ui = DdDialogWidget()
 
