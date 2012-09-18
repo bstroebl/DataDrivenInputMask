@@ -405,90 +405,100 @@ class DataDrivenUi(object):
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
+    def __createForms(self,  thisTable,  db,  skip,  labels):
+        ddForms = []
+
+        #QtGui.QMessageBox.information(None, "pop",  thisTable.tableName)
+        ddAttributes = self.getAttributes(thisTable, db,  labels)
+
+        for anAtt in ddAttributes:
+            if anAtt.isPK:
+                n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels)
+                ddAttributes = ddAttributes + n2mAttributes
+
+        #check if we need a QToolBox
+        needsToolBox = (len(ddAttributes) > 5)
+
+        oneLineAttributes = []
+        largeAttributes = []
+
+        # loop through the attributes and get one-line types (QLineEdit, QComboBox) first
+        for anAttribute in ddAttributes:
+            #QtGui.QMessageBox.information(None, "att",  anAttribute.name)
+            nextAtt = False
+             #check if this attribute is supposed to be skipped
+            for skipName in skip:
+                if skipName == anAttribute.name:
+                    nextAtt = True
+                    break
+
+            if nextAtt:
+                continue # skip it
+
+            if anAttribute.type == "text" or anAttribute.type == "n2m" or anAttribute.type == "table":
+                needsToolBox = True
+                largeAttributes.append(anAttribute)
+            else:
+                oneLineAttributes.append(anAttribute)
+
+            #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
+        ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
+
+        for anAttribute in oneLineAttributes:
+            #QtGui.QMessageBox.information(None, "oneLineAttribute",  anAttribute.name)
+            if anAttribute.isFK:
+                ddInputWidget = DdComboBox(anAttribute)
+            else:
+                if anAttribute.isTypeFloat():
+                    ddInputWidget = DdLineEditDouble(anAttribute)
+                elif anAttribute.isTypeInt():
+                    ddInputWidget = DdLineEditInt(anAttribute)
+                else:
+                    if anAttribute.type == "bool":
+                        ddInputWidget = DdCheckBox(anAttribute)
+                    elif anAttribute.type == "date":
+                        ddInputWidget = DdDateEdit(anAttribute)
+                    else:
+                        ddInputWidget = DdLineEdit(anAttribute)
+
+            ddFormWidget.addInputWidget(ddInputWidget)
+
+        for anAttribute in largeAttributes:
+            #QtGui.QMessageBox.information(None, "largeAttribute",  anAttribute.name)
+            if anAttribute.type == "text":
+                ddInputWidget = DdTextEdit(anAttribute)
+            elif anAttribute.type == "n2m":
+
+                if anAttribute.subType == "list":
+                    ddInputWidget = DdN2mListWidget(anAttribute)
+                elif anAttribute.subType == "tree":
+                    ddInputWidget = DdN2mTreeWidget(anAttribute)
+            elif anAttribute.type == "table":
+                ddInputWidget = DdN2mTableWidget(anAttribute)
+
+            ddFormWidget.addInputWidget(ddInputWidget)
+
+        ddForms.append(ddFormWidget)
+
+        # do not show this table in the parent's form
+        skip.append(thisTable.tableName)
+
+        # go recursivly into thisTable's parents
+        for aParent in self.getParents(thisTable,  db):
+            parentForms = self.__createForms(aParent,  db,  skip,  labels)
+            ddForms = ddForms + parentForms
+
+        return ddForms
+
     def createUi(self,  thisTable,  db,  skip = [],  labels = {}):
         '''creates a default ui for this table (DdTable instance)
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"'''
 
-        ddTables = [thisTable]
-        parents = self.getParents(thisTable,  db)
-        ddTables = ddTables + parents
-
         ui = DdDialogWidget()
+        forms = self.__createForms(thisTable,  db,  skip,  labels)
 
-        # now loop through all tables
-        while len(ddTables) > 0:
-            thisTable = ddTables.pop()
-            QtGui.QMessageBox.information(None, "pop",  thisTable.tableName)
-            ddAttributes = self.getAttributes(thisTable, db,  labels)
-
-            for anAtt in ddAttributes:
-                if anAtt.isPK:
-                    n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels)
-                    ddAttributes = ddAttributes + n2mAttributes
-
-            #check if we need a QToolBox
-            needsToolBox = (len(ddAttributes) > 5)
-
-            oneLineAttributes = []
-            largeAttributes = []
-
-            # loop through the attributes and get one-line types (QLineEdit, QComboBox) first
-            for anAttribute in ddAttributes:
-                #QtGui.QMessageBox.information(None, "att",  anAttribute.name)
-                nextAtt = False
-                 #check if this attribute is supposed to be skipped
-                for skipName in skip:
-                    if skipName == anAttribute.name:
-                        nextAtt = True
-                        break
-
-                if nextAtt:
-                    continue # skip it
-
-                if anAttribute.type == "text" or anAttribute.type == "n2m" or anAttribute.type == "table":
-                    needsToolBox = True
-                    largeAttributes.append(anAttribute)
-                else:
-                    oneLineAttributes.append(anAttribute)
-
-                #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
-            ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
-
-            for anAttribute in oneLineAttributes:
-                #QtGui.QMessageBox.information(None, "oneLineAttribute",  anAttribute.name)
-                if anAttribute.isFK:
-                    ddInputWidget = DdComboBox(anAttribute)
-                else:
-                    if anAttribute.isTypeFloat():
-                        ddInputWidget = DdLineEditDouble(anAttribute)
-                    elif anAttribute.isTypeInt():
-                        ddInputWidget = DdLineEditInt(anAttribute)
-                    else:
-                        if anAttribute.type == "bool":
-                            ddInputWidget = DdCheckBox(anAttribute)
-                        elif anAttribute.type == "date":
-                            ddInputWidget = DdDateEdit(anAttribute)
-                        else:
-                            ddInputWidget = DdLineEdit(anAttribute)
-
-                ddFormWidget.addInputWidget(ddInputWidget)
-
-            for anAttribute in largeAttributes:
-                #QtGui.QMessageBox.information(None, "largeAttribute",  anAttribute.name)
-                if anAttribute.type == "text":
-                    ddInputWidget = DdTextEdit(anAttribute)
-                elif anAttribute.type == "n2m":
-
-                    if anAttribute.subType == "list":
-                        ddInputWidget = DdN2mListWidget(anAttribute)
-                    elif anAttribute.subType == "tree":
-                        ddInputWidget = DdN2mTreeWidget(anAttribute)
-                elif anAttribute.type == "table":
-                    ddInputWidget = DdN2mTableWidget(anAttribute)
-
-                ddFormWidget.addInputWidget(ddInputWidget)
-
+        for ddFormWidget in forms:
             ui.addFormWidget(ddFormWidget)
 
         return ui
@@ -528,15 +538,24 @@ class DataDrivenUi(object):
         return parentTable
 
     def getParents(self,  thisTable,  db):
-        ''' query the DB to get a table's parents if any'''
+        ''' query the DB to get a table's parents if any
+        A table has a parent if its primary key is at the same time
+        a foreign key to another table''s primary key. Thus there is a 1:1
+        relationship between the two.'''
 
         query = QtSql.QSqlQuery(db)
-        sQuery = "SELECT c.oid, n.nspname, c.relname, COALESCE(d.description, '') \
-        FROM pg_inherits i \
-        JOIN pg_class c ON i.inhparent = c.oid \
-        JOIN pg_namespace n ON c.relnamespace = n.oid \
-        LEFT JOIN (SELECT * FROM pg_description WHERE objsubid = 0) d ON c.oid = d.objoid \
-        WHERE i.inhrelid = :oid"
+        sQuery = "SELECT \
+               c.oid, ns.nspname, c.relname, d.description \
+            FROM pg_attribute att \
+                JOIN (SELECT * FROM pg_constraint WHERE contype = 'f') fcon ON att.attrelid = fcon.conrelid AND att.attnum = ANY (fcon.conkey) \
+                JOIN (SELECT * FROM pg_constraint WHERE contype = 'p') pcon ON att.attrelid = pcon.conrelid AND att.attnum = ANY (pcon.conkey) \
+                JOIN pg_class c ON fcon.confrelid = c.oid \
+                JOIN pg_namespace ns ON c.relnamespace = ns.oid \
+                JOIN pg_description d ON c.oid = d.objoid \
+            WHERE att.attnum > 0 \
+                AND att.attisdropped = false \
+                AND d.objsubid = 0 \
+                AND att.attrelid = :oid"
         query.prepare(sQuery)
         query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         query.exec_()
@@ -553,32 +572,17 @@ class DataDrivenUi(object):
                     table = query.value(2).toString()
                     comment = query.value(3).toString()
                     parentTable = DdTable(oid,  schema,  table,  comment)
+                    parents.append(parentTable)
 
-                    # no duplicates
-                    notFound = True
-                    for aParent in parents:
-                        if aParent.oid == oid:
-                            notFound = False
-                            break
-
-                    if notFound:
-                        parents.append(parentTable)
-
-                        # get the parentTable's parents
-                        parentsParents = self.getParents(parentTable,  db)
-
-                        for aParentsParent in parentsParents:
-                            notFound = True
-                            for aParent in parents:
-                                if aParent.oid == aParentsParent.oid:
-                                    notFound = False
-                                    break
-
-                            if notFound:
-                                parents.append(aParentsParent)
                 query.finish()
         else:
             DbError(query)
+
+        myParents = "myParents:"
+        for aParent in parents:
+            myParents = myParents + " " + aParent.tableName
+
+        #QtGui.QMessageBox.information(None, "getParents",  "called with " + thisTable.tableName + "\n" + myParents)
 
         return parents
 
@@ -602,7 +606,7 @@ class DataDrivenUi(object):
                     AND :attNum = ANY(fk.confkey) "
                     #  0 = d.objsubid: comment on table only, not on its columns
         pkQuery.prepare(sPkQuery)
-        QtGui.QMessageBox.information(None, str(attNum), str(thisTable.oid))
+        #QtGui.QMessageBox.information(None, str(attNum), str(thisTable.oid))
         pkQuery.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         pkQuery.bindValue(":attNum", QtCore.QVariant(attNum))
         pkQuery.exec_()
@@ -617,11 +621,12 @@ class DataDrivenUi(object):
                 relationTable = pkQuery.value(5).toString()
                 numFields = pkQuery.value(6).toInt()[0]
                 relationComment = pkQuery.value(7).toString()
-                QtGui.QMessageBox.information(None, "relationFeatureIdField", relationFeatureIdField)
+                #QtGui.QMessageBox.information(None, "relationFeatureIdField", relationFeatureIdField)
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
 
                 if numPkFields == 1:
                     subType = "table"
+                    maxRows = 1
                 elif numPkFields > 1:
                     if numFields == 2:
                         # get the related table i.e. the table where the other FK field is the PK
@@ -650,7 +655,7 @@ class DataDrivenUi(object):
                         if relatedQuery.isActive():
                             if relatedQuery.size() != 1:
                                 relatedQuery.finish()
-                                QtGui.QMessageBox.information(None, "relatedQuery.size()", str(relatedQuery.size()))
+                                #QtGui.QMessageBox.information(None, "relatedQuery.size()", str(relatedQuery.size()))
                                 continue
 
                             while relatedQuery.next():
@@ -661,7 +666,7 @@ class DataDrivenUi(object):
                                 ddRelatedTable = DdTable(relatedOid,  relatedSchema,  relatedTable)
                             relatedQuery.finish()
 
-                            QtGui.QMessageBox.information(None, "relatedQuery", relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
+                            #QtGui.QMessageBox.information(None, "relatedQuery", relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
                             relatedFieldsQuery = QtSql.QSqlQuery(db)
                             relatedFieldsQuery.prepare(self.__attributeQuery("att.attnum"))
                             relatedFieldsQuery.bindValue(":oid", QtCore.QVariant(relatedOid))
@@ -719,6 +724,7 @@ class DataDrivenUi(object):
 
                     elif numFields > 2:
                         subType = "table"
+                        maxRows = None
 
                 try:
                     attLabel = labels[str(relationTable)]
@@ -727,7 +733,7 @@ class DataDrivenUi(object):
 
                 if subType == "table":
                     attributes = self.getAttributes(ddRelationTable,  db,  {})
-                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes)
+                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows)
                 else:
                     ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
                                        subType,  relationComment,  attLabel,  \
@@ -1878,6 +1884,9 @@ class DdN2mTableWidget(DdN2mWidget):
         self.inputWidget.setRowCount(thisRow + 1) # append a row
         self.fillRow(thisRow, thisFeature)
 
+        if self.attribute.maxRows:
+            self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+
     def save(self,  layer,  feature,  db):
         if self.tableLayer.isEditable():
             if self.tableLayer.isModified():
@@ -1940,7 +1949,7 @@ class DdN2mTableWidget(DdN2mWidget):
             # load the layer into the project
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 
-        QtGui.QMessageBox.information(None, "tableLayer",  self.tableLayer.name())
+        #QtGui.QMessageBox.information(None, "tableLayer",  self.tableLayer.name())
         # create a DdUi for the layer without the featurreIdField
         self.parentDialog.ddManager.initLayer(self.tableLayer)
 
@@ -1980,6 +1989,9 @@ class DdN2mTableWidget(DdN2mWidget):
         thisFeature = featureItem.feature
         self.tableLayer.deleteFeature(thisFeature.id())
         self.inputWidget.removeRow(thisRow)
+
+        if self.attribute.maxRows:
+            self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
 
 class DdPushButton(DdInputWidget):
     '''abstract class, needs subclassing'''

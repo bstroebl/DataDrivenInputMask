@@ -111,7 +111,7 @@ class DdFkLayerAttribute(DdLayerAttribute):
 class DdTableAttribute(DdAttribute):
     '''attribute for a relationTable'''
     def __init__(self,  relationTable, comment ,  label,   \
-                 relationFeatureIdField,  attributes):
+                 relationFeatureIdField,  attributes,  maxRows):
         DdAttribute.__init__(self,  relationTable,  "table",  False,  relationTable.tableName,  comment,  label)
         self.relationFeatureIdField = relationFeatureIdField
         self.attributes = attributes # an array with DdAttributes
@@ -121,6 +121,7 @@ class DdTableAttribute(DdAttribute):
                 self.attributes.remove(anAtt)
                 break
 
+        self.maxRows = maxRows
         # init statements
         self.setSubsetString()
 
