@@ -1206,7 +1206,7 @@ class DdLineEdit(DdInputWidget):
 
         if fieldIndex == -1:
             DdError(str(QtGui.QApplication.translate("DdError", "Field not found in layer:", None,
-                                                           QtGui.QApplication.UnicodeUTF8)) + " %s"% str(self.attribute.name))
+                                                           QtGui.QApplication.UnicodeUTF8)) + " %s"% str(layer.name()) + '.' + str(self.attribute.name))
             return None
         return fieldIndex
 
