@@ -69,7 +69,7 @@ class DataDrivenInputMask:
         QtCore.QObject.connect(self.action, QtCore.SIGNAL("triggered()"), self.run)
 
         # Add toolbar button and menu item
-        self.iface.addPluginToMenu(u"&Data-dirven Input Mask", self.action)
+        self.iface.addPluginToMenu(u"&Data-driven Input Mask", self.action)
 
          # Create action that will start plugin configuration
         self.actionSel = QtGui.QAction(u"Show Input Form", self.iface.mainWindow())
@@ -77,29 +77,29 @@ class DataDrivenInputMask:
         QtCore.QObject.connect(self.actionSel, QtCore.SIGNAL("triggered()"), self.runSel)
 
         # Add toolbar button and menu item
-        self.iface.addPluginToMenu(u"&Data-dirven Input Mask", self.actionSel)
+        self.iface.addPluginToMenu(u"&Data-driven Input Mask", self.actionSel)
 
     def unload(self):
         # Remove the plugin menu item and icon
         self.app.ddManager.quit()
         #QtGui.QMessageBox.information(None, "", "unload")
-        self.iface.removePluginMenu(u"&Data-dirven Input Mask",self.action)
-        self.iface.removePluginMenu(u"&Data-dirven Input Mask",self.actionSel)
+        self.iface.removePluginMenu(u"&Data-driven Input Mask", self.action)
+        self.iface.removePluginMenu(u"&Data-driven Input Mask", self.actionSel)
 
     # run method that performs all the real work
     def run(self):
         layer = self.iface.activeLayer()
         if 0 != layer.type():   # not a vector layer
-            DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a vector layer:", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
+            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
+                                                           QtGui.QApplication.UnicodeUTF8).append(layer.name()))
         else:
             self.app.ddManager.initLayer(layer)
 
     def runSel(self):
         layer = self.iface.activeLayer()
         if 0 != layer.type():   # not a vector layer
-            DdError(str(QtGui.QApplication.translate("DdError", "Layer is not a vector layer:", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
+            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
+                                                           QtGui.QApplication.UnicodeUTF8).append(layer.name()))
         else:
             sel = layer.selectedFeatures()
 
@@ -107,5 +107,5 @@ class DataDrivenInputMask:
                 feature = sel[0]
                 self.app.ddManager.showFeatureForm(layer,  feature)
             else:
-                DdError(unicode(QtGui.QApplication.translate("DdError", "No selection in layer:", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + " %s"% layer.name()))
+                DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
+                                                               QtGui.QApplication.UnicodeUTF8).append(layer.name()))

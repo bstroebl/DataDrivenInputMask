@@ -42,7 +42,7 @@
  being displayed.
 """
 
-from PyQt4 import QtCore
+from PyQt4 import QtCore,  QtGui
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
@@ -111,17 +111,21 @@ class DdFkLayerAttribute(DdLayerAttribute):
 class DdTableAttribute(DdAttribute):
     '''attribute for a relationTable'''
     def __init__(self,  relationTable, comment ,  label,   \
-                 relationFeatureIdField,  attributes,  maxRows):
+                 relationFeatureIdField,  attributes,  maxRows,  showParents):
         DdAttribute.__init__(self,  relationTable,  "table",  False,  relationTable.tableName,  comment,  label)
         self.relationFeatureIdField = relationFeatureIdField
         self.attributes = attributes # an array with DdAttributes
 
         for anAtt in self.attributes:
+
+            #if relationTable.tableName == "auslegungsStartDatum":
+                #QtGui.QMessageBox.information(None, "",  anAtt.name + " " + self.relationFeatureIdField)
             if anAtt.name == self.relationFeatureIdField:
                 self.attributes.remove(anAtt)
                 break
 
         self.maxRows = maxRows
+        self.showParents = showParents
         # init statements
         self.setSubsetString()
 
@@ -174,7 +178,7 @@ class DdN2mAttribute(DdAttribute):
 
         if self.subType ==  QtCore.QString("tree"):
             for aField in fieldList:
-                displayStatement.append(", \'").append(aField).append(": \' || disp.\"").append(aField).append("\"")
+                displayStatement.append(", \'").append(aField).append(": \' || COALESCE(disp.\"").append(aField).append("\", \'NULL\')")
 
         displayStatement.append(" FROM \"").append(relatedSchema).append("\".\"").append(relatedTable).append("\" disp")
         displayStatement.append(" LEFT JOIN (SELECT * FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
