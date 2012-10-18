@@ -1983,8 +1983,6 @@ class DdN2mTableWidget(DdN2mWidget):
             subsetString = QtCore.QString(str(self.attribute.subsetString))
             subsetString.append(QtCore.QString(str(self.featureId)))
             #QtGui.QMessageBox.information(None, "",  subsetString + "\n" + self.attribute.name)
-            if not self.tableLayer:
-                QtGui.QMessageBox.information(None, "Debug",  self.attribute.name)
             self.tableLayer.setSubsetString(subsetString)
             self.tableLayer.reload()
             # display the features in the QTableWidget
