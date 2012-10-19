@@ -945,7 +945,7 @@ class DataDrivenUi(object):
 
         return foreignKeys
 
-    def __attributeQuery(self,  order = "att.attname"):
+    def __attributeQuery(self,  order = "lower(att.attname"):
         sQuery = "SELECT \
         att.attname, \
         att.attnum, \
