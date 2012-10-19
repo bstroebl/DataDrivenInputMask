@@ -553,8 +553,8 @@ class DataDrivenUi(object):
 
     def getParents(self,  thisTable,  db):
         ''' query the DB to get a table's parents if any
-        A table has a parent if its primary key is at the same time
-        a foreign key to another table''s primary key. Thus there is a 1:1
+        A table has a parent if its primary key defined on one field only and is at the same time
+        a foreign key to another table's primary key. Thus there is a 1:1
         relationship between the two.'''
 
         query = QtSql.QSqlQuery(db)
@@ -569,7 +569,10 @@ class DataDrivenUi(object):
             WHERE att.attnum > 0 \
                 AND att.attisdropped = false \
                 AND d.objsubid = 0 \
-                AND att.attrelid = :oid"
+                AND att.attrelid = :oid \
+                AND array_length(pcon.conkey, 1) = 1"
+        # AND array_length(pcon.conkey, 1) = 1:
+        # if we have a combined PK we are in a n-to-m relational table
         query.prepare(sQuery)
         query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         query.exec_()
@@ -605,10 +608,11 @@ class DataDrivenUi(object):
 
         n2mAttributes = []
         pkQuery = QtSql.QSqlQuery(db)
-        sPkQuery = "SELECT array_length(pk.conkey, 1), att.attname, att.attnum, c.oid as table_oid,n.nspname,c.relname, f.numfields, COALESCE(d.description,'') as comment \
+        sPkQuery = "SELECT array_length(pk.conkey, 1), att.attname, att.attnum, c.oid as table_oid,n.nspname,c.relname, f.numfields, COALESCE(d.description,'') as comment, COALESCE(inpk.in,0) as inpk \
                 FROM pg_attribute att \
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'f') fk ON att.attrelid = fk.conrelid AND att.attnum = ANY (fk.conkey) \
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'p') pk ON pk.conrelid = fk.conrelid \
+                LEFT JOIN (SELECT 1 AS in, conrelid, conkey FROM pg_constraint where contype = 'p') inpk ON inpk.conrelid = fk.conrelid AND att.attnum = ANY (inpk.conkey) \
                 JOIN pg_class c ON fk.conrelid = c.oid \
                 JOIN pg_namespace n ON c.relnamespace = n.oid \
                 LEFT JOIN pg_description d ON c.oid = d.objoid AND 0 = d.objsubid \
@@ -636,136 +640,138 @@ class DataDrivenUi(object):
                 relationTable = pkQuery.value(5).toString()
                 numFields = pkQuery.value(6).toInt()[0]
                 relationComment = pkQuery.value(7).toString()
-                #QtGui.QMessageBox.information(None, "relationFeatureIdField", relationFeatureIdField)
+                inPk = bool(pkQuery.value(8).toInt()[0])
+                QtGui.QMessageBox.information(None, "Debug", relationSchema + '.' +  relationTable + '.' + relationFeatureIdField)
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
 
-                if numPkFields == 1:
-                    subType = "table"
-                    maxRows = 1
-                    showParents = True
-                elif numPkFields > 1:
-                    if numFields == 2:
-                        # get the related table i.e. the table where the other FK field is the PK
-                        relatedQuery = QtSql.QSqlQuery(db)
-                        sRelatedQuery = "SELECT c.oid, n.nspname, c.relname, att.attname \
-                            FROM pg_constraint con \
-                                JOIN pg_class c ON con.confrelid = c.oid \
-                                JOIN pg_namespace n ON c.relnamespace = n.oid \
-                                JOIN (\
-                                    SELECT * \
-                                    FROM pg_attribute \
-                                    WHERE attnum > 0 \
-                                        AND attisdropped = false \
-                                        AND attnum != :attNum1 \
-                                    ) att ON con.conrelid = att.attrelid \
-                            WHERE conrelid = :relationOid \
-                                AND contype = 'f' \
-                                AND :attNum2 != ANY(conkey)"
-                        # we do not want the table where we came from in the results, therefore :attNum != ANY(confkey)
-                        # JOIN pg_class c ON con.confrelid = c.oid -- referenced table
-                        # WHERE conrelid = :relationOid -- table this constraint is on
-                        # AND contype = 'f' -- foreign key constraint
-                        # AND :attNum2 != ANY(conkey) -- list of constrained columns
-                        relatedQuery.prepare(sRelatedQuery)
-                        relatedQuery.bindValue(":relationOid", QtCore.QVariant(relationOid))
-                        relatedQuery.bindValue(":attNum1", QtCore.QVariant(fkAttNum))
-                        relatedQuery.bindValue(":attNum2", QtCore.QVariant(fkAttNum))
-                        relatedQuery.exec_()
-
-                        if relatedQuery.isActive():
-
-                            if relatedQuery.size() == 0: #no relatedTable but a Table with two PK columns
-                                subType = "table"
-                                maxRows = 1
-                                showParents = False
-                                #QtGui.QMessageBox.information(None, "relatedQuery.size()", str(relatedQuery.size()))
-                            elif relatedQuery.size() == 1:
-                                while relatedQuery.next():
-                                    relatedOid = relatedQuery.value(0).toInt()[0]
-                                    relatedSchema = relatedQuery.value(1).toString()
-                                    relatedTable = relatedQuery.value(2).toString()
-                                    relationRelatedIdField = relatedQuery.value(3).toString()
-                                    ddRelatedTable = DdTable(relatedOid,  relatedSchema,  relatedTable)
-                                relatedQuery.finish()
-
-                                #QtGui.QMessageBox.information(None, "relatedQuery", relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
-                                relatedFieldsQuery = QtSql.QSqlQuery(db)
-                                relatedFieldsQuery.prepare(self.__attributeQuery("att.attnum"))
-                                relatedFieldsQuery.bindValue(":oid", QtCore.QVariant(relatedOid))
-                                relatedFieldsQuery.exec_()
-
-                                if relatedFieldsQuery.isActive():
-                                    if relatedFieldsQuery.size() == 2:
-                                        subType = "list"
-                                    else:
-                                        subType = "tree"
-
-                                    relatedIdField = None
-                                    relatedDisplayCandidate = None
-                                    relatedDisplayField = None
-                                    i = 0
-
-                                    fieldList = []
-
-                                    while relatedFieldsQuery.next():
-                                        relatedAttName = relatedFieldsQuery.value(0).toString()
-                                        relatedAttNum = relatedFieldsQuery.value(1).toInt()[0]
-                                        relatedAttNotNull = relatedFieldsQuery.value(2).toBool()
-                                        relatedAttHasDefault = relatedFieldsQuery.value(3).toBool()
-                                        relatedAttIsChild = relatedFieldsQuery.value(4).toBool()
-                                        relatedAttLength = relatedFieldsQuery.value(5).toInt()[0]
-                                        relatedAttTyp = relatedFieldsQuery.value(6).toString()
-                                        relatedAttComment = relatedFieldsQuery.value(7).toString()
-                                        relatedAttDefault = relatedFieldsQuery.value(8).toString()
-                                        relatedAttConstraint = relatedFieldsQuery.value(9).toString()
-
-                                        if relatedAttConstraint == QtCore.QString("p"): # PK of the related table
-                                            relatedIdField = relatedAttName
-
-                                        if relatedAttTyp == QtCore.QString("varchar") or relatedAttTyp == QtCore.QString("char"):
-
-                                            if not relatedDisplayCandidate:
-                                                relatedDisplayCandidate = relatedAttName # we use the first string field
-
-                                            if relatedAttNotNull and not relatedDisplayField: # we use the first one
-                                                relatedDisplayField = relatedAttName
-
-                                            fieldList.append(relatedAttName)
-
-                                    relatedFieldsQuery.finish()
-
-                                    if not relatedDisplayCandidate: # there wa sno string field
-                                        relatedDisplayCandidate = relatedIdField
-
-                                    if not relatedDisplayField: # there was no notNull string field
-                                        relatedDisplayField = relatedDisplayCandidate
-                                else:
-                                    DbError(relatedFieldsQuery)
-                            else:
-                                relatedQuery.finish()
-                                continue
-                        else:
-                            DbError(relatedQuery)
-
-                    elif numFields > 2:
+                if inPk:
+                    if numPkFields == 1:
                         subType = "table"
-                        maxRows = None
-                        showParents = False
+                        maxRows = 1
+                        showParents = True
+                    elif numPkFields > 1:
+                        if numFields == 2:
+                            # get the related table i.e. the table where the other FK field is the PK
+                            relatedQuery = QtSql.QSqlQuery(db)
+                            sRelatedQuery = "SELECT c.oid, n.nspname, c.relname, att.attname \
+                                FROM pg_constraint con \
+                                    JOIN pg_class c ON con.confrelid = c.oid \
+                                    JOIN pg_namespace n ON c.relnamespace = n.oid \
+                                    JOIN (\
+                                        SELECT * \
+                                        FROM pg_attribute \
+                                        WHERE attnum > 0 \
+                                            AND attisdropped = false \
+                                            AND attnum != :attNum1 \
+                                        ) att ON con.conrelid = att.attrelid \
+                                WHERE conrelid = :relationOid \
+                                    AND contype = 'f' \
+                                    AND :attNum2 != ANY(conkey)"
+                            # we do not want the table where we came from in the results, therefore :attNum != ANY(confkey)
+                            # JOIN pg_class c ON con.confrelid = c.oid -- referenced table
+                            # WHERE conrelid = :relationOid -- table this constraint is on
+                            # AND contype = 'f' -- foreign key constraint
+                            # AND :attNum2 != ANY(conkey) -- list of constrained columns
+                            relatedQuery.prepare(sRelatedQuery)
+                            relatedQuery.bindValue(":relationOid", QtCore.QVariant(relationOid))
+                            relatedQuery.bindValue(":attNum1", QtCore.QVariant(fkAttNum))
+                            relatedQuery.bindValue(":attNum2", QtCore.QVariant(fkAttNum))
+                            relatedQuery.exec_()
 
-                try:
-                    attLabel = labels[str(relationTable)]
-                except KeyError:
-                    attLabel = None
+                            if relatedQuery.isActive():
 
-                if subType == "table":
-                    attributes = self.getAttributes(ddRelationTable,  db,  {})
-                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
-                else:
-                    ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
-                                       subType,  relationComment,  attLabel,  \
-                                       relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList)
+                                if relatedQuery.size() == 0: #no relatedTable but a Table with two PK columns
+                                    subType = "table"
+                                    maxRows = 1
+                                    showParents = False
+                                    #QtGui.QMessageBox.information(None, "relatedQuery.size()", str(relatedQuery.size()))
+                                elif relatedQuery.size() == 1:
+                                    while relatedQuery.next():
+                                        relatedOid = relatedQuery.value(0).toInt()[0]
+                                        relatedSchema = relatedQuery.value(1).toString()
+                                        relatedTable = relatedQuery.value(2).toString()
+                                        relationRelatedIdField = relatedQuery.value(3).toString()
+                                        ddRelatedTable = DdTable(relatedOid,  relatedSchema,  relatedTable)
+                                    relatedQuery.finish()
 
-                n2mAttributes.append(ddAtt)
+                                    #QtGui.QMessageBox.information(None, "relatedQuery", relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
+                                    relatedFieldsQuery = QtSql.QSqlQuery(db)
+                                    relatedFieldsQuery.prepare(self.__attributeQuery("att.attnum"))
+                                    relatedFieldsQuery.bindValue(":oid", QtCore.QVariant(relatedOid))
+                                    relatedFieldsQuery.exec_()
+
+                                    if relatedFieldsQuery.isActive():
+                                        if relatedFieldsQuery.size() == 2:
+                                            subType = "list"
+                                        else:
+                                            subType = "tree"
+
+                                        relatedIdField = None
+                                        relatedDisplayCandidate = None
+                                        relatedDisplayField = None
+                                        i = 0
+
+                                        fieldList = []
+
+                                        while relatedFieldsQuery.next():
+                                            relatedAttName = relatedFieldsQuery.value(0).toString()
+                                            relatedAttNum = relatedFieldsQuery.value(1).toInt()[0]
+                                            relatedAttNotNull = relatedFieldsQuery.value(2).toBool()
+                                            relatedAttHasDefault = relatedFieldsQuery.value(3).toBool()
+                                            relatedAttIsChild = relatedFieldsQuery.value(4).toBool()
+                                            relatedAttLength = relatedFieldsQuery.value(5).toInt()[0]
+                                            relatedAttTyp = relatedFieldsQuery.value(6).toString()
+                                            relatedAttComment = relatedFieldsQuery.value(7).toString()
+                                            relatedAttDefault = relatedFieldsQuery.value(8).toString()
+                                            relatedAttConstraint = relatedFieldsQuery.value(9).toString()
+
+                                            if relatedAttConstraint == QtCore.QString("p"): # PK of the related table
+                                                relatedIdField = relatedAttName
+
+                                            if relatedAttTyp == QtCore.QString("varchar") or relatedAttTyp == QtCore.QString("char"):
+
+                                                if not relatedDisplayCandidate:
+                                                    relatedDisplayCandidate = relatedAttName # we use the first string field
+
+                                                if relatedAttNotNull and not relatedDisplayField: # we use the first one
+                                                    relatedDisplayField = relatedAttName
+
+                                                fieldList.append(relatedAttName)
+
+                                        relatedFieldsQuery.finish()
+
+                                        if not relatedDisplayCandidate: # there wa sno string field
+                                            relatedDisplayCandidate = relatedIdField
+
+                                        if not relatedDisplayField: # there was no notNull string field
+                                            relatedDisplayField = relatedDisplayCandidate
+                                    else:
+                                        DbError(relatedFieldsQuery)
+                                else:
+                                    relatedQuery.finish()
+                                    continue
+                            else:
+                                DbError(relatedQuery)
+
+                        elif numFields > 2:
+                            subType = "table"
+                            maxRows = None
+                            showParents = False
+
+                    try:
+                        attLabel = labels[str(relationTable)]
+                    except KeyError:
+                        attLabel = None
+
+                    if subType == "table":
+                        attributes = self.getAttributes(ddRelationTable,  db,  {})
+                        ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
+                    else:
+                        ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
+                                           subType,  relationComment,  attLabel,  \
+                                           relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList)
+
+                    n2mAttributes.append(ddAtt)
 
             pkQuery.finish()
         else:
@@ -813,34 +819,34 @@ class DataDrivenUi(object):
                     if attIsChild:
                         continue
 
-                    if isPK:
-                        normalAtt = True
-                    else:
-                        try: # is this attribute a FK
-                            fk = foreignKeys[attNum]
+                    #if isPK:
+                    #    normalAtt = True
+                    #else:
+                    try: # is this attribute a FK
+                        fk = foreignKeys[attNum]
 
-                            try:
-                                attLabel = labels[str(attName)]
-                            except KeyError:
-                                attLabel = attName + " (" + fk[2] + ")"
-
-                            try:
-                                fkComment = fk[3]
-                            except IndexError:
-                                #QtGui.QMessageBox.information(None, "",  "no fkComment for " + attName)
-                                fkComment = QtCore.QString()
-
-                            if attComment.isEmpty():
-                                attComment = fkComment
-                            else:
-                                if not fkComment.isEmpty():
-                                    attComment = attComment + "\n(" + fkComment + ")"
-
-                            ddAtt = DdFkLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, attDefault,  attHasDefault,  fk[1],  attLabel)
-                            normalAtt = False
+                        try:
+                            attLabel = labels[str(attName)]
                         except KeyError:
-                            # no fk defined
-                            normalAtt = True
+                            attLabel = attName + " (" + fk[2] + ")"
+
+                        try:
+                            fkComment = fk[3]
+                        except IndexError:
+                            #QtGui.QMessageBox.information(None, "",  "no fkComment for " + attName)
+                            fkComment = QtCore.QString()
+
+                        if attComment.isEmpty():
+                            attComment = fkComment
+                        else:
+                            if not fkComment.isEmpty():
+                                attComment = attComment + "\n(" + fkComment + ")"
+
+                        ddAtt = DdFkLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, attDefault,  attHasDefault,  fk[1],  attLabel)
+                        normalAtt = False
+                    except KeyError:
+                        # no fk defined
+                        normalAtt = True
 
                     if normalAtt:
                         try:
