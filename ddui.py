@@ -127,6 +127,7 @@ class DdManager(object):
 
                 ddui = DataDrivenUi(self.iface)
                 ui = ddui.createUi(thisTable,  db,  skip,  labels,  showParents)
+                self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
                 self.ddLayers[layer.id()] = [thisTable,  db,  ui]
                 self.__connectSignals(layer)
 
@@ -605,7 +606,7 @@ class DataDrivenUi(object):
 
     def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels):
         # find those tables (n2mtable) where our pk is a fk
-
+        #QtGui.QMessageBox.information(None, "Debug", "getN2mAttributes:" + thisTable.tableName)
         n2mAttributes = []
         pkQuery = QtSql.QSqlQuery(db)
         sPkQuery = "SELECT array_length(pk.conkey, 1), att.attname, att.attnum, c.oid as table_oid,n.nspname,c.relname, f.numfields, COALESCE(d.description,'') as comment, COALESCE(inpk.in,0) as inpk \
@@ -641,7 +642,6 @@ class DataDrivenUi(object):
                 numFields = pkQuery.value(6).toInt()[0]
                 relationComment = pkQuery.value(7).toString()
                 inPk = bool(pkQuery.value(8).toInt()[0])
-                QtGui.QMessageBox.information(None, "Debug", relationSchema + '.' +  relationTable + '.' + relationFeatureIdField)
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
 
                 if inPk:
@@ -694,7 +694,6 @@ class DataDrivenUi(object):
                                         ddRelatedTable = DdTable(relatedOid,  relatedSchema,  relatedTable)
                                     relatedQuery.finish()
 
-                                    #QtGui.QMessageBox.information(None, "relatedQuery", relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
                                     relatedFieldsQuery = QtSql.QSqlQuery(db)
                                     relatedFieldsQuery.prepare(self.__attributeQuery("att.attnum"))
                                     relatedFieldsQuery.bindValue(":oid", QtCore.QVariant(relatedOid))
@@ -705,6 +704,7 @@ class DataDrivenUi(object):
                                             subType = "list"
                                         else:
                                             subType = "tree"
+                                            #QtGui.QMessageBox.information(None, "Debug", "tree: " + relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
 
                                         relatedIdField = None
                                         relatedDisplayCandidate = None
@@ -784,7 +784,7 @@ class DataDrivenUi(object):
         ddAttributes = []
 
         query = QtSql.QSqlQuery(db)
-        sQuery = self.__attributeQuery()
+        sQuery = self.__attributeQuery("att.attnum")
 
         query.prepare(sQuery)
         query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
@@ -815,9 +815,6 @@ class DataDrivenUi(object):
                     attConstraint = query.value(9).toString()
                     constrainedAttNums = query.value(10).toList()
                     isPK = attConstraint == QtCore.QString("p") # PrimaryKey
-
-                    if attIsChild:
-                        continue
 
                     #if isPK:
                     #    normalAtt = True
@@ -945,7 +942,7 @@ class DataDrivenUi(object):
 
         return foreignKeys
 
-    def __attributeQuery(self,  order = "lower(att.attname"):
+    def __attributeQuery(self,  order = "lower(att.attname)"):
         sQuery = "SELECT \
         att.attname, \
         att.attnum, \
@@ -1783,7 +1780,6 @@ class DdN2mListWidget(DdN2mWidget):
                 parentId = int(query.value(0).toString())
                 parent = unicode(query.value(1).toString())
                 checked = int(query.value(2).toString())
-                #QtGui.QMessageBox.information(None,"debug",str(parentId) + ": " + parent + " checked = " + str(checked))
                 parentItem = QtGui.QListWidgetItem(QtCore.QString(parent))
                 parentItem.id = parentId
                 parentItem.setCheckState(checked)
@@ -1845,7 +1841,6 @@ class DdN2mTreeWidget(DdN2mWidget):
     def initialize(self,  layer,  feature,  db):
         query = QtSql.QSqlQuery(db)
         query.prepare(self.attribute.displayStatement)
-        #QtGui.QMessageBox.information(None,"debug",self.attribute.displayStatement)
         query.bindValue(":featureId", QtCore.QVariant(feature.id()))
         query.exec_()
 
