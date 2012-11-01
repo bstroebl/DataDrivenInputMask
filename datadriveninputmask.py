@@ -93,7 +93,7 @@ class DataDrivenInputMask:
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(layer.name()))
         else:
-            self.app.ddManager.initLayer(layer)
+            self.app.ddManager.initLayer(layer,  skip = [])
 
     def runSel(self):
         layer = self.iface.activeLayer()

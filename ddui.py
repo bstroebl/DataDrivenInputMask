@@ -82,7 +82,6 @@ def ddFormInit(dialog, layerId, featureId):
                 if result == 1:
                     layer.setModified()
 
-
 class DdManager(object):
     def __init__(self,  iface):
         self.iface = iface
@@ -96,7 +95,7 @@ class DdManager(object):
 
     def initLayer(self,  layer,  skip = [],  labels = {},  showParents = True):
         '''api method initLayer: initialize the layer with a data-driven input mask'''
-        #self.__debug("initializing",  layer.name())
+
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(layer.name()))
@@ -149,7 +148,7 @@ class DdManager(object):
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
-            self.initLayer(layer)
+            self.initLayer(layer,  skip = [])
             layerValues = self.ddLayers[layer.id()]
 
         #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -418,12 +417,11 @@ class DataDrivenUi(object):
 
     def __createForms(self,  thisTable,  db,  skip,  labels,  showParents):
         ddForms = []
-
-        #QtGui.QMessageBox.information(None, "__createForms",  thisTable.tableName + " showParents = " + str(showParents))
         ddAttributes = self.getAttributes(thisTable, db,  labels)
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
+                #QtGui.QMessageBox.information(None, "debug",  anAtt.name + " isPK")
                 n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels)
                 ddAttributes = ddAttributes + n2mAttributes
 
@@ -436,11 +434,12 @@ class DataDrivenUi(object):
         # loop through the attributes and get one-line types (QLineEdit, QComboBox) first
         for anAttribute in ddAttributes:
             msg = msg + " " + anAttribute.name
-            #QtGui.QMessageBox.information(None, "att",  anAttribute.name)
+
             nextAtt = False
              #check if this attribute is supposed to be skipped
             for skipName in skip:
                 if skipName == anAttribute.name:
+                    #QtGui.QMessageBox.information(None, "debug",  "skipping " + anAttribute.name)
                     nextAtt = True
                     break
 
@@ -1645,7 +1644,7 @@ class DdDateEdit(DdLineEdit):
         self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
 
 class DdCheckBox(DdLineEdit):
-    '''QCheckBox for a date field'''
+    '''QCheckBox for a boolean field'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -2098,8 +2097,8 @@ class DdN2mTableWidget(DdN2mWidget):
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 
         #QtGui.QMessageBox.information(None, "setupUi",  self.attribute.name + ": " + self.tableLayer.name())
-        # create a DdUi for the layer without the featurreIdField
-        self.parentDialog.ddManager.initLayer(self.tableLayer,  showParents = self.attribute.showParents)
+        # create a DdUi for the layer without the featureIdField
+        self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [],  showParents = self.attribute.showParents)
 
     # SLOTS
     def selectionChanged(self):
