@@ -69,7 +69,7 @@ def ddFormInit(dialog, layerId, featureId):
                 try:
                     layerValues = ddManager.ddLayers[aLayer.id()]
                 except KeyError:
-                    ddManager.initLayer(aLayer)
+                    ddManager.initLayer(aLayer,  skip = [])
                     layerValues = ddManager.ddLayers[aLayer.id()]
 
                 #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -175,7 +175,7 @@ class DdManager(object):
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
-            self.initLayer(layer)
+            self.initLayer(layer,  skip = [])
             layerValues = self.ddLayers[layer.id()]
 
         #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -188,7 +188,7 @@ class DdManager(object):
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
-            self.initLayer(layer)
+            self.initLayer(layer,  skip = [])
             layerValues = self.ddLayers[layer.id()]
 
         thisTable = layerValues[0]
@@ -250,7 +250,7 @@ class DdManager(object):
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
-            self.initLayer(layer)
+            self.initLayer(layer,  skip = [])
             layerValues = self.ddLayers[layer.id()]
 
         #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
