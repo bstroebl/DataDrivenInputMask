@@ -165,7 +165,6 @@ class DdN2mAttribute(DdAttribute):
 
     def buildDisplayStatement(self,  relationSchema,  relationTable, relatedSchema,  relatedTable,  relationFeatureIdField, \
                               relatedIdField,  relatedDisplayField,  relationRelatedIdField,  fieldList):
-        ''''''
 
         displayStatement = QtCore.QString("SELECT disp.\"").append(relatedIdField).append("\", disp.\"").append(relatedDisplayField).append("\",")
         displayStatement.append(" CASE COALESCE(lnk.\"").append(relationFeatureIdField).append("\", 0) WHEN 0 THEN 0 ELSE 2 END as checked")

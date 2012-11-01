@@ -64,27 +64,32 @@ class DataDrivenInputMask:
 
     def initGui(self):
         # Create action that will start plugin configuration
-        self.action = QtGui.QAction(u"Initialize Layer", self.iface.mainWindow())
+
+        self.action = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Initialize Layer",
+                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
         QtCore.QObject.connect(self.action, QtCore.SIGNAL("triggered()"), self.run)
 
         # Add toolbar button and menu item
-        self.iface.addPluginToMenu(u"&Data-driven Input Mask", self.action)
+        self.menuLabel = QtGui.QApplication.translate("DdLabel", "&Data-driven Input Mask",
+                                                                 None, QtGui.QApplication.UnicodeUTF8)
+        self.iface.addPluginToMenu(self.menuLabel, self.action)
 
          # Create action that will start plugin configuration
-        self.actionSel = QtGui.QAction(u"Show Input Form", self.iface.mainWindow())
+        self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
+                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
         QtCore.QObject.connect(self.actionSel, QtCore.SIGNAL("triggered()"), self.runSel)
 
         # Add toolbar button and menu item
-        self.iface.addPluginToMenu(u"&Data-driven Input Mask", self.actionSel)
+        self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
 
     def unload(self):
         # Remove the plugin menu item and icon
         self.app.ddManager.quit()
         #QtGui.QMessageBox.information(None, "", "unload")
-        self.iface.removePluginMenu(u"&Data-driven Input Mask", self.action)
-        self.iface.removePluginMenu(u"&Data-driven Input Mask", self.actionSel)
+        self.iface.removePluginMenu(self.menuLabel, self.action)
+        self.iface.removePluginMenu(self.menuLabel, self.actionSel)
 
     # run method that performs all the real work
     def run(self):
