@@ -812,37 +812,44 @@ class DataDrivenUi(object):
                         continue
 
                     attConstraint = query.value(9).toString()
-                    constrainedAttNums = query.value(10).toList()
+                    constrainedAttNums = query.value(10).toString()
                     isPK = attConstraint == QtCore.QString("p") # PrimaryKey
 
-                    #if isPK:
-                    #    normalAtt = True
-                    #else:
-                    try: # is this attribute a FK
-                        fk = foreignKeys[attNum]
+                    if isPK:
+                        constrainedAttNums = constrainedAttNums.replace("{",  "").replace("}",  "").split(",")
+                    else:
+                        constrainedAttNums = []
 
-                        try:
-                            attLabel = labels[str(attName)]
-                        except KeyError:
-                            attLabel = attName + " (" + fk[2] + ")"
-
-                        try:
-                            fkComment = fk[3]
-                        except IndexError:
-                            #QtGui.QMessageBox.information(None, "",  "no fkComment for " + attName)
-                            fkComment = QtCore.QString()
-
-                        if attComment.isEmpty():
-                            attComment = fkComment
-                        else:
-                            if not fkComment.isEmpty():
-                                attComment = attComment + "\n(" + fkComment + ")"
-
-                        ddAtt = DdFkLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, attDefault,  attHasDefault,  fk[1],  attLabel)
-                        normalAtt = False
-                    except KeyError:
-                        # no fk defined
+                    if isPK and len(constrainedAttNums) == 1:
+                        # if table has a single PK we do not care if it is a FK, too because we
+                        # do not treat a parent in a 1:1 relation as lookup table
                         normalAtt = True
+                    else:
+                        try: # is this attribute a FK
+                            fk = foreignKeys[attNum]
+
+                            try:
+                                attLabel = labels[str(attName)]
+                            except KeyError:
+                                attLabel = attName + " (" + fk[2] + ")"
+
+                            try:
+                                fkComment = fk[3]
+                            except IndexError:
+                                #QtGui.QMessageBox.information(None, "",  "no fkComment for " + attName)
+                                fkComment = QtCore.QString()
+
+                            if attComment.isEmpty():
+                                attComment = fkComment
+                            else:
+                                if not fkComment.isEmpty():
+                                    attComment = attComment + "\n(" + fkComment + ")"
+
+                            ddAtt = DdFkLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, attDefault,  attHasDefault,  fk[1],  attLabel)
+                            normalAtt = False
+                        except KeyError:
+                            # no fk defined
+                            normalAtt = True
 
                     if normalAtt:
                         try:
