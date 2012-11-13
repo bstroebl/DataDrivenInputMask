@@ -415,14 +415,14 @@ class DataDrivenUi(object):
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  showParents):
+    def __createForms(self,  thisTable,  db,  skip,  labels,  showParents,  showChildren):
         ddForms = []
         ddAttributes = self.getAttributes(thisTable, db,  labels)
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
                 #QtGui.QMessageBox.information(None, "debug",  anAtt.name + " isPK")
-                n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels)
+                n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels,  showChildren)
                 ddAttributes = ddAttributes + n2mAttributes
 
         #check if we need a QToolBox
@@ -499,18 +499,18 @@ class DataDrivenUi(object):
         if showParents:
              # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms = self.__createForms(aParent,  db,  skip,  labels,  showParents)
+                parentForms = self.__createForms(aParent,  db,  skip,  labels,  showParents,  False)
                 ddForms = ddForms + parentForms
 
         return ddForms
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  showParents = True):
+    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  showParents = True,  showChildren = True):
         '''creates a default ui for this table (DdTable instance)
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"'''
 
         ui = DdDialogWidget()
-        forms = self.__createForms(thisTable,  db,  skip,  labels,  showParents)
+        forms = self.__createForms(thisTable,  db,  skip,  labels,  showParents,  showChildren)
 
         for ddFormWidget in forms:
             ui.addFormWidget(ddFormWidget)
@@ -603,7 +603,7 @@ class DataDrivenUi(object):
 
         return parents
 
-    def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels):
+    def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels,  showChildren):
         # find those tables (n2mtable) where our pk is a fk
         #QtGui.QMessageBox.information(None, "Debug", "getN2mAttributes:" + thisTable.tableName)
         n2mAttributes = []
@@ -645,9 +645,14 @@ class DataDrivenUi(object):
 
                 if inPk:
                     if numPkFields == 1:
-                        subType = "table"
-                        maxRows = 1
-                        showParents = True
+
+                        if showChildren:
+                            # show 1:1 related tables, too
+                            subType = "table"
+                            maxRows = 1
+                            showParents = True
+                        else:
+                            continue
                     elif numPkFields > 1:
                         if numFields == 2:
                             # get the related table i.e. the table where the other FK field is the PK
