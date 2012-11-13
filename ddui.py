@@ -734,17 +734,15 @@ class DataDrivenUi(object):
 
                                             if relatedAttTyp == QtCore.QString("varchar") or relatedAttTyp == QtCore.QString("char"):
 
-                                                if not relatedDisplayCandidate:
-                                                    relatedDisplayCandidate = relatedAttName # we use the first string field
-
                                                 if relatedAttNotNull and not relatedDisplayField: # we use the first one
                                                     relatedDisplayField = relatedAttName
 
+                                                #we display only char attributes
                                                 fieldList.append(relatedAttName)
 
                                         relatedFieldsQuery.finish()
 
-                                        if not relatedDisplayCandidate: # there wa sno string field
+                                        if not relatedDisplayCandidate: # there was no string field
                                             relatedDisplayCandidate = relatedIdField
 
                                         if not relatedDisplayField: # there was no notNull string field
