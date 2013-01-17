@@ -1720,7 +1720,7 @@ class DdCheckBox(DdLineEdit):
             return True
 
 class DdTextEdit(DdLineEdit):
-    '''QTextEdit  for a date field'''
+    '''QTextEdit  for a text field'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1732,12 +1732,6 @@ class DdTextEdit(DdLineEdit):
         inputWidget = QtGui.QTextEdit(parent)
         inputWidget.setObjectName("txt" + parent.objectName() + self.attribute.name)
         return inputWidget
-
-    def setupUi(self,  parent,  db):
-        '''setup the label and add the inputWidget to parents formLayout'''
-        self.inputWidget = self.createInputWidget(parent)
-        self.inputWidget.setToolTip(self.attribute.comment)
-        parent.layout().addWidget(self.inputWidget)
 
     def setValue(self,  thisValue):
         self.inputWidget.setPlainText(thisValue)
