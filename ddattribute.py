@@ -42,7 +42,7 @@
  being displayed.
 """
 
-from PyQt4 import QtCore,  QtGui
+from PyQt4 import QtCore
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
@@ -183,7 +183,7 @@ class DdN2mAttribute(DdAttribute):
         displayStatement.append(" LEFT JOIN (SELECT * FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
         displayStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId) lnk")
         displayStatement.append(" ON disp.\"").append(relatedIdField).append("\" = lnk.\"") .append(relationRelatedIdField).append("\"")
-        displayStatement.append( " ORDER BY disp.\"").append(relatedDisplayField).append("\"")
+        displayStatement.append( " ORDER BY checked DESC, disp.\"").append(relatedDisplayField).append("\"")
 
         return displayStatement
 
