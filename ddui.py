@@ -93,7 +93,7 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  showParents = True):
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  showParents = True):
         '''api method initLayer: initialize the layer with a data-driven input mask'''
 
         if 0 != layer.type():   # not a vector layer
@@ -125,7 +125,7 @@ class DdManager(object):
                     return None
 
                 ddui = DataDrivenUi(self.iface)
-                ui = ddui.createUi(thisTable,  db,  skip,  labels,  showParents)
+                ui = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  showParents)
                 self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
                 self.ddLayers[layer.id()] = [thisTable,  db,  ui]
                 self.__connectSignals(layer)
@@ -415,7 +415,7 @@ class DataDrivenUi(object):
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  showParents,  showChildren):
+    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  showParents,  showChildren):
         ddForms = []
         ddAttributes = self.getAttributes(thisTable, db,  labels)
 
@@ -428,8 +428,7 @@ class DataDrivenUi(object):
         #check if we need a QToolBox
         needsToolBox = (len(ddAttributes) > 5)
 
-        oneLineAttributes = []
-        largeAttributes = []
+        unorderedAttributes = []
         msg = ""
         # loop through the attributes and get one-line types (QLineEdit, QComboBox) first
         for anAttribute in ddAttributes:
@@ -448,34 +447,34 @@ class DataDrivenUi(object):
 
             if anAttribute.type == "text" or anAttribute.type == "n2m" or anAttribute.type == "table":
                 needsToolBox = True
-                largeAttributes.append(anAttribute)
-            else:
-                oneLineAttributes.append(anAttribute)
-
+                
+            unorderedAttributes.append(anAttribute)
+        
+        # create an ordered list of attributes
+        if len(fieldOrder) > 0:
+            orderedAttributes = []
+            
+            for aFieldName in fieldOrder:
+                counter = 0
+                while counter < len(unorderedAttributes):
+                    anAttribute = unorderedAttributes.pop()
+                    if aFieldName == anAttribute.name:
+                        orderedAttributes.append(anAttribute)
+                        break
+                    else:
+                        unorderedAttributes.insert(anAttribute)
+                    
+                    counter += 1
+            # put the rest in
+            orderedAttributes.extend(unorderedAttributes)
+        else:
+            orderedAttributes = unorderedAttributes
             #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
+        
         ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
 
-        for anAttribute in oneLineAttributes:
+        for anAttribute in orderedAttributes:
             #QtGui.QMessageBox.information(None, "oneLineAttribute",  anAttribute.name)
-            if anAttribute.isFK:
-                ddInputWidget = DdComboBox(anAttribute)
-            else:
-                if anAttribute.isTypeFloat():
-                    ddInputWidget = DdLineEditDouble(anAttribute)
-                elif anAttribute.isTypeInt():
-                    ddInputWidget = DdLineEditInt(anAttribute)
-                else:
-                    if anAttribute.type == "bool":
-                        ddInputWidget = DdCheckBox(anAttribute)
-                    elif anAttribute.type == "date":
-                        ddInputWidget = DdDateEdit(anAttribute)
-                    else:
-                        ddInputWidget = DdLineEdit(anAttribute)
-
-            ddFormWidget.addInputWidget(ddInputWidget)
-
-        for anAttribute in largeAttributes:
-            #QtGui.QMessageBox.information(None, "largeAttribute",  anAttribute.name)
             if anAttribute.type == "text":
                 ddInputWidget = DdTextEdit(anAttribute)
             elif anAttribute.type == "n2m":
@@ -486,31 +485,46 @@ class DataDrivenUi(object):
                     ddInputWidget = DdN2mTreeWidget(anAttribute)
             elif anAttribute.type == "table":
                 ddInputWidget = DdN2mTableWidget(anAttribute)
+            else: # on line attributes
+                if anAttribute.isFK:
+                    ddInputWidget = DdComboBox(anAttribute)
+                else:
+                    if anAttribute.isTypeFloat():
+                        ddInputWidget = DdLineEditDouble(anAttribute)
+                    elif anAttribute.isTypeInt():
+                        ddInputWidget = DdLineEditInt(anAttribute)
+                    else:
+                        if anAttribute.type == "bool":
+                            ddInputWidget = DdCheckBox(anAttribute)
+                        elif anAttribute.type == "date":
+                            ddInputWidget = DdDateEdit(anAttribute)
+                        else:
+                            ddInputWidget = DdLineEdit(anAttribute)
 
             ddFormWidget.addInputWidget(ddInputWidget)
 
         ddForms.append(ddFormWidget)
 
-        # do not show this table in the parent's form
-        skip.append(thisTable.tableName)
-
         #QtGui.QMessageBox.information(None, "attributes for",  thisTable.tableName + ": \n" + msg)
 
         if showParents:
-             # go recursivly into thisTable's parents
+            # do not show this table in the parent's form
+            skip.append(thisTable.tableName)
+            # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms = self.__createForms(aParent,  db,  skip,  labels,  showParents,  False)
+                parentForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  showParents,  False)
                 ddForms = ddForms + parentForms
 
         return ddForms
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  showParents = True,  showChildren = True):
+    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  showParents = True,  showChildren = True):
         '''creates a default ui for this table (DdTable instance)
         skip is an array with field names to not show
-        labels is a dict with entries: "fieldname": "label"'''
+        labels is a dict with entries: "fieldname": "label"
+        fieldOrder is an array containing the field names in the order they should be shown'''
 
         ui = DdDialogWidget()
-        forms = self.__createForms(thisTable,  db,  skip,  labels,  showParents,  showChildren)
+        forms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  showParents,  showChildren)
 
         for ddFormWidget in forms:
             ui.addFormWidget(ddFormWidget)
