@@ -23,13 +23,13 @@ PLUGIN_UPLOAD = $(CURDIR)/plugin_upload.py
 # Makefile for a PyQGIS plugin
 
 # translation
-SOURCES = datadriveninputmask.py __init__.py DataDrivenUi/dddialog.py DataDrivenUi/ddui.py
+SOURCES = datadriveninputmask.py __init__.py dddialog.py ddui.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
 TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
 # global
 
-PLUGINNAME = datadriveninputmask
+PLUGINNAME = DataDrivenInputMask
 
 PY_FILES = datadriveninputmask.py ui_datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py
 
@@ -60,7 +60,7 @@ compile: $(UI_FILES)
 # $HOME/.qgis/python/plugins
 deploy: compile doc transcompile
 	mkdir -p $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
-	mkdir -p $(HOME)/.qgis/python/plugins/$(PLUGINNAME)/DataDrivenUi
+#	mkdir -p $(HOME)/.qgis/python/plugins/$(PLUGINNAME)/DataDrivenUi
 	cp -vf $(PY_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vf $(UI_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	#cp -vf $(RESOURCE_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
