@@ -34,9 +34,12 @@ class DataDrivenInputMask:
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/datadriveninputmask"
-        ddManager = DdManager(self.iface)
         self.app = QgsApplication.instance()
-        self.app.ddManager = ddManager
+        try:
+            self.app.ddManager
+        except AttributeError:
+            ddManager = DdManager(self.iface)
+            self.app.ddManager = ddManager
         # initialize locale
         localePath = ""
         locale = QtCore.QSettings().value("locale/userLocale").toString()[0:2]
