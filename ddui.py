@@ -480,11 +480,12 @@ class DataDrivenUi(object):
                 counter = 0
                 while counter < len(unorderedAttributes):
                     anAttribute = unorderedAttributes.pop()
-                    if aFieldName == anAttribute.name:
+
+                    if QtCore.QString(aFieldName) == anAttribute.name:
                         orderedAttributes.append(anAttribute)
                         break
                     else:
-                        unorderedAttributes.insert(-1,  anAttribute)
+                        unorderedAttributes.insert(0,  anAttribute)
                     
                     counter += 1
             # put the rest in
@@ -496,7 +497,7 @@ class DataDrivenUi(object):
         ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
 
         for anAttribute in orderedAttributes:
-            #QtGui.QMessageBox.information(None, "oneLineAttribute",  anAttribute.name)
+            #QtGui.QMessageBox.information(None, "orderedAttribute",  anAttribute.name)
             if anAttribute.type == "text":
                 ddInputWidget = DdTextEdit(anAttribute)
             elif anAttribute.type == "n2m":
