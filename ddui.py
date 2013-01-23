@@ -149,6 +149,21 @@ class DdManager(object):
             layer.actions().addAction(1,  actionName, # actionType 1: Python
                                  QtCore.QString("app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);"))
     
+    def removeAction(self,  layer,  actionName):
+        '''api method to remove an action from the layer'''
+        
+        wereActions = []
+        for i in range(layer.actions().size()):
+            act = layer.actions().at(i)
+
+            if act.name() != actionName:
+                wereActions.append(act)
+                
+        layer.actions().clearActions()
+        
+        for act in wereActions:
+            layer.actions().addAction(act.type(),  act.name(), act.action())
+        
     def showFeatureForm(self,  layer,  feature):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature'''
         
