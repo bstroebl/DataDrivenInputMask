@@ -796,22 +796,25 @@ class DataDrivenUi(object):
                             subType = "table"
                             maxRows = None
                             showParents = False
+                else: # 1:n relation
+                    subType = "table"
+                    maxRows = None
+                    showParents = False
+                    
+                try:
+                    attLabel = labels[str(relationTable)]
+                except KeyError:
+                    attLabel = None
 
-                    try:
-                        attLabel = labels[str(relationTable)]
-                    except KeyError:
-                        attLabel = None
+                if subType == "table":
+                    attributes = self.getAttributes(ddRelationTable,  db,  {})
+                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
+                else:
+                    ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
+                                       subType,  relationComment,  attLabel,  \
+                                       relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList)
 
-                    if subType == "table":
-                        attributes = self.getAttributes(ddRelationTable,  db,  {})
-                        ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
-                    else:
-                        ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
-                                           subType,  relationComment,  attLabel,  \
-                                           relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList)
-
-                    n2mAttributes.append(ddAtt)
-
+                n2mAttributes.append(ddAtt)
             pkQuery.finish()
         else:
             DbError(pkQuery)
@@ -2138,8 +2141,11 @@ class DdN2mTableWidget(DdN2mWidget):
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 
         #QtGui.QMessageBox.information(None, "setupUi",  self.attribute.name + ": " + self.tableLayer.name())
-        # create a DdUi for the layer without the featureIdField
-        self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [],  showParents = self.attribute.showParents)
+        # create a DdUi for the layer without the featureIdField it it has not yet been created
+        try:
+            self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
+        except KeyError:
+            self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  showParents = self.attribute.showParents)
 
     # SLOTS
     def selectionChanged(self):
