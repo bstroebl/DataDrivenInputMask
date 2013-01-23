@@ -93,7 +93,7 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  showParents = True):
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  showParents = True,  createAction = True):
         '''api method initLayer: initialize the layer with a data-driven input mask'''
 
         if 0 != layer.type():   # not a vector layer
@@ -129,22 +129,29 @@ class DdManager(object):
                 self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
                 self.ddLayers[layer.id()] = [thisTable,  db,  ui]
                 self.__connectSignals(layer)
-
-                #create action for Layer
-                createAction = True
-                for i in range(layer.actions().size()):
-                    act = layer.actions().at(i)
-
-                    if act.name() == QtCore.QString(u'showDdForm'):
-                        createAction = False
-                        break
-
+                
                 if createAction:
-                    layer.actions().addAction(1,  QtCore.QString(u'showDdForm'), # actionType 1: Python
-                                         QtCore.QString("app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);"))
+                    self.addAction(layer)
+ 
+    def addAction(self,  layer,  actionName = QtCore.QString(u'showDdForm')):
+        '''api method to add an action to the layer with a self defined name'''
+        
+        createAction = True
+        #check if the action is already attached
+        for i in range(layer.actions().size()):
+            act = layer.actions().at(i)
 
+            if act.name() == actionName:
+                createAction = False
+                break
+
+        if createAction:
+            layer.actions().addAction(1,  actionName, # actionType 1: Python
+                                 QtCore.QString("app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);"))
+    
     def showFeatureForm(self,  layer,  feature):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature'''
+        
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
@@ -462,7 +469,7 @@ class DataDrivenUi(object):
                         orderedAttributes.append(anAttribute)
                         break
                     else:
-                        unorderedAttributes.insert(anAttribute)
+                        unorderedAttributes.insert(-1,  anAttribute)
                     
                     counter += 1
             # put the rest in
