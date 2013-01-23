@@ -257,7 +257,7 @@ class DdManager(object):
         if keyColumn:
             uri.setKeyColumn(keyColumn)
         vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres")
-        QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+        QgsMapLayerRegistry.instance().addMapLayers([vlayer])
         return vlayer
 
     def quit(self):
