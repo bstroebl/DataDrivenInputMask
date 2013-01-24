@@ -46,11 +46,12 @@ from PyQt4 import QtCore
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
-    def __init__(self,  oid = None,  schemaName = "None", tableName = "None",  comment = ""):
+    def __init__(self,  oid = None,  schemaName = "None", tableName = "None",  comment = "",  title = None):
         self.oid = oid
         self.schemaName = QtCore.QString(schemaName)
         self.tableName = QtCore.QString(tableName)
         self.comment = QtCore.QString(comment)
+        self.title = title
 
     def __str__(self):
         return "<ddattribute.DdTable %s.%s>" % (str(self.schemaName),  str(self.tableName))

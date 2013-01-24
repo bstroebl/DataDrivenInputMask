@@ -112,7 +112,7 @@ class DdManager(object):
                 schema = relation[0].replace('"', '')
                 table = relation[1].replace('"', '')
                 #QtGui.QMessageBox.information(None, "",  schema + '.' + table)
-                thisTable = DdTable(schemaName = schema,  tableName = table)
+                thisTable = DdTable(schemaName = schema,  tableName = table,  title = layer.name())
                 thisTable.oid = self.__getOid(thisTable,  db)
                 comment = self.__getComment(thisTable,  db)
 
@@ -1070,7 +1070,13 @@ class DdDialogWidget(DdWidget):
 
             tabLayout.setObjectName("tabLayout" + str(i))
             aForm.setupUi(aTab,  db)
-            self.mainTab.addTab(aTab,  aForm.ddTable.tableName)
+            
+            if aForm.ddTable.title:
+                tabTitle = aForm.ddTable.title
+            else:
+                tabTitle = aForm.ddTable.tableName
+            
+            self.mainTab.addTab(aTab,  tabTitle)
 
             if not aForm.ddTable.comment.isEmpty():
                 aTab.setToolTip(aForm.ddTable.comment)
