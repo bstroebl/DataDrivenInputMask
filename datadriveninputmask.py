@@ -33,7 +33,7 @@ class DataDrivenInputMask:
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
-        self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/datadriveninputmask"
+        self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/DataDrivenInputMask"
         self.app = QgsApplication.instance()
         try:
             self.app.ddManager
