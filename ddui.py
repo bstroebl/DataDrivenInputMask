@@ -286,17 +286,19 @@ class DdManager(object):
             DdError(QtGui.QApplication.translate("DdError", "Error starting transaction on DB ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(db.databaseName()))
             return None
-
+        
     def editingStopped(self):
         layer = self.iface.activeLayer()
         db = self.ddLayers[layer.id()][1]
-
+        QtGui.QMessageBox.information(None, "modified", str(layer.isModified()))
         if layer.isModified():
+            QtGui.QMessageBox.information(None, "modified", "rolling back")
             if not db.rollback():
                 DdError(QtGui.QApplication.translate("DdError", "Error rolling back transaction on DB ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
                 return None
         else:
+            QtGui.QMessageBox.information(None, "not modified", "committing")
             if not db.commit():
                 DdError(QtGui.QApplication.translate("DdError", "Error committing transaction on DB ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
@@ -1458,7 +1460,7 @@ class DdLineEditInt(DdLineEdit):
             self.setValidator()
 
 class DdLineEditDouble(DdLineEdit):
-    '''QLineEdit for an IntegerValue'''
+    '''QLineEdit for a DoubleValue'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1467,6 +1469,17 @@ class DdLineEditDouble(DdLineEdit):
     def __str__(self):
         return "<ddui.DdLineEditDouble %s>" % str(self.attribute.name)
 
+    def setValue(self,  thisValue):
+        if not thisValue.isEmpty():
+            # convert double to a locale string representation
+            thisDouble,  ok = thisValue.toDouble()
+            
+            if ok:
+                loc = QtCore.QLocale.system()
+                thisValue = loc.toString(thisDouble)
+                
+        self.inputWidget.setText(thisValue)
+    
     def getValue(self):
         thisValue = self.inputWidget.text()
 
@@ -1803,7 +1816,7 @@ class DdN2mWidget(DdInputWidget):
         parent.layout().addRow(self.inputWidget)
 
 class DdN2mListWidget(DdN2mWidget):
-    '''a clickable tree widget for simple n2m relations'''
+    '''a clickable list widget for simple n2m relations'''
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
