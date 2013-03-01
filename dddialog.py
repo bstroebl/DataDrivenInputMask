@@ -58,8 +58,12 @@ class DdDialog(QtGui.QDialog):
 
     def accept(self):
         if self.ui.checkInput():
-            self.ui.save(self.layer,  self.feature,  self.db)
-            self.done(1)
+            hasChanges = self.ui.save(self.layer,  self.feature,  self.db)
+            
+            if hasChanges:
+                self.done(1)
+            else:
+                self.done(0)
 
     def reject(self):
         self.ui.discard()

@@ -1112,8 +1112,12 @@ class DdDialogWidget(DdWidget):
         return inputOk
 
     def save(self,  layer,  feature,  db):
+        hasChanges = False
         for aForm in self.forms:
-            aForm.save(layer,  feature,  db)
+            if aForm.save(layer,  feature,  db):
+                hasChanges = True
+        
+        return hasChanges
 
     def discard(self):
         for aForm in self.forms:
@@ -1243,9 +1247,13 @@ class DdFormWidget(DdWidget):
         return inputOk
 
     def save(self,  layer,  feature,  db):
+        hasChanges = False
         if self.parent.isEnabled():
             for anInputWidget in self.inputWidgets:
-                anInputWidget.save(self.layer,  self.feature,  db)
+                if anInputWidget.save(self.layer,  self.feature,  db):
+                    hasChanges = True
+        
+        return hasChanges
 
     def discard(self):
         if self.parent.isEnabled():
@@ -1321,7 +1329,11 @@ class DdLineEdit(DdInputWidget):
         default implementation for a QLineEdit'''
 
         fieldIndex = self.getFieldIndex(layer)
-        thisValue = feature.attributeMap().get(fieldIndex).toString()
+        
+        if QGis.QGIS_VERSION_INT >= 10900:
+            thisValue = feature[fildIndex].toString()
+        else:
+            thisValue = feature.attributeMap().get(fieldIndex).toString()
 
         if feature.id() < 0 and thisValue.isEmpty(): # new feature
             if self.attribute.hasDefault:
@@ -1384,7 +1396,15 @@ class DdLineEdit(DdInputWidget):
     def save(self,  layer,  feature,  db):
         thisValue = self.getValue()
         fieldIndex = self.getFieldIndex(layer)
-        layer.changeAttributeValue(feature.id(),  fieldIndex,  QtCore.QVariant(thisValue),  False)
+        oldValue = self.getFeatureValue(layer,  feature,  db)
+        
+        if thisValue == oldValue:
+            hasChanges = False
+        else:
+            layer.changeAttributeValue(feature.id(),  fieldIndex,  QtCore.QVariant(thisValue),  False)
+            hasChanges = True
+        
+        return hasChanges
 
 class QInt64Validator(QtGui.QValidator):
     def __init__(self,  parent = None):
@@ -1559,14 +1579,26 @@ class DdComboBox(DdLineEdit):
         fieldIndex = self.getFieldIndex(layer)
 
         if self.attribute.isTypeInt():
-            thisValue = feature.attributeMap().get(fieldIndex,  QtCore.QVariant(-9999)).toInt()[0]
+            if QGis.QGIS_VERSION_INT >= 10900:
+                thisValue = feature[fildIndex].toString()
+                
+                if thisValue.isEmpty():
+                    thisValue = -9999
+            else:
+                thisValue = feature.attributeMap().get(fieldIndex,  QtCore.QVariant(-9999)).toInt()[0]
 
             if  feature.id() < 0 and thisValue == -9999: # new feature and no value set
                 if self.attribute.hasDefault:
                     thisValue = QtCore.QVariant(self.attribute.default).toInt()[0]
 
         elif self.attribute.isTypeChar():
-            thisValue = feature.attributeMap().get(fieldIndex,  "-9999").toString()
+            if QGis.QGIS_VERSION_INT >= 10900:
+                thisValue = feature[fildIndex].toString()
+                
+                if thisValue.isEmpty():
+                    thisValue = QtCore.QString("-9999")
+            else:
+                thisValue = feature.attributeMap().get(fieldIndex,  "-9999").toString()
 
             if  feature.id() < 0 and thisValue == QtCore.QString("-9999"): # new feature and no value set
                 if self.attribute.hasDefault:
@@ -1655,7 +1687,10 @@ class DdDateEdit(DdLineEdit):
         '''returns a QDate representing the value in this field for this feature'''
 
         fieldIndex = self.getFieldIndex(layer)
-        thisValue = feature.attributeMap().get(fieldIndex).toString()
+        if QGis.QGIS_VERSION_INT >= 10900:
+            thisValue = feature[fildIndex].toString()
+        else:
+            thisValue = feature.attributeMap().get(fieldIndex).toString()
 
         if thisValue.isEmpty():
             if feature.id() < 0 and self.attribute.hasDefault:
@@ -1725,7 +1760,11 @@ class DdCheckBox(DdLineEdit):
         '''returns a boolean representing the value in this field for this feature'''
 
         fieldIndex = self.getFieldIndex(layer)
-        thisValue = feature.attributeMap().get(fieldIndex).toString()
+        
+        if QGis.QGIS_VERSION_INT >= 10900:
+            thisValue = feature[fildIndex].toString()
+        else:
+            thisValue = feature.attributeMap().get(fieldIndex).toString()
 
         if thisValue.isEmpty():
             thisValue = None
@@ -1878,10 +1917,13 @@ class DdN2mListWidget(DdN2mWidget):
                         insertQuery.finish()
                     else:
                         DbError(insertQuery)
+                        return False
 
             deleteQuery.finish()
+            return True
         else:
             DbError(deleteQuery)
+            return False
 
 class DdN2mTreeWidget(DdN2mWidget):
     '''a clickable tree widget for simple n2m relations'''
@@ -1962,10 +2004,13 @@ class DdN2mTreeWidget(DdN2mWidget):
                         insertQuery.finish()
                     else:
                         DbError(insertQuery)
+                        return false
 
             deleteQuery.finish()
+            return True
         else:
             DbError(deleteQuery)
+            return false
 
 class DdN2mTableWidget(DdN2mWidget):
     '''a table'''
