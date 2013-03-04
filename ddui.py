@@ -2048,10 +2048,17 @@ class DdN2mTableWidget(DdN2mWidget):
             newFeature = QgsFeature(fid)
         else:
             newFeature = QgsFeature() # gid wird automatisch vergeben
-
-        # create attributes with null values
-        for att in self.tableLayer.pendingAllAttributesList():
-            newFeature.addAttribute(att, QtCore.QVariant())
+        
+        provider = layer.dataProvider()
+        fields = layer.pendingFields()
+        
+        if QGis.QGIS_VERSION_INT >= 10900:
+            newFeature.initAttributes(fields.count())			
+            for i in range(fields.count()):
+                newFeature.setAttribute(i,provider.defaultValue(i))
+        else:
+            for i in fields:
+                newFeature.addAttribute(i,  provider.defaultValue(i))
 
         return newFeature
 
@@ -2224,20 +2231,31 @@ class DdN2mTableWidget(DdN2mWidget):
             # make sure user did not change parentFeatureId
             self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId),  False)
             # refresh thisFeature with the new values
-            self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
+            if QGis.QGIS_VERSION_INT >= 10900:
+                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).nextFeature(thisFeature))
+            else:
+                self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
             self.fillRow(thisRow,  thisFeature)
+            self.hasChanges = True
 
     def add(self):
         thisFeature = self.createFeature()
         # set the parentFeature's id
-        thisFeature.changeAttribute(self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId))
+        if QGis.QGIS_VERSION_INT >= 10900:
+            thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] =  QtCore.QVariant(self.featureId)
+        else:
+            thisFeature.changeAttribute(self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId))
 
         if self.tableLayer.addFeature(thisFeature,  False):
             result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
 
             if result == 1: # user clicked OK
-                self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
+                if QGis.QGIS_VERSION_INT >= 10900:
+                    self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).nextFeature(thisFeature))
+                else:
+                    self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
                 self.appendRow(thisFeature)
+                self.hasChanges = True
             else:
                 self.tableLayer.deleteFeature(thisFeature.id())
 
@@ -2247,6 +2265,7 @@ class DdN2mTableWidget(DdN2mWidget):
         thisFeature = featureItem.feature
         self.tableLayer.deleteFeature(thisFeature.id())
         self.inputWidget.removeRow(thisRow)
+        self.hasChanges = True
 
         if self.attribute.maxRows:
             self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
