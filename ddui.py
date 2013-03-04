@@ -290,15 +290,15 @@ class DdManager(object):
     def editingStopped(self):
         layer = self.iface.activeLayer()
         db = self.ddLayers[layer.id()][1]
-        QtGui.QMessageBox.information(None, "modified", str(layer.isModified()))
+        #QtGui.QMessageBox.information(None, "modified", str(layer.isModified()))
         if layer.isModified():
-            QtGui.QMessageBox.information(None, "modified", "rolling back")
+            #QtGui.QMessageBox.information(None, "modified", "rolling back")
             if not db.rollback():
                 DdError(QtGui.QApplication.translate("DdError", "Error rolling back transaction on DB ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
                 return None
         else:
-            QtGui.QMessageBox.information(None, "not modified", "committing")
+            #QtGui.QMessageBox.information(None, "not modified", "committing")
             if not db.commit():
                 DdError(QtGui.QApplication.translate("DdError", "Error committing transaction on DB ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
@@ -1265,10 +1265,15 @@ class DdInputWidget(DdWidget):
     def __init__(self,  attribute):
         DdWidget.__init__(self)
         self.attribute = attribute
+        self.hasChanges = False
 
     def __str__(self):
         return "<ddui.DdInputWidget %s>" % str(self.attribute.name)
-
+    
+    def registerChange(self , thisValue):
+        '''slot to be called by any concrete InputWidget'''
+        self.hasChanges = True
+        
     def getLabel(self):
         labelString = self.attribute.getLabel()
 
@@ -1322,7 +1327,7 @@ class DdLineEdit(DdInputWidget):
 
     def __str__(self):
         return "<ddui.DdOneLineInputWidget %s>" % str(self.attribute.name)
-
+        
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a QString representing the value in this field for this feature;
         if it is a new feature the default value is returned
@@ -1344,6 +1349,7 @@ class DdLineEdit(DdInputWidget):
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QLineEdit(parent) # defaultInputWidget
         inputWidget.setObjectName("txl" + parent.objectName() + self.attribute.name)
+        inputWidget.textChanged.connect(self.registerChange)
         return inputWidget
 
     # public methods
@@ -1370,6 +1376,7 @@ class DdLineEdit(DdInputWidget):
     def initialize(self,  layer,  feature,  db):
         thisValue = self.getFeatureValue(layer,  feature,  db)
         self.setValue(thisValue)
+        self.hasChanges = False # do not register this change
 
     def checkInput(self):
         thisValue = self.getValue()
@@ -1396,15 +1403,11 @@ class DdLineEdit(DdInputWidget):
     def save(self,  layer,  feature,  db):
         thisValue = self.getValue()
         fieldIndex = self.getFieldIndex(layer)
-        oldValue = self.getFeatureValue(layer,  feature,  db)
         
-        if thisValue == oldValue:
-            hasChanges = False
-        else:
+        if self.hasChanges:
             layer.changeAttributeValue(feature.id(),  fieldIndex,  QtCore.QVariant(thisValue),  False)
-            hasChanges = True
         
-        return hasChanges
+        return self.hasChanges
 
 class QInt64Validator(QtGui.QValidator):
     def __init__(self,  parent = None):
@@ -1609,6 +1612,7 @@ class DdComboBox(DdLineEdit):
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QComboBox(parent) # defaultInputWidget
         inputWidget.setObjectName("cbx" + parent.objectName() + self.attribute.name)
+        inputWidget.currentIndexChanged.connect(self.registerChange)
         return inputWidget
 
     def fill(self,  db):
@@ -1711,6 +1715,7 @@ class DdDateEdit(DdLineEdit):
         inputWidget.setDisplayFormat("dd.MM.yyyy")
         inputWidget.setObjectName("dat" + parent.objectName() + self.attribute.name)
         inputWidget.setToolTip(self.attribute.comment)
+        inputWidget.dateChanged.connect(self.registerChange)
         return inputWidget
 
     def setValue(self,  thisValue):
@@ -1782,6 +1787,7 @@ class DdCheckBox(DdLineEdit):
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QCheckBox(parent)
         inputWidget.setObjectName("chk" + parent.objectName() + self.attribute.name)
+        inputWidget.stateChanged.connect(self.registerChange)
         return inputWidget
 
     def setValue(self,  thisValue):
@@ -1826,9 +1832,13 @@ class DdTextEdit(DdLineEdit):
     def __str__(self):
         return "<ddui.DdTextEdit %s>" % str(self.attribute.name)
 
+    def registerChange(self):
+        self.hasChanges = True
+    
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QTextEdit(parent)
         inputWidget.setObjectName("txt" + parent.objectName() + self.attribute.name)
+        inputWidget.textChanged.connect(self.registerChange)
         return inputWidget
 
     def setValue(self,  thisValue):
@@ -1863,9 +1873,13 @@ class DdN2mListWidget(DdN2mWidget):
     def __str__(self):
         return "<ddui.DdN2mListWidget %s>" % str(self.attribute.name)
 
+    def registerChange(self,  thisItem):
+        self.hasChanges = True
+        
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QListWidget(parent) # defaultInputWidget
         inputWidget.setObjectName("lst" + parent.objectName() + self.attribute.name)
+        inputWidget.itemChanged.connect(self.registerChange)
         return inputWidget
 
     def initialize(self,  layer,  feature,  db):
@@ -1890,39 +1904,42 @@ class DdN2mListWidget(DdN2mWidget):
             DbError(query)
 
     def save(self,  layer,  feature,  db):
-        featureId = feature.id()
-        deleteQuery = QtSql.QSqlQuery(db)
-        deleteQuery.prepare(self.attribute.deleteStatement)
-        deleteQuery.bindValue(":featureId", QtCore.QVariant(featureId))
-        deleteQuery.exec_()
+        if self.hasChanges:
+            featureId = feature.id()
+            deleteQuery = QtSql.QSqlQuery(db)
+            deleteQuery.prepare(self.attribute.deleteStatement)
+            deleteQuery.bindValue(":featureId", QtCore.QVariant(featureId))
+            deleteQuery.exec_()
 
-        if deleteQuery.isActive():
-            for i in range(self.inputWidget.count()):
-                item = self.inputWidget.item(i)
+            if deleteQuery.isActive():
+                for i in range(self.inputWidget.count()):
+                    item = self.inputWidget.item(i)
 
-                if item.checkState() == 2:
-                    if featureId < 0:
-                        QtGui.QMessageBox.information(None,  "",  QtGui.QApplication.translate("DdInfo", "n-to-m relation for new feature cannot be saved",
-                                                                                              None, QtGui.QApplication.UnicodeUTF8) )
-                        break
+                    if item.checkState() == 2:
+                        if featureId < 0:
+                            QtGui.QMessageBox.information(None,  "",  QtGui.QApplication.translate("DdInfo", "n-to-m relation for new feature cannot be saved",
+                                                                                                  None, QtGui.QApplication.UnicodeUTF8) )
+                            break
 
-                    itemId = item.id
-                    insertQuery = QtSql.QSqlQuery(db)
-                    insertQuery.prepare(self.attribute.insertStatement)
-                    insertQuery.bindValue(":featureId", QtCore.QVariant(featureId))
-                    insertQuery.bindValue(":itemId", QtCore.QVariant(itemId))
-                    insertQuery.exec_()
+                        itemId = item.id
+                        insertQuery = QtSql.QSqlQuery(db)
+                        insertQuery.prepare(self.attribute.insertStatement)
+                        insertQuery.bindValue(":featureId", QtCore.QVariant(featureId))
+                        insertQuery.bindValue(":itemId", QtCore.QVariant(itemId))
+                        insertQuery.exec_()
 
-                    if insertQuery.isActive():
-                        insertQuery.finish()
-                    else:
-                        DbError(insertQuery)
-                        return False
+                        if insertQuery.isActive():
+                            insertQuery.finish()
+                        else:
+                            DbError(insertQuery)
+                            return False
 
-            deleteQuery.finish()
-            return True
+                deleteQuery.finish()
+                return True
+            else:
+                DbError(deleteQuery)
+                return False
         else:
-            DbError(deleteQuery)
             return False
 
 class DdN2mTreeWidget(DdN2mWidget):
@@ -1934,12 +1951,17 @@ class DdN2mTreeWidget(DdN2mWidget):
     def __str__(self):
         return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
 
+    def registerChange(selfthisItem,  thisColumn):
+        if thisColumn == 0:
+            self.hasChanges = True
+            
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QTreeWidget(parent)
         inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         inputWidget.setHeaderHidden(True)
         inputWidget.setColumnCount(1)
         inputWidget.setObjectName("tre" + parent.objectName() + self.attribute.name)
+        inputWidget.itemChanged.connect(self.registerChange)
         return inputWidget
 
     def initialize(self,  layer,  feature,  db):
@@ -1977,40 +1999,43 @@ class DdN2mTreeWidget(DdN2mWidget):
             DbError(query)
 
     def save(self,  layer,  feature,  db):
-        featureId = feature.id()
-        deleteQuery = QtSql.QSqlQuery(db)
-        deleteQuery.prepare(self.attribute.deleteStatement)
-        deleteQuery.bindValue(":featureId", QtCore.QVariant(featureId))
-        deleteQuery.exec_()
+        if self.hasChanges:
+            featureId = feature.id()
+            deleteQuery = QtSql.QSqlQuery(db)
+            deleteQuery.prepare(self.attribute.deleteStatement)
+            deleteQuery.bindValue(":featureId", QtCore.QVariant(featureId))
+            deleteQuery.exec_()
 
-        if deleteQuery.isActive():
-            for i in range(self.inputWidget.topLevelItemCount()):
-                item = self.inputWidget.topLevelItem(i)
+            if deleteQuery.isActive():
+                for i in range(self.inputWidget.topLevelItemCount()):
+                    item = self.inputWidget.topLevelItem(i)
 
-                if item.checkState(0) == 2:
-                    if featureId < 0:
-                        QtGui.QMessageBox.information(None,  "",  QtGui.QApplication.translate("DdInfo", "n-to-m relation for new feature cannot be saved",
-                                                                                              None, QtGui.QApplication.UnicodeUTF8) )
-                        break
+                    if item.checkState(0) == 2:
+                        if featureId < 0:
+                            QtGui.QMessageBox.information(None,  "",  QtGui.QApplication.translate("DdInfo", "n-to-m relation for new feature cannot be saved",
+                                                                                                  None, QtGui.QApplication.UnicodeUTF8) )
+                            break
 
-                    itemId = item.id
-                    insertQuery = QtSql.QSqlQuery(db)
-                    insertQuery.prepare(self.attribute.insertStatement)
-                    insertQuery.bindValue(":featureId", QtCore.QVariant(featureId))
-                    insertQuery.bindValue(":itemId", QtCore.QVariant(itemId))
-                    insertQuery.exec_()
+                        itemId = item.id
+                        insertQuery = QtSql.QSqlQuery(db)
+                        insertQuery.prepare(self.attribute.insertStatement)
+                        insertQuery.bindValue(":featureId", QtCore.QVariant(featureId))
+                        insertQuery.bindValue(":itemId", QtCore.QVariant(itemId))
+                        insertQuery.exec_()
 
-                    if insertQuery.isActive():
-                        insertQuery.finish()
-                    else:
-                        DbError(insertQuery)
-                        return false
+                        if insertQuery.isActive():
+                            insertQuery.finish()
+                        else:
+                            DbError(insertQuery)
+                            return False
 
-            deleteQuery.finish()
-            return True
+                deleteQuery.finish()
+                return True
+            else:
+                DbError(deleteQuery)
+                return False
         else:
-            DbError(deleteQuery)
-            return false
+            return False
 
 class DdN2mTableWidget(DdN2mWidget):
     '''a table'''
@@ -2150,14 +2175,18 @@ class DdN2mTableWidget(DdN2mWidget):
         self.fillRow(thisRow, thisFeature)
 
     def save(self,  layer,  feature,  db):
-        if self.tableLayer.isEditable():
-            if self.tableLayer.isModified():
-                if not self.tableLayer.commitChanges():
-                    DdError(QtGui.QApplication.translate("DdError", "Could not save changes to layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) .append(self.tableLayer.name()))
-                    return None
-            else:
-                self.discard()
+        if self.hasChanges:
+            if self.tableLayer.isEditable():
+                if self.tableLayer.isModified():
+                    if self.tableLayer.commitChanges():
+                        return True
+                    else:
+                        DdError(QtGui.QApplication.translate("DdError", "Could not save changes to layer: ", None,
+                                                                   QtGui.QApplication.UnicodeUTF8) .append(self.tableLayer.name()))
+                else:
+                    self.discard()
+        
+        return False
 
     def discard(self):
         if self.tableLayer.isEditable():
