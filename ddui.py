@@ -1336,7 +1336,7 @@ class DdLineEdit(DdInputWidget):
         fieldIndex = self.getFieldIndex(layer)
         
         if QGis.QGIS_VERSION_INT >= 10900:
-            thisValue = feature[fildIndex].toString()
+            thisValue = feature[fieldIndex].toString()
         else:
             thisValue = feature.attributeMap().get(fieldIndex).toString()
 
@@ -1438,7 +1438,11 @@ class DdLineEditInt(DdLineEdit):
 
     def getFeatureValue(self,  layer,  feature,  db):
         fieldIndex = self.getFieldIndex(layer)
-        thisValue = feature.attributeMap().get(fieldIndex).toString()
+        
+        if QGis.QGIS_VERSION_INT >= 10900:
+            thisValue = feature[fieldIndex].toString()
+        else:
+            thisValue = feature.attributeMap().get(fieldIndex).toString()
 
         if (feature.id() < 0) and (thisValue.isEmpty()): # new feature and no value set
             if self.attribute.hasDefault:
@@ -1583,7 +1587,7 @@ class DdComboBox(DdLineEdit):
 
         if self.attribute.isTypeInt():
             if QGis.QGIS_VERSION_INT >= 10900:
-                thisValue = feature[fildIndex].toString()
+                thisValue = feature[fieldIndex].toString()
                 
                 if thisValue.isEmpty():
                     thisValue = -9999
@@ -1596,7 +1600,7 @@ class DdComboBox(DdLineEdit):
 
         elif self.attribute.isTypeChar():
             if QGis.QGIS_VERSION_INT >= 10900:
-                thisValue = feature[fildIndex].toString()
+                thisValue = feature[fieldIndex].toString()
                 
                 if thisValue.isEmpty():
                     thisValue = QtCore.QString("-9999")
@@ -1692,7 +1696,7 @@ class DdDateEdit(DdLineEdit):
 
         fieldIndex = self.getFieldIndex(layer)
         if QGis.QGIS_VERSION_INT >= 10900:
-            thisValue = feature[fildIndex].toString()
+            thisValue = feature[fieldIndex].toString()
         else:
             thisValue = feature.attributeMap().get(fieldIndex).toString()
 
@@ -1705,7 +1709,10 @@ class DdDateEdit(DdLineEdit):
                 else:
                     thisValue = None
         else:
-            thisValue = feature.attributeMap().get(fieldIndex).toDate()
+            if QGis.QGIS_VERSION_INT >= 10900:
+                thisValue = feature[fieldIndex].toDate()
+            else:
+                thisValue = feature.attributeMap().get(fieldIndex).toDate()
 
         return thisValue
 
@@ -1767,7 +1774,7 @@ class DdCheckBox(DdLineEdit):
         fieldIndex = self.getFieldIndex(layer)
         
         if QGis.QGIS_VERSION_INT >= 10900:
-            thisValue = feature[fildIndex].toString()
+            thisValue = feature[fieldIndex].toString()
         else:
             thisValue = feature.attributeMap().get(fieldIndex).toString()
 
@@ -2149,11 +2156,15 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def fillRow(self, thisRow, thisFeature):
         #QtGui.QMessageBox.information(None,'',str(thisRow))
-        attMap = thisFeature.attributeMap()
+        if QGis.QGIS_VERSION_INT < 10900:
+            attMap = thisFeature.attributeMap()
 
         for i in range(len(self.attribute.attributes)):
             anAtt = self.attribute.attributes[i]
-            aValue = attMap.get(self.tableLayer.fieldNameIndex(anAtt.name),  "").toString()
+            if QGis.QGIS_VERSION_INT >= 10900:
+                aValue = thisFeature[anAtt.name].toString()
+            else:
+                aValue = attMap.get(self.tableLayer.fieldNameIndex(anAtt.name),  "").toString()
 
             if anAtt.isFK:
                 values = self.fkValues[anAtt.name]
