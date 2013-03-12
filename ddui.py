@@ -592,26 +592,26 @@ class DataDrivenUi(object):
 
     def getParents(self,  thisTable,  db):
         ''' query the DB to get a table's parents if any
-        A table has a parent if its primary key defined on one field only and is at the same time
+        A table has a parent if its primary key is defined on one field only and is at the same time
         a foreign key to another table's primary key. Thus there is a 1:1
         relationship between the two.'''
 
         query = QtSql.QSqlQuery(db)
         sQuery = "SELECT \
-               c.oid, ns.nspname, c.relname, d.description \
+               c.oid, ns.nspname, c.relname, COALESCE(d.description,'') \
             FROM pg_attribute att \
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'f') fcon ON att.attrelid = fcon.conrelid AND att.attnum = ANY (fcon.conkey) \
                 JOIN (SELECT * FROM pg_constraint WHERE contype = 'p') pcon ON att.attrelid = pcon.conrelid AND att.attnum = ANY (pcon.conkey) \
                 JOIN pg_class c ON fcon.confrelid = c.oid \
                 JOIN pg_namespace ns ON c.relnamespace = ns.oid \
-                JOIN pg_description d ON c.oid = d.objoid \
+                LEFT JOIN (SELECT * FROM pg_description WHERE objsubid = 0) d ON c.oid = d.objoid \
             WHERE att.attnum > 0 \
                 AND att.attisdropped = false \
-                AND d.objsubid = 0 \
                 AND att.attrelid = :oid \
                 AND array_length(pcon.conkey, 1) = 1"
         # AND array_length(pcon.conkey, 1) = 1:
         # if we have a combined PK we are in a n-to-m relational table
+        # pg_description.objsubid = 0 for description on tables
         query.prepare(sQuery)
         query.bindValue(":oid", QtCore.QVariant(thisTable.oid))
         query.exec_()
@@ -634,9 +634,9 @@ class DataDrivenUi(object):
         else:
             DbError(query)
 
-        myParents = "myParents:"
-        for aParent in parents:
-            myParents = myParents + " " + aParent.tableName
+        #myParents = "myParents:"
+        #for aParent in parents:
+        #    myParents = myParents + " " + aParent.tableName
 
         #QtGui.QMessageBox.information(None, "getParents",  "called with " + thisTable.tableName + "\n" + myParents)
 
