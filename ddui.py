@@ -2100,8 +2100,8 @@ class DdN2mTableWidget(DdN2mWidget):
         else:
             newFeature = QgsFeature() # gid wird automatisch vergeben
         
-        provider = layer.dataProvider()
-        fields = layer.pendingFields()
+        provider = self.tableLayer.dataProvider()
+        fields = self.tableLayer.pendingFields()
         
         if QGis.QGIS_VERSION_INT >= 10900:
             newFeature.initAttributes(fields.count())			
