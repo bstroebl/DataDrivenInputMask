@@ -37,8 +37,11 @@ class DdFormHelper:
                 #QtGui.QMessageBox.information(None,  "", aLayer.name())
                 #thisDialog.hide()
                 feat = QgsFeature()
-
-                if aLayer.featureAtId(featureId,  feat,  False,  True):
+                if QGis.QGIS_VERSION_INT >= 10900:
+                    featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
+                else:
+                    featureFound = aLayer.featureAtId(featureId,  feat,  False,  True)
+                if featureFound:
                     result = ddManager.showFeatureForm(aLayer,  feat)
                     #QtGui.QMessageBox.information(None,  "", str(thisDialog))
                     thisDialog.setVisible(False)
@@ -65,7 +68,12 @@ def ddFormInit(dialog, layerId, featureId):
             #thisDialog.hide()
             feat = QgsFeature()
 
-            if aLayer.featureAtId(featureId,  feat,  False,  True):
+            if QGis.QGIS_VERSION_INT >= 10900:
+                featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
+            else:
+                featureFound = aLayer.featureAtId(featureId,  feat,  False,  True)
+            
+            if featureFound:
                 try:
                     layerValues = ddManager.ddLayers[aLayer.id()]
                 except KeyError:
@@ -186,11 +194,15 @@ class DdManager(object):
         return result
 
     def showDdForm(self,  fid):
-        layer = self.iface.activeLayer()
+        aLayer = self.iface.activeLayer()
         feat = QgsFeature()
 
-        if layer.featureAtId(fid,  feat,  False,  True):
-            self.showFeatureForm(layer,  feat)
+        if QGis.QGIS_VERSION_INT >= 10900:
+            featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(fid).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
+        else:
+            featureFound = aLayer.featureAtId(fid,  feat,  False,  True)
+        if featureFound:
+            self.showFeatureForm(aLayer,  feat)
 
     def setUi(self,  layer,  ui):
         '''api method to exchange the default ui with a custom ui'''
@@ -1221,19 +1233,26 @@ class DdFormWidget(DdWidget):
             self.feature = feature
         else:
             self.feature = QgsFeature()
-
-            if not self.layer.featureAtId(feature.id(),  self.feature, False,  True):
+            
+            if QGis.QGIS_VERSION_INT >= 10900:
+                featureFound = self.layer.getFeatures(QgsFeatureRequest().setFilterFid(feature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(self.feature)
+            else:
+                featureFound = self.layer.featureAtId(feature.id(),  self.feature, False,  True)
+            
+            if not featureFound:
                 self.feature = None
+                QtGui.QMessageBox.information(None,"!featureFound", str(feature.id()))
 
             if layer.isEditable():
                 self.parent.setEnabled(self.__setLayerEditable())
 
-        #QtGui.QMessageBox.information(None,  "initializing Form",  "passed layer: "+ layer.name() + "\n self.layer: " + self.layer.name() + "\n self.ddTable: " + self.ddTable.tableName)
         if self.feature:
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer,  self.feature,  db)
         else:
             self.parent.setEnabled(False)
+            
+        #QtGui.QMessageBox.information(None,  "initializing Form",  "passed layer: "+ layer.name() + "\n self.layer: " + self.layer.name() + "\n self.ddTable: " + self.ddTable.tableName + "\n self.feature: " + str(self.feature) + "\n self.parent.isEnabled: " + str(self.parent.isEnabled()))
 
     def checkInput(self):
         inputOk = True
@@ -2272,7 +2291,7 @@ class DdN2mTableWidget(DdN2mWidget):
             self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId),  False)
             # refresh thisFeature with the new values
             if QGis.QGIS_VERSION_INT >= 10900:
-                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).nextFeature(thisFeature))
+                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
             else:
                 self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
             self.fillRow(thisRow,  thisFeature)
@@ -2291,7 +2310,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
             if result == 1: # user clicked OK
                 if QGis.QGIS_VERSION_INT >= 10900:
-                    self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).nextFeature(thisFeature))
+                    self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
                 else:
                     self.tableLayer.featureAtId(thisFeature.id(),  thisFeature,  False,  True)
                 self.appendRow(thisFeature)
