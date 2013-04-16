@@ -1395,7 +1395,7 @@ class DdLineEdit(DdInputWidget):
     def initialize(self,  layer,  feature,  db):
         thisValue = self.getFeatureValue(layer,  feature,  db)
         self.setValue(thisValue)
-        self.hasChanges = False # do not register this change
+        self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
     def checkInput(self):
         thisValue = self.getValue()
