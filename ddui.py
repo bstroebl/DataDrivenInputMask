@@ -1381,15 +1381,28 @@ class DdLineEdit(DdInputWidget):
         inputWidget.textChanged.connect(self.registerChange)
         return inputWidget
 
+    def manageChk(self,  thisValue):
+        '''check/uncheck the null checkbox depending on the value and
+        the attribute'S' notNull property'''
+
+        if self.attribute.notNull: # uncheck in order to make inputWidget editable
+            self.chk.setChecked(False)
+        else:
+            self.chk.setChecked(not thisValue) # i.e. None
+        
     # public methods
     def setValue(self,  thisValue):
+        self.manageChk(thisValue)
         self.inputWidget.setText(thisValue)
 
     def getValue(self):
-        thisValue = self.inputWidget.text()
-
-        if thisValue.isEmpty():
+        if self.chk.isChecked():
             thisValue = None
+        else:
+            thisValue = self.inputWidget.text()
+
+            if thisValue.isEmpty():
+                thisValue = None
 
         #QtGui.QMessageBox.information(None,  "DdLineEdit",  "getValue " + self.attribute.label  + " " + str(thisValue))
         return thisValue
@@ -1400,7 +1413,20 @@ class DdLineEdit(DdInputWidget):
         self.label = self.createLabel(parent)
         self.inputWidget = self.createInputWidget(parent)
         self.inputWidget.setToolTip(self.attribute.comment)
-        parent.layout().addRow(self.label,  self.inputWidget)
+        hLayout = QtGui.QHBoxLayout(parent)
+        hLayout.addWidget(self.inputWidget)
+        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
+                                                           QtGui.QApplication.UnicodeUTF8),  parent)
+        self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
+        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check this if you want to save an empty (or null) value.", None,
+                                                           QtGui.QApplication.UnicodeUTF8))
+        self.chk.stateChanged.connect(self.chkStateChanged)
+        self.chk.setVisible(not self.attribute.notNull)
+        hLayout.addWidget(self.chk)
+        parent.layout().addRow(self.label,  hLayout)
+
+    def chkStateChanged(self,  newState):
+        self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
 
     def initialize(self,  layer,  feature,  db):
         thisValue = self.getFeatureValue(layer,  feature,  db)
@@ -1526,6 +1552,8 @@ class DdLineEditDouble(DdLineEdit):
         return "<ddui.DdLineEditDouble %s>" % str(self.attribute.name)
 
     def setValue(self,  thisValue):
+        self.manageChk(thisValue)
+        
         if not thisValue.isEmpty():
             # convert double to a locale string representation
             thisDouble,  ok = thisValue.toDouble()
@@ -1533,22 +1561,25 @@ class DdLineEditDouble(DdLineEdit):
             if ok:
                 loc = QtCore.QLocale.system()
                 thisValue = loc.toString(thisDouble)
-                
+            
         self.inputWidget.setText(thisValue)
     
     def getValue(self):
-        thisValue = self.inputWidget.text()
-
-        if thisValue.isEmpty():
+        if self.chk.isChecked():
             thisValue = None
         else:
-            loc = QtCore.QLocale.system()
-            thisDouble = loc.toDouble(thisValue)
+            thisValue = self.inputWidget.text()
 
-            if thisDouble[1]:
-                thisValue = QtCore.QString(str(thisDouble[0]))
-            else:
+            if thisValue.isEmpty():
                 thisValue = None
+            else:
+                loc = QtCore.QLocale.system()
+                thisDouble = loc.toDouble(thisValue)
+
+                if thisDouble[1]:
+                    thisValue = QtCore.QString(str(thisDouble[0]))
+                else:
+                    thisValue = None
 
         return thisValue
 
@@ -1619,26 +1650,30 @@ class DdComboBox(DdLineEdit):
                 thisValue = feature[fieldIndex].toString()
                 
                 if thisValue.isEmpty():
-                    thisValue = -9999
+                    thisValue = None
             else:
                 thisValue = feature.attributeMap().get(fieldIndex,  QtCore.QVariant(-9999)).toInt()[0]
 
             if  feature.id() < 0 and thisValue == -9999: # new feature and no value set
                 if self.attribute.hasDefault:
                     thisValue = QtCore.QVariant(self.attribute.default).toInt()[0]
+                else:
+                    thisValue = None
 
         elif self.attribute.isTypeChar():
             if QGis.QGIS_VERSION_INT >= 10900:
                 thisValue = feature[fieldIndex].toString()
                 
                 if thisValue.isEmpty():
-                    thisValue = QtCore.QString("-9999")
+                    thisValue = None
             else:
                 thisValue = feature.attributeMap().get(fieldIndex,  "-9999").toString()
 
             if  feature.id() < 0 and thisValue == QtCore.QString("-9999"): # new feature and no value set
                 if self.attribute.hasDefault:
                     thisValue = QtCore.QVariant(self.attribute.default).toString()
+                else:
+                    thisValue = None
 
         return thisValue
 
@@ -1656,15 +1691,6 @@ class DdComboBox(DdLineEdit):
         if query.isActive():
             self.inputWidget.clear()
 
-            if not self.attribute.notNull:
-                #nullString = QtGui.QApplication.translate("DdInput", "Please choose", None, QtGui.QApplication.UnicodeUTF8)
-                nullString = QtCore.QString()
-
-                if self.attribute.isTypeChar():
-                    self.inputWidget.addItem(nullString, "-9999")
-                elif self.attribute.isTypeInt():
-                    self.inputWidget.addItem(nullString, -9999)
-
             while query.next(): # returns false when all records are done
                 sValue = QtCore.QString(query.value(0).toString())
                 keyValue = query.value(1)
@@ -1681,6 +1707,8 @@ class DdComboBox(DdLineEdit):
             DbError(query)
 
     def setValue(self,  thisValue):
+        self.manageChk(thisValue)
+        
         if not thisValue:
             self.inputWidget.setCurrentIndex(0)
         else:
@@ -1690,11 +1718,10 @@ class DdComboBox(DdLineEdit):
                     break
 
     def getValue(self):
-        thisValue = self.inputWidget.itemData(self.inputWidget.currentIndex())
-
-        if QtCore.QString("-9999") == thisValue.toString(): # Null selected
+        if self.chk.isChecked():
             thisValue = None
         else:
+            thisValue = self.inputWidget.itemData(self.inputWidget.currentIndex())
             thisValue = thisValue.toString()
 
         return thisValue
@@ -1702,11 +1729,8 @@ class DdComboBox(DdLineEdit):
     def setupUi(self,  parent,  db):
         '''setup the label and add the inputWidget to parents formLayout'''
         #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
-        self.label = self.createLabel(parent)
-        self.inputWidget = self.createInputWidget(parent)
-        self.inputWidget.setToolTip(self.attribute.comment)
+        DdLineEdit.setupUi(self,  parent,  db)
         self.fill(db)
-        parent.layout().addRow(self.label,  self.inputWidget)
 
 class DdDateEdit(DdLineEdit):
     '''QDateEdit for a date field'''
@@ -1755,9 +1779,10 @@ class DdDateEdit(DdLineEdit):
         return inputWidget
 
     def setValue(self,  thisValue):
+        self.manageChk(thisValue)
+        
         if not thisValue: # i.e. None
             self.inputWidget.setDate(QtCore.QDate.currentDate())
-            self.chk.setChecked(True)
         else:
             self.inputWidget.setDate(thisValue)
 
@@ -1768,25 +1793,6 @@ class DdDateEdit(DdLineEdit):
             thisValue = self.inputWidget.date()
 
         return thisValue
-
-    def setupUi(self,  parent,  db):
-        '''setup the label and add the inputWidget to parents formLayout'''
-        self.label = self.createLabel(parent)
-        hLayout = QtGui.QHBoxLayout(parent)
-        self.inputWidget = self.createInputWidget(parent)
-        hLayout.addWidget(self.inputWidget)
-        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
-                                                           QtGui.QApplication.UnicodeUTF8),  parent)
-        self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check this if you want to save an empty date.", None,
-                                                           QtGui.QApplication.UnicodeUTF8))
-        self.chk.stateChanged.connect(self.chkStateChanged)
-        self.chk.setVisible(not self.attribute.notNull)
-        hLayout.addWidget(self.chk)
-        parent.layout().addRow(self.label,  hLayout)
-
-    def chkStateChanged(self,  newState):
-        self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
 
 class DdCheckBox(DdLineEdit):
     '''QCheckBox for a boolean field'''
@@ -1827,9 +1833,9 @@ class DdCheckBox(DdLineEdit):
         return inputWidget
 
     def setValue(self,  thisValue):
+        self.manageChk(thisValue)
         if None == thisValue: #handle Null values
-            self.inputWidget.setTristate(True)
-            self.inputWidget.setCheckState(1)
+            self.inputWidget.setCheckState(0) # false
         else:
             self.inputWidget.setChecked(thisValue)
 
@@ -1838,14 +1844,16 @@ class DdCheckBox(DdLineEdit):
             self.inputWidget.setTristate(False)
 
     def getValue(self):
-        state = self.inputWidget.checkState()
-        #QtGui.QMessageBox.information(None, "", str(state))
-        if state == 0:
-            thisValue = False
-        elif state == 1:
+        if self.chk.isChecked():
             thisValue = None
-        elif state == 2:
-            thisValue = True
+        else:
+            state = self.inputWidget.checkState()
+            #QtGui.QMessageBox.information(None, "", str(state))
+            if state == 0:
+                thisValue = False
+            
+            elif state == 2:
+                thisValue = True
 
         return thisValue
 
@@ -1878,13 +1886,19 @@ class DdTextEdit(DdLineEdit):
         return inputWidget
 
     def setValue(self,  thisValue):
+        if not thisValue:
+            self.chk.setChecked(True)
+            
         self.inputWidget.setPlainText(thisValue)
 
     def getValue(self):
-        thisValue = self.inputWidget.toPlainText()
-
-        if thisValue.isEmpty():
+        if self.chk.isChecked():
             thisValue = None
+        else:
+            thisValue = self.inputWidget.toPlainText()
+
+            if thisValue.isEmpty():
+                thisValue = None
 
         return thisValue
 
