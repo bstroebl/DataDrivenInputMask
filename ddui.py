@@ -196,7 +196,10 @@ class DdManager(object):
         result = dlg.exec_()
 
         if result == 1:
-            layer.setModified()
+            if QGis.QGIS_VERSION_INT >= 10900:
+                layer.emit(QtCore.SIGNAL('layerModified()'))
+            else:
+                layer.setModified()
 
         return result
 
