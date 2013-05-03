@@ -16,7 +16,9 @@ import sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+#add QGIS
+sys.path.insert(0, '/opt/qgis-1.9.0/share/qgis/python')
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '../../..'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -25,7 +27,7 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.todo', 'sphinx.ext.pngmath', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.todo', 'sphinx.ext.pngmath', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -40,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'datadriveninputmask'
-copyright = u'2012, Bernhard Ströbl / Kommunale Immobilien Jena'
+project = u'DataDrivenInputMask'
+copyright = u'2013, Bernhard Ströbl / Kommunale Immobilien Jena'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -178,7 +180,7 @@ htmlhelp_basename = 'templateclassdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'datadriveninputmask.tex', u'datadriveninputmask Documentation',
+  ('index', 'datadriveninputmask.tex', u'DataDrivenInputMask Documentation',
    u'Bernhard Ströbl / Kommunale Immobilien Jena', 'manual'),
 ]
 
@@ -211,6 +213,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'templateclass', u'datadriveninputmask Documentation',
+    ('index', 'templateclass', u'DataDrivenInputMask Documentation',
      [u'Bernhard Ströbl / Kommunale Immobilien Jena'], 1)
 ]

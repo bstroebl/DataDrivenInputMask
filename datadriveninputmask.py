@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+DataDrivenInputMask
+"""
+"""
 /***************************************************************************
- DataDrivenInputMask
-                                 A QGIS plugin
- Applies a data-driven input mask to any PostGIS-Layer
+A QGIS plugin
+Applies a data-driven input mask to any PostGIS-Layer
                               -------------------
         begin                : 2012-06-21
         copyright            : (C) 2012 by Bernhard Ströbl / Kommunale Immobilien Jena
@@ -28,7 +30,7 @@ from ddui import DdManager
 import os.path, sys
 
 class DataDrivenInputMask:
-
+    """Main class for the QGIS plugin"""
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
@@ -66,12 +68,12 @@ class DataDrivenInputMask:
                 QtCore.QCoreApplication.installTranslator(self.translator)
 
     def initGui(self):
+        """Add menu and menu items."""
         # Create action that will start plugin configuration
-
         self.action = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Initialize Layer",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
-        QtCore.QObject.connect(self.action, QtCore.SIGNAL("triggered()"), self.run)
+        QtCore.QObject.connect(self.action, QtCore.SIGNAL("triggered()"), self.initializeLayer)
 
         # Add toolbar button and menu item
         self.menuLabel = QtGui.QApplication.translate("DdLabel", "&Data-driven Input Mask",
@@ -82,20 +84,20 @@ class DataDrivenInputMask:
         self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
-        QtCore.QObject.connect(self.actionSel, QtCore.SIGNAL("triggered()"), self.runSel)
+        QtCore.QObject.connect(self.actionSel, QtCore.SIGNAL("triggered()"), self.showInputForm)
 
         # Add toolbar button and menu item
         self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
 
     def unload(self):
-        # Remove the plugin menu item and icon
+        """Remove the plugin menu item and icon"""
         self.app.ddManager.quit()
         #QtGui.QMessageBox.information(None, "", "unload")
         self.iface.removePluginMenu(self.menuLabel, self.action)
         self.iface.removePluginMenu(self.menuLabel, self.actionSel)
 
-    # run method that performs all the real work
-    def run(self):
+    def initializeLayer(self):
+        """Create the mask for the active layer"""
         layer = self.iface.activeLayer()
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
@@ -103,7 +105,8 @@ class DataDrivenInputMask:
         else:
             self.app.ddManager.initLayer(layer,  skip = [])
 
-    def runSel(self):
+    def showInputForm(self):
+        """Show the mask for the first selected feature in the active layer"""
         layer = self.iface.activeLayer()
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,

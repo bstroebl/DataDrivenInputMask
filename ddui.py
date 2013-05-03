@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+ddui
+--------
+Classes that make up or steer the DataDrivenUI
+"""
+"""
 /***************************************************************************
  DataDrivenInputMask
                                  A QGIS plugin
@@ -91,6 +96,8 @@ def ddFormInit(dialog, layerId, featureId):
                     layer.setModified()
 
 class DdManager(object):
+    """DdManager manages all masks in the current project"""
+    
     def __init__(self,  iface):
         self.iface = iface
         self.ddLayers = dict()
@@ -442,7 +449,9 @@ class DdManager(object):
             db = None
 
 class DataDrivenUi(object):
-    '''when subclassing this class, you want to rewrite createUi and use DdManager's setUi
+    '''Creates the DataDrivenUi
+    
+    When subclassing this class, you want to rewrite createUi and use DdManager's setUi
     method to apply your custom ui to the layer'''
 
     def __init__(self,  iface):
@@ -452,6 +461,7 @@ class DataDrivenUi(object):
         return "<ddui.DataDrivenUi>"
 
     def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  showParents,  showChildren):
+        """create the forms (DdFom instances) shown in the tabs of  the Dialog (DdDialog instance)"""
         ddForms = []
         ddAttributes = self.getAttributes(thisTable, db,  labels)
 

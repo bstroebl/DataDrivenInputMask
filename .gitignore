@@ -3,3 +3,5 @@ DataDrivenInputMask.e4p
 .ropeproject/
 ui*.*
 images/
+help/build/
+*.pyc
