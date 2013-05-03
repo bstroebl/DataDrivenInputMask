@@ -59,13 +59,14 @@ class DdTable(object):
 class DdAttribute(object):
     '''abstract super class for all DdAttributes'''
 
-    def __init__(self,  table,  type,  notNull,  name,  comment ,  label):
+    def __init__(self,  table,  type,  notNull,  name,  comment ,  label,  min = None,  max = None):
         self.table = table
         self.type = QtCore.QString(type)
         self.notNull = notNull
         self.name = QtCore.QString(name)
         self.comment = QtCore.QString(comment)
         self.label = label
+        self.setMinMax(min,  max)
 
     def __str__(self):
         return "<ddattribute.DdAttribute %s>" % str(self.name)
@@ -86,11 +87,38 @@ class DdAttribute(object):
             labelString = self.name
 
         return labelString
-
+        
+    def setMinMax(self,  min,  max):
+        self.min = None
+        self.max = None
+        
+        if self.isTypeInt:
+            if min != None:
+                self.min = int(round(min))
+            else:
+                if self.type == "int2":
+                    self.min = -32768
+                elif self.type == "int4":
+                    self.min = -2147483648
+           
+            if max != None:
+                self.max = int(round(max))
+            else:
+                if self.type == "int2":
+                    self.max = 32767
+                elif self.type == "int4":
+                    self.max = 2147483647
+        elif self.isTypeFloat:
+            if min != None:
+                self.min = float(min)
+            
+            if max != None:
+                self.max = float(max)
+            
 class DdLayerAttribute(DdAttribute):
-
-    def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label = None):
-        DdAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  label)
+    '''a DdAttribute for a field in a QGIS layer'''
+    def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label = None,  min = None,  max = None):
+        DdAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  label,  min,  max)
         self.isPK = isPK
         self.isFK = isFK
         self.default = default
@@ -102,6 +130,7 @@ class DdLayerAttribute(DdAttribute):
         return "<ddattribute.DdLayerAttribute %s>" % str(self.name)
 
 class DdFkLayerAttribute(DdLayerAttribute):
+    '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
     def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK,  default ,  hasDefault,  queryForCbx,  label = None):
         DdLayerAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK,  True,  default,  hasDefault,  -1,  label)
         self.queryForCbx = QtCore.QString(queryForCbx)
@@ -110,7 +139,7 @@ class DdFkLayerAttribute(DdLayerAttribute):
         return "<ddattribute.DdFkLayerAttribute %s>" % str(self.name)
 
 class DdTableAttribute(DdAttribute):
-    '''attribute for a relationTable'''
+    '''a DdAttribute for a relationTable'''
     def __init__(self,  relationTable, comment ,  label,   \
                  relationFeatureIdField,  attributes,  maxRows,  showParents):
         DdAttribute.__init__(self,  relationTable,  "table",  False,  relationTable.tableName,  comment,  label)
@@ -143,7 +172,7 @@ class DdTableAttribute(DdAttribute):
 
 
 class DdN2mAttribute(DdAttribute):
-    '''attribute for a n2m relation, subtype can be list, tree or table
+    '''a DdAttribute for a n2m relation, subtype can be list, tree or table
     relationTable and relatedTable are DdTable objects'''
     def __init__(self,  relationTable,  relatedTable,  subType,  comment ,  label,   \
                  relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = []):
@@ -223,9 +252,9 @@ class DdN2mAttribute(DdAttribute):
 
         self.deleteStatement = deleteStatement
 
-
 class DdPushButtonAttribute(DdAttribute):
-
+    '''a DdAttribute that drwas a pushButton in the mask. 
+    the button must be implemented as subclass of ddui.DdPushButton'''
     def __init__(self,  comment ,  label):
         DdAttribute.__init__(self,  None,  "pushButton",  False,  "",  comment,  label)
         pass

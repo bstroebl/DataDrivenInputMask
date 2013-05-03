@@ -108,9 +108,9 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  showParents = True,  createAction = True):
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  createAction = True):
         '''api method initLayer: initialize the layer with a data-driven input mask'''
-
+        
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(layer.name()))
@@ -140,7 +140,7 @@ class DdManager(object):
                     return None
 
                 ddui = DataDrivenUi(self.iface)
-                ui = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  showParents)
+                ui = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents)
                 self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
                 self.ddLayers[layer.id()] = [thisTable,  db,  ui]
                 self.__connectSignals(layer)
@@ -463,10 +463,11 @@ class DataDrivenUi(object):
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  showParents,  showChildren):
+    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  showChildren):
         """create the forms (DdFom instances) shown in the tabs of  the Dialog (DdDialog instance)"""
+            
         ddForms = []
-        ddAttributes = self.getAttributes(thisTable, db,  labels)
+        ddAttributes = self.getAttributes(thisTable, db,  labels,  minMax)
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
@@ -562,19 +563,20 @@ class DataDrivenUi(object):
             skip.append(thisTable.tableName)
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  showParents,  False)
+                parentForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  False)
                 ddForms = ddForms + parentForms
 
         return ddForms
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  showParents = True,  showChildren = True):
+    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  showChildren = True):
         '''creates a default ui for this table (DdTable instance)
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"
-        fieldOrder is an array containing the field names in the order they should be shown'''
-
+        fieldOrder is an array containing the field names in the order they should be shown
+        minMax is a dict with entries: "fieldname": [min, max]'''
+            
         ui = DdDialogWidget()
-        forms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  showParents,  showChildren)
+        forms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  showChildren)
 
         for ddFormWidget in forms:
             ui.addFormWidget(ddFormWidget)
@@ -834,7 +836,7 @@ class DataDrivenUi(object):
                     attLabel = None
 
                 if subType == "table":
-                    attributes = self.getAttributes(ddRelationTable,  db,  {})
+                    attributes = self.getAttributes(ddRelationTable,  db,  {},  {})
                     ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
                 else:
                     ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
@@ -848,10 +850,10 @@ class DataDrivenUi(object):
 
         return n2mAttributes
 
-    def getAttributes(self,  thisTable, db,  labels):
+    def getAttributes(self,  thisTable, db,  labels,  minMax):
         ''' query the DB and create DdAttributes'''
+            
         ddAttributes = []
-
         query = QtSql.QSqlQuery(db)
         sQuery = self.__attributeQuery("att.attnum")
 
@@ -902,7 +904,7 @@ class DataDrivenUi(object):
                                 attLabel = labels[str(attName)]
                             except KeyError:
                                 attLabel = attName + " (" + fk[2] + ")"
-
+                            
                             try:
                                 fkComment = fk[3]
                             except IndexError:
@@ -926,8 +928,18 @@ class DataDrivenUi(object):
                             attLabel = labels[str(attName)]
                         except KeyError:
                             attLabel = None
+                            
+                        try:
+                            thisMinMax = minMax[str(attName)]
+                        except KeyError:
+                            thisMinMax = None
 
-                        ddAtt = DdLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, False,  attDefault,  attHasDefault,  attLength,  attLabel)
+                        if thisMinMax == None:
+                            ddAtt = DdLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, 
+                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel)
+                        else:
+                            ddAtt = DdLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, 
+                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel,  thisMinMax[0],  thisMinMax[1])
 
                     ddAttributes.append(ddAtt)
 
@@ -1254,7 +1266,7 @@ class DdFormWidget(DdWidget):
             
             if not featureFound:
                 self.feature = None
-                QtGui.QMessageBox.information(None,"!featureFound", str(feature.id()))
+                #QtGui.QMessageBox.information(None,"!featureFound", str(feature.id()))
 
             if layer.isEditable():
                 self.parent.setEnabled(self.__setLayerEditable())
@@ -1372,7 +1384,10 @@ class DdLineEdit(DdInputWidget):
         else:
             thisValue = feature.attributeMap().get(fieldIndex).toString()
 
-        if feature.id() < 0 and thisValue.isEmpty(): # new feature
+        if thisValue.isEmpty():
+            thisValue = None
+            
+        if feature.id() < 0 and thisValue == None: # new feature
             if self.attribute.hasDefault:
                 thisValue = QtCore.QString(self.attribute.default)
 
@@ -1386,16 +1401,20 @@ class DdLineEdit(DdInputWidget):
 
     def manageChk(self,  thisValue):
         '''check/uncheck the null checkbox depending on the value and
-        the attribute'S' notNull property'''
+        the attribute's notNull property'''
 
         if self.attribute.notNull: # uncheck in order to make inputWidget editable
             self.chk.setChecked(False)
         else:
-            self.chk.setChecked(not thisValue) # i.e. None
+            self.chk.setChecked(thisValue == None)
         
     # public methods
     def setValue(self,  thisValue):
         self.manageChk(thisValue)
+        
+        if thisValue == None:
+            thisValue = QtCore.QString()
+            
         self.inputWidget.setText(thisValue)
 
     def getValue(self):
@@ -1502,48 +1521,47 @@ class DdLineEditInt(DdLineEdit):
         else:
             thisValue = feature.attributeMap().get(fieldIndex).toString()
 
-        if (feature.id() < 0) and (thisValue.isEmpty()): # new feature and no value set
+        if thisValue.isEmpty():
+            thisValue = None
+            
+        if feature.id() < 0 and thisValue == None: # new feature and no value set
             if self.attribute.hasDefault:
                 thisValue = QtCore.QString(self.attribute.default)
             else:
                 if self.attribute.isPK :
                     thisValue = self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1
                     thisValue = QtCore.QString(str(thisValue))
+        
         return thisValue
 
     def setValidator(self):
-        if self.attribute.type == QtCore.QString("int2"):
-            min = -32768
-            max = 32767
-            validator = QtGui.QIntValidator(min,  max,  self.inputWidget)
-        elif self.attribute.type == QtCore.QString("int4"):
-            min = -2147483648
-            max = 2147483647
-            validator = QtGui.QIntValidator(min,  max,  self.inputWidget)
-        elif self.attribute.type == QtCore.QString("int8"):
+        if self.attribute.min != None or self.attribute.max != None:
+            validator = QtGui.QIntValidator(self.attribute.min,  self.attribute.max,  self.inputWidget)
+        else:
             validator = QInt64Validator(self.inputWidget)
 
         self.inputWidget.setValidator(validator)
 
-    def setupUi(self,  parent,  db):
-        DdLineEdit.setupUi(self,  parent,  db)
-        #self.setValidator()
-
     def initialize(self,  layer,  feature,  db):
-        thisValue = self.getFeatureValue(layer,  feature,  db)
-        isInt = thisValue.toInt()[1]
-
-        if not  isInt: # could be a Longlong, or a serial, i.e. a nextval(sequence) expression
-            isInt = thisValue.toLongLong()[1]
-
-            if not  isInt:
-                self.inputWidget.setValidator(None) # remove the validator
-
-        self.setValue(thisValue)
-
-        if isInt:
+        DdLineEdit.initialize(self,  layer,  feature,  db)
+        thisValue = self.getValue()
+        
+        if thisValue == None:
             self.setValidator()
+        else:
+            isInt = thisValue.toInt()[1]
 
+            if not  isInt: # could be a Longlong, or a serial, i.e. a nextval(sequence) expression
+                isInt = thisValue.toLongLong()[1]
+
+                if not  isInt:
+                    self.inputWidget.setValidator(None) # remove the validator
+
+            self.setValue(thisValue)
+
+            if isInt:
+                self.setValidator()
+                
 class DdLineEditDouble(DdLineEdit):
     '''QLineEdit for a DoubleValue'''
 
@@ -1588,6 +1606,13 @@ class DdLineEditDouble(DdLineEdit):
 
     def setValidator(self):
         validator = QtGui.QDoubleValidator(self.inputWidget)
+        
+        if self.attribute.min != None:
+            validator.setBottom(self.attribute.min)
+            
+        if self.attribute.max != None:
+            validator.setTop(self.attribute.max)
+            
         validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
         validator.setLocale(QtCore.QLocale.system())
         self.inputWidget.setValidator(validator)
