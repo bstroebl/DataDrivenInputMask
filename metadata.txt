@@ -10,7 +10,7 @@
 
 [general]
 name=Data-Driven Input Mask
-qgisMinimumVersion=1.7
+qgisMinimumVersion=1.8
 description=Opens a data-driven input mask for any PostgreSQL Layer
 version=0.1.1
 
@@ -25,9 +25,9 @@ version=0.1.1
 tags=
 
 homepage=
-tracker=
-repository=
-icon=ogo_kij.png
+tracker=http://hub.qgis.org/projects/datadriveninputmask
+repository=https://github.com/bstroebl/DataDrivenInputMask
+icon=
 # experimental flag
 experimental=False
 
@@ -35,5 +35,5 @@ experimental=False
 deprecated=False
 
 # Author contact information
-author=Bernhard Ströbl / Kommunale Immobilien Jena
+author=Bernhard Ströbl, Kommunale Immobilien Jena
 email=bernhard.stroebl@jena.de

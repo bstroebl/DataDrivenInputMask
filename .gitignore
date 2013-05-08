@@ -4,4 +4,5 @@ DataDrivenInputMask.zip
 .ropeproject/
 ui*.*
 images/
+help/build/
 *.pyc
