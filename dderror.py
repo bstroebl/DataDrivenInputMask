@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+dderror
+-----------------------------------
+Error classes
+"""
+"""
 /***************************************************************************
  DataDrivenInputMask
                                  A QGIS plugin
@@ -22,6 +27,7 @@
 from PyQt4 import QtGui,  QtSql,  QtCore
 
 class DdError(object):
+    '''General error'''
     def __init__(self,  value):
         self.value = value
         QtGui.QMessageBox.warning(None, "DdError",  value)
@@ -29,6 +35,7 @@ class DdError(object):
         return repr(self.value)
 
 class DbError(object):
+    '''error querying the DB'''
     def __init__(self,  query):
         self.query = query
         QtGui.QMessageBox.warning(None, "DBError",  QtGui.QApplication.translate("DBError", "Database Error:", None,

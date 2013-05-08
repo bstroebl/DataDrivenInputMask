@@ -1058,7 +1058,7 @@ class DataDrivenUi(object):
         return sQuery
 
 class DdWidget(object):
-    '''abstract class'''
+    '''abstract base class of all ui-widgets'''
 
     def __init__(self):
         pass
@@ -1067,21 +1067,31 @@ class DdWidget(object):
         return "<ddui.DdWidget>"
 
     def checkInput(self):
-       return True
+        '''check if input is valid
+        returns True if not implemented in child class'''
+        return True
 
     def setupUi(self,  parent,  db):
+        '''create the ui
+        must be implemented in child classes'''
         raise NotImplementedError("Should have implemented setupUi")
 
     def initialize(self,  layer,  feature,  db):
+        '''initialize this widget for feature in layer
+        must be implemented in child classes'''
         raise NotImplementedError("Should have implemented initialize")
 
     def save(self,  layer,  feature,  db):
+        '''saves the input
+        must be implemented in child classes'''
         raise NotImplementedError("Should have implemented save")
 
     def discard(self):
+        '''discards the input'''
         pass
 
 class DdDialogWidget(DdWidget):
+    '''This is the mask ui'''
     def __init__(self):
         DdWidget.__init__(self)
         self.forms = []
@@ -1133,6 +1143,7 @@ class DdDialogWidget(DdWidget):
         QtCore.QMetaObject.connectSlotsByName(DataDrivenInputMask)
 
     def addFormWidget(self,  ddFormWidget):
+        '''add this DdFormWidget to the ui'''
         self.forms.append(ddFormWidget)
 
     def initialize(self,  layer,  feature,  db):
@@ -1161,7 +1172,9 @@ class DdDialogWidget(DdWidget):
             aForm.discard()
 
 class DdFormWidget(DdWidget):
-    '''class arranges its input widgets either in a QToolBox or int the DdDialogWidget's current tab'''
+    '''DdForms are the content of DdDialog, each DdDialog needs at least one DdForm (tab)
+    class arranges its input widgets either in a QToolBox or int the DdDialogWidget's current tab'''
+    
     def __init__(self,  ddTable, hasToolBox = False,  layer = None):
         DdWidget.__init__(self)
         self.ddTable = ddTable
@@ -1250,6 +1263,7 @@ class DdFormWidget(DdWidget):
         self.layer = self.__getLayer(db)
 
     def addInputWidget(self,  ddInputWidget):
+        '''insert this DdInputWidget into this DdForm'''
         #QtGui.QMessageBox.information(None,  "addInputWidget",  ddInputWidget.attribute.name)
         self.inputWidgets.append(ddInputWidget)
 
@@ -1305,41 +1319,35 @@ class DdFormWidget(DdWidget):
                 anInputWidget.discard()
 
 class DdInputWidget(DdWidget):
-    '''abstract super class for all input widgets'''
-    def __init__(self,  attribute):
+    '''abstract super class for any input widget, corresponds to a DdAttribute'''
+    
+    def __init__(self,  ddAttribute):
         DdWidget.__init__(self)
-        self.attribute = attribute
+        self.attribute = ddAttribute
         self.hasChanges = False
 
     def __str__(self):
         return "<ddui.DdInputWidget %s>" % str(self.attribute.name)
     
     def registerChange(self , thisValue):
-        '''slot to be called by any concrete InputWidget'''
+        '''slot to be called when user changes the input'''
         self.hasChanges = True
         
     def getLabel(self):
+        '''returns the label for this DdInputWidget'''
         labelString = self.attribute.getLabel()
 
         return labelString
 
-    def changeLabelColor(self,  valid):
-        labelString = self.getLabel()
-
-        if valid:
-            labelString = "<font color='Green'>" + labelString + "</font>"
-        else:
-            labelString = "<font color='Red'>" + labelString + "</font>"
-
-        return labelString
-
     def createLabel(self,  parent):
+        '''creates a QLabel object'''
         labelString = self.getLabel()
         label = QtGui.QLabel(labelString,  parent)
         label.setObjectName("lbl" + parent.objectName() + self.attribute.name)
         return label
 
     def getMaxValueFromTable(self,  schemaName,  tableName,  db):
+        '''querys schema.table in db to get the highest occuring values for this DdInputWidget's attribute'''
         query = QtSql.QSqlQuery(db)
         query.prepare("SELECT \"" + \
                       self.attribute.name + \
@@ -1362,9 +1370,8 @@ class DdInputWidget(DdWidget):
 
 class DdLineEdit(DdInputWidget):
     '''abstract class for all Input Widgets that can be represented in one line,
-    creates a QLineEdit as default InputWidget, adds a label and the inputWidget
-    to a QFormLayout. Methods implemented
-    in this class can be overridden by implementations in child classes'''
+    creates a QLineEdit as default InputWidget, adds it together with a QCheckBox (to store null values)
+    and a label to a QFormLayout.'''
 
     def __init__(self,  attribute):
         DdInputWidget.__init__(self,  attribute)
@@ -1374,8 +1381,8 @@ class DdLineEdit(DdInputWidget):
         
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a QString representing the value in this field for this feature;
-        if it is a new feature the default value is returned
-        default implementation for a QLineEdit'''
+        if the value is null, None is returned,
+        if it is a new feature the default value is returned.'''
 
         fieldIndex = self.getFieldIndex(layer)
         
@@ -1410,6 +1417,7 @@ class DdLineEdit(DdInputWidget):
         
     # public methods
     def setValue(self,  thisValue):
+        '''sets thisValue into the input widget'''
         self.manageChk(thisValue)
         
         if thisValue == None:
@@ -1448,6 +1456,7 @@ class DdLineEdit(DdInputWidget):
         parent.layout().addRow(self.label,  hLayout)
 
     def chkStateChanged(self,  newState):
+        '''slot: disables the input widget if the null checkbox is checked and vice versa'''
         self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
 
     def initialize(self,  layer,  feature,  db):
@@ -1466,6 +1475,7 @@ class DdLineEdit(DdInputWidget):
             return True
 
     def getFieldIndex(self,  layer):
+        '''return the field index for this DdInputWidget's attribute's name in this layer'''
         #QtGui.QMessageBox.information(None, "getFieldIndex",  "layer: " + layer.name() + " attribute: " + self.attribute.name)
         if layer:
             fieldIndex = layer.fieldNameIndex(self.attribute.name)
@@ -1487,6 +1497,7 @@ class DdLineEdit(DdInputWidget):
         return self.hasChanges
 
 class QInt64Validator(QtGui.QValidator):
+    '''a QValidator for int64 values'''
     def __init__(self,  parent = None):
         QtGui.QValidator.__init__(self,  parent)
         self.min = -9223372036854775808
@@ -1505,7 +1516,7 @@ class QInt64Validator(QtGui.QValidator):
             return QtGui.QValidator.Invalid,  pos
 
 class DdLineEditInt(DdLineEdit):
-    '''QLineEdit for an IntegerValue'''
+    '''input widget (QLineEdit) for an IntegerValue'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1535,6 +1546,8 @@ class DdLineEditInt(DdLineEdit):
         return thisValue
 
     def setValidator(self):
+        '''sets an appropriate QValidator for the QLineEdit
+        if this DdInputWidget's attribute has min/max values validator is set to them'''
         if self.attribute.min != None or self.attribute.max != None:
             validator = QtGui.QIntValidator(self.attribute.min,  self.attribute.max,  self.inputWidget)
         else:
@@ -1563,7 +1576,7 @@ class DdLineEditInt(DdLineEdit):
                 self.setValidator()
                 
 class DdLineEditDouble(DdLineEdit):
-    '''QLineEdit for a DoubleValue'''
+    '''input widget (QLineEdit) for a DoubleValue'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1605,6 +1618,8 @@ class DdLineEditDouble(DdLineEdit):
         return thisValue
 
     def setValidator(self):
+        '''sets an appropriate QValidator for the QLineEdit
+        if this DdInputWidget's attribute has min/max values validator is set to them'''
         validator = QtGui.QDoubleValidator(self.inputWidget)
         
         if self.attribute.min != None:
@@ -1632,7 +1647,7 @@ class DdLineEditDouble(DdLineEdit):
         self.inputWidget.textChanged.connect(self.__textChanged)
 
 class DdLineEditChar(DdLineEdit):
-    '''QLineEdit for a char or varchar'''
+    '''input widget (QLineEdit) for a char or varchar'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1660,7 +1675,7 @@ class DdLineEditChar(DdLineEdit):
         return ok
 
 class DdComboBox(DdLineEdit):
-    '''QComboBox for a foreign key'''
+    '''input widget (QComboBox) for a foreign key'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1712,6 +1727,7 @@ class DdComboBox(DdLineEdit):
         return inputWidget
 
     def fill(self,  db):
+        '''fill the QComboBox with values according to the attribute from the db'''
         query = QtSql.QSqlQuery(db)
         query.prepare(self.attribute.queryForCbx)
         query.exec_()
@@ -1755,22 +1771,18 @@ class DdComboBox(DdLineEdit):
         return thisValue
 
     def setupUi(self,  parent,  db):
-        '''setup the label and add the inputWidget to parents formLayout'''
         #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
         DdLineEdit.setupUi(self,  parent,  db)
         self.fill(db)
 
 class DdDateEdit(DdLineEdit):
-    '''QDateEdit for a date field'''
+    '''input widget (QDateEdit) for a date field'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
 
     def __str__(self):
         return "<ddui.DdDateEdit %s>" % str(self.attribute.name)
-
-    def getNullValue(self):
-        return QtCore.QDate.fromString(QtCore.QString("2999.12.31"),  QtCore.QString("yyyy.MM.dd"))
 
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a QDate representing the value in this field for this feature'''
@@ -1823,7 +1835,7 @@ class DdDateEdit(DdLineEdit):
         return thisValue
 
 class DdCheckBox(DdLineEdit):
-    '''QCheckBox for a boolean field'''
+    '''input widget (QCheckBox) for a boolean field'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -1868,6 +1880,7 @@ class DdCheckBox(DdLineEdit):
             self.inputWidget.setChecked(thisValue)
 
     def stateChanged(self,  newState):
+        '''slot if this QCheckBox' state has changed'''
         if self.inputWidget.isTristate() and newState != 1:
             self.inputWidget.setTristate(False)
 
@@ -1896,14 +1909,14 @@ class DdCheckBox(DdLineEdit):
             return True
 
 class DdTextEdit(DdLineEdit):
-    '''QTextEdit  for a text field'''
+    '''input widget (QTextEdit) for a text field'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
 
     def __str__(self):
         return "<ddui.DdTextEdit %s>" % str(self.attribute.name)
-
+    
     def registerChange(self):
         self.hasChanges = True
     
@@ -1931,11 +1944,11 @@ class DdTextEdit(DdLineEdit):
         return thisValue
 
 class DdN2mWidget(DdInputWidget):
+    '''abstract class for any n-to-m relation'''
     def __init__(self,  attribute):
         DdInputWidget.__init__(self,  attribute)
 
     def setupUi(self,  parent,  db):
-        '''setup the label and add the inputWidget to parents formLayout'''
         label = self.createLabel(parent)
         self.inputWidget = self.createInputWidget(parent)
         self.inputWidget.setToolTip(self.attribute.comment)
@@ -1943,7 +1956,7 @@ class DdN2mWidget(DdInputWidget):
         parent.layout().addRow(self.inputWidget)
 
 class DdN2mListWidget(DdN2mWidget):
-    '''a clickable list widget for simple n2m relations'''
+    '''input widget (clickable QListWidget) for simple n2m relations'''
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -2021,7 +2034,7 @@ class DdN2mListWidget(DdN2mWidget):
             return False
 
 class DdN2mTreeWidget(DdN2mWidget):
-    '''a clickable tree widget for simple n2m relations'''
+    '''input widget (clickable QTreeWidget) for n2m relations with more than one additional field in the related table'''
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -2116,7 +2129,8 @@ class DdN2mTreeWidget(DdN2mWidget):
             return False
 
 class DdN2mTableWidget(DdN2mWidget):
-    '''a table'''
+    '''a input widget for n-to-m relations with more than one field in the relation table
+    The input widget consists of a QTableWidget and an add (+) and a remove (-) button'''
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -2147,6 +2161,7 @@ class DdN2mTableWidget(DdN2mWidget):
         return inputWidget
 
     def createFeature(self, fid = None):
+        '''create a new QgsFeature for the relation table with this fid'''
         if fid:
             newFeature = QgsFeature(fid)
         else:
@@ -2226,6 +2241,7 @@ class DdN2mTableWidget(DdN2mWidget):
                 self.addButton.setEnabled(False)
 
     def fillRow(self, thisRow, thisFeature):
+        '''fill thisRow with values from thisFeature'''
         #QtGui.QMessageBox.information(None,'',str(thisRow))
         if QGis.QGIS_VERSION_INT < 10900:
             attMap = thisFeature.attributeMap()
@@ -2252,6 +2268,7 @@ class DdN2mTableWidget(DdN2mWidget):
             self.inputWidget.setItem(thisRow, i, item)
 
     def appendRow(self, thisFeature):
+        '''add a new row to the QTableWidget'''
         thisRow = self.inputWidget.rowCount() # identical with index of row to be appended as row indices are 0 based
         self.inputWidget.setRowCount(thisRow + 1) # append a row
         self.fillRow(thisRow, thisFeature)
@@ -2331,9 +2348,11 @@ class DdN2mTableWidget(DdN2mWidget):
 
     # SLOTS
     def selectionChanged(self):
+        '''slot to be called when the QTableWidget's selection has changed'''
         self.removeButton.setEnabled(len(self.inputWidget.selectedItems()) > 0)
 
     def doubleClick(self,  thisRow,  thisColumn):
+        '''slot to be called when the user double clicks on the QTableWidget'''
         featureItem = self.inputWidget.item(thisRow,  0)
         thisFeature = featureItem.feature
         result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
@@ -2350,6 +2369,7 @@ class DdN2mTableWidget(DdN2mWidget):
             self.hasChanges = True
 
     def add(self):
+        '''slot to be called when the user clicks on the add button'''
         thisFeature = self.createFeature()
         # set the parentFeature's id
         if QGis.QGIS_VERSION_INT >= 10900:
@@ -2371,6 +2391,7 @@ class DdN2mTableWidget(DdN2mWidget):
                 self.tableLayer.deleteFeature(thisFeature.id())
 
     def remove(self):
+        '''slot to be called when the user clicks on the remove button'''
         thisRow = self.inputWidget.currentRow()
         featureItem = self.inputWidget.takeItem(thisRow,  0)
         thisFeature = featureItem.feature

@@ -1,17 +1,27 @@
 Full Documentation
 ==================================
 
-DdManager
-```````````````
+Modules
+```````````````````````
 
-.. autoclass:: ddui.DdManager
+.. automodule:: datadriveninputmask
+    :show-inheritance:
     :members:
-    :private-members:
+    :undoc-members:
 
-DataDrivenUi
-```````````````
-
-.. autoclass:: ddui.DataDrivenUi
+.. automodule:: ddattribute
     :members:
-    :private-members:
+    :undoc-members:
+    
+.. automodule:: ddui
+    :show-inheritance:
+    :members:
+    :undoc-members:
 
+.. automodule:: dddialog
+    :members:
+    :undoc-members:
+
+.. automodule:: dderror
+    :members:
+    :undoc-members:

@@ -1,5 +1,23 @@
 # -*- coding: utf-8 -*-
 """
+ddattribute
+---------------------
+Each DdAttribute corresponds to an input widget in the mask or each input widget is based on exactly one DdAttribute.
+
+General rules:
+```````````````````````
+#) every field has an input widget suitable for its type
+#) no ARRAY typees are supported
+#) supported types are: int4, int8, float, date, boolean, char, varchar, text
+#) foreign keys are represented as comboboxes and are only supported if based on one field (exactly one fk field in the table references exactly one pk field in the referenced table)
+#) the table referenced by a foreign key should have at least one field wit a notNull constraint apart from the primary key. This field will be used as display field in the combobox
+#) if a varchar field is present in a table referenced by a foreign key it is used as display field in the combobox, if there are several the one defined earlier is used
+#) if no varchar field is present any char field is used
+#) if no varchar or char fields are available the pk field is used for display
+#) table inheritance is not covered
+#) if a table's pk is a fk to another table's pk the other table's mask is shown in a second tab
+"""
+"""
 /***************************************************************************
  DataDrivenInputMask
                                  A QGIS plugin
@@ -18,28 +36,6 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
- General rules:
- 1) every field has an input widget suitable for its typee
- 2) no ARRAY typees are supported
- 3) supported typees are: int4, int8, float, date, boolean, char, varchar, text
- 4) n-to-m relations are supported if the table itself has a single field PK
- 5) foreign keys are represented as comboboxes and are only supported
- if based on one field (exactly one fk field in the table references exactly one
- pk field in the referenced table)
- 6) the table referenced by a foreign key should have at least one field with
- a notNull constraint apart from the primary key. This field will be used as
- display field in the combobox
- 7) if a varchar field is present in a table referenced by a foreign key it is used
- as display field in the combobox, if there are several the one defined earlier
- is used
- 8) if no varchar field is present any char field is used
- 9) if no varchar or char fields are available the pk field is used for display
-
- Rules for inheritance in your database:
- 0) input widgets are displayed for the relation in which they are defined (parent)
- 1) foreign keys must be defined on the highest parent in an inheritance chain;
- defining a foreign key only on an inherited field will not result in a QComboBox
- being displayed.
 """
 
 from PyQt4 import QtCore
@@ -253,7 +249,7 @@ class DdN2mAttribute(DdAttribute):
         self.deleteStatement = deleteStatement
 
 class DdPushButtonAttribute(DdAttribute):
-    '''a DdAttribute that drwas a pushButton in the mask. 
+    '''a DdAttribute that draws a pushButton in the mask. 
     the button must be implemented as subclass of ddui.DdPushButton'''
     def __init__(self,  comment ,  label):
         DdAttribute.__init__(self,  None,  "pushButton",  False,  "",  comment,  label)

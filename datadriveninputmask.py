@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-DataDrivenInputMask
+datadriveninputmask
+-----------------------------------
 """
 """
 /***************************************************************************
+DataDrivenInputMask
 A QGIS plugin
 Applies a data-driven input mask to any PostGIS-Layer
                               -------------------

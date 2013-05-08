@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+dddialog
+-----------------------------------
+"""
+"""
 /***************************************************************************
  DataDrivenDialog
                                  A QGIS plugin
@@ -24,6 +28,7 @@ from PyQt4 import QtGui
 
 # create the dialog
 class DdDialog(QtGui.QDialog):
+    '''Each mask is a DdDialog instance, thus a child of QDialog'''
     def __init__(self,  ddManager,  ui,  layer,  feature,  db,  parent = None):
         QtGui.QDialog.__init__(self,  parent)
         # Set up the user interface from Designer.
