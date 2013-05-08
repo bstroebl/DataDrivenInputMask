@@ -31,11 +31,11 @@ TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
 PLUGINNAME = DataDrivenInputMask
 
-PY_FILES = datadriveninputmask.py ui_datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py
+PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py
 
 EXTRAS = metadata.txt
 
-UI_FILES = ui_datadriveninputmask.py
+UI_FILES = 
 
 #RESOURCE_FILES = resources_rc.py
 
@@ -64,8 +64,8 @@ deploy: compile doc transcompile
 #	mkdir -p $(HOME)/.qgis/python/plugins/$(PLUGINNAME)/DataDrivenUi
 	cp -vf $(PY_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vf $(PY_FILES) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
-	cp -vf $(UI_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
-	cp -vf $(UI_FILES) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
+	#cp -vf $(UI_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
+	#cp -vf $(UI_FILES) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
 	#cp -vf $(RESOURCE_FILES) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vf $(EXTRAS) $(HOME)/.qgis/python/plugins/$(PLUGINNAME)
 	cp -vf $(EXTRAS) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
