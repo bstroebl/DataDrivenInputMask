@@ -1,0 +1,6 @@
+Readme for DataDrivenInputMask
+A QGIS plugin that automagically creates input masks for PostGIS layers.
+All table constraints (notNull, foreign keys etc.) are taken into account.
+The user can edit any data contained in related tables.
+
+See the help section for more documentation.
