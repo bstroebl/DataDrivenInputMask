@@ -1,0 +1,1091 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Full Documentation &mdash; DataDrivenInputMask 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DataDrivenInputMask 0.1 documentation" href="index.html" />
+    <link rel="prev" title="API Documentation" href="apidoc.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="apidoc.html" title="API Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DataDrivenInputMask 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="full-documentation">
+<h1>Full Documentation<a class="headerlink" href="#full-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-datadriveninputmask">
+<span id="modules"></span><h2>Modules<a class="headerlink" href="#module-datadriveninputmask" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="datadriveninputmask">
+<h3>datadriveninputmask<a class="headerlink" href="#datadriveninputmask" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="datadriveninputmask.DataDrivenInputMask">
+<em class="property">class </em><tt class="descclassname">datadriveninputmask.</tt><tt class="descname">DataDrivenInputMask</tt><big>(</big><em>iface</em><big>)</big><a class="reference internal" href="_modules/datadriveninputmask.html#DataDrivenInputMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datadriveninputmask.DataDrivenInputMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main class for the QGIS plugin</p>
+<dl class="method">
+<dt id="datadriveninputmask.DataDrivenInputMask.initGui">
+<tt class="descname">initGui</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/datadriveninputmask.html#DataDrivenInputMask.initGui"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datadriveninputmask.DataDrivenInputMask.initGui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add menu and menu items.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datadriveninputmask.DataDrivenInputMask.initializeLayer">
+<tt class="descname">initializeLayer</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/datadriveninputmask.html#DataDrivenInputMask.initializeLayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datadriveninputmask.DataDrivenInputMask.initializeLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the mask for the active layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datadriveninputmask.DataDrivenInputMask.showInputForm">
+<tt class="descname">showInputForm</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/datadriveninputmask.html#DataDrivenInputMask.showInputForm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datadriveninputmask.DataDrivenInputMask.showInputForm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the mask for the first selected feature in the active layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="datadriveninputmask.DataDrivenInputMask.unload">
+<tt class="descname">unload</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/datadriveninputmask.html#DataDrivenInputMask.unload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#datadriveninputmask.DataDrivenInputMask.unload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the plugin menu item and icon</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-ddattribute"></span><div class="section" id="ddattribute">
+<h3>ddattribute<a class="headerlink" href="#ddattribute" title="Permalink to this headline">¶</a></h3>
+<p>Each DdAttribute corresponds to an input widget in the mask or each input widget is based on exactly one DdAttribute.</p>
+<div class="section" id="general-rules">
+<h4>General rules:<a class="headerlink" href="#general-rules" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>every field has an input widget suitable for its type</li>
+<li>no ARRAY typees are supported</li>
+<li>supported types are: int4, int8, float, date, boolean, char, varchar, text</li>
+<li>foreign keys are represented as comboboxes and are only supported if based on one field (exactly one fk field in the table references exactly one pk field in the referenced table)</li>
+<li>the table referenced by a foreign key should have at least one field wit a notNull constraint apart from the primary key. This field will be used as display field in the combobox</li>
+<li>if a varchar field is present in a table referenced by a foreign key it is used as display field in the combobox, if there are several the one defined earlier is used</li>
+<li>if no varchar field is present any char field is used</li>
+<li>if no varchar or char fields are available the pk field is used for display</li>
+<li>table inheritance is not covered</li>
+<li>if a table&#8217;s pk is a fk to another table&#8217;s pk the other table&#8217;s mask is shown in a second tab</li>
+</ol>
+<dl class="class">
+<dt id="ddattribute.DdAttribute">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdAttribute</tt><big>(</big><em>table</em>, <em>type</em>, <em>notNull</em>, <em>name</em>, <em>comment</em>, <em>label</em>, <em>min=None</em>, <em>max=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdAttribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>abstract super class for all DdAttributes</p>
+<dl class="method">
+<dt id="ddattribute.DdAttribute.getLabel">
+<tt class="descname">getLabel</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdAttribute.getLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdAttribute.getLabel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdAttribute.isTypeChar">
+<tt class="descname">isTypeChar</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdAttribute.isTypeChar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdAttribute.isTypeChar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdAttribute.isTypeFloat">
+<tt class="descname">isTypeFloat</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdAttribute.isTypeFloat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdAttribute.isTypeFloat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdAttribute.isTypeInt">
+<tt class="descname">isTypeInt</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdAttribute.isTypeInt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdAttribute.isTypeInt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdAttribute.setMinMax">
+<tt class="descname">setMinMax</tt><big>(</big><em>min</em>, <em>max</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdAttribute.setMinMax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdAttribute.setMinMax" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddattribute.DdFkLayerAttribute">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdFkLayerAttribute</tt><big>(</big><em>table</em>, <em>type</em>, <em>notNull</em>, <em>name</em>, <em>comment</em>, <em>attNum</em>, <em>isPK</em>, <em>default</em>, <em>hasDefault</em>, <em>queryForCbx</em>, <em>label=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdFkLayerAttribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdFkLayerAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>a DdAttribute for field in a QGIS layer that represents a foreign key</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ddattribute.DdLayerAttribute">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdLayerAttribute</tt><big>(</big><em>table</em>, <em>type</em>, <em>notNull</em>, <em>name</em>, <em>comment</em>, <em>attNum</em>, <em>isPK</em>, <em>isFK</em>, <em>default</em>, <em>hasDefault</em>, <em>length</em>, <em>label=None</em>, <em>min=None</em>, <em>max=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdLayerAttribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdLayerAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>a DdAttribute for a field in a QGIS layer</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ddattribute.DdN2mAttribute">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdN2mAttribute</tt><big>(</big><em>relationTable</em>, <em>relatedTable</em>, <em>subType</em>, <em>comment</em>, <em>label</em>, <em>relationFeatureIdField</em>, <em>relationRelatedIdField</em>, <em>relatedIdField</em>, <em>relatedDisplayField</em>, <em>fieldList=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>a DdAttribute for a n2m relation, subtype can be list, tree or table
+relationTable and relatedTable are DdTable objects</p>
+<dl class="method">
+<dt id="ddattribute.DdN2mAttribute.buildDeleteStatement">
+<tt class="descname">buildDeleteStatement</tt><big>(</big><em>relationSchema</em>, <em>relationTable</em>, <em>relationFeatureIdField</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute.buildDeleteStatement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute.buildDeleteStatement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdN2mAttribute.buildDisplayStatement">
+<tt class="descname">buildDisplayStatement</tt><big>(</big><em>relationSchema</em>, <em>relationTable</em>, <em>relatedSchema</em>, <em>relatedTable</em>, <em>relationFeatureIdField</em>, <em>relatedIdField</em>, <em>relatedDisplayField</em>, <em>relationRelatedIdField</em>, <em>fieldList</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute.buildDisplayStatement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute.buildDisplayStatement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdN2mAttribute.buildInsertStatement">
+<tt class="descname">buildInsertStatement</tt><big>(</big><em>relationSchema</em>, <em>relationTable</em>, <em>relationFeatureIdField</em>, <em>relationRelatedIdField</em>, <em>fieldList</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute.buildInsertStatement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute.buildInsertStatement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdN2mAttribute.setDeleteStatement">
+<tt class="descname">setDeleteStatement</tt><big>(</big><em>deleteStatement=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute.setDeleteStatement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute.setDeleteStatement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdN2mAttribute.setDisplayStatement">
+<tt class="descname">setDisplayStatement</tt><big>(</big><em>displayStatement=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute.setDisplayStatement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute.setDisplayStatement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdN2mAttribute.setInsertStatement">
+<tt class="descname">setInsertStatement</tt><big>(</big><em>insertStatement=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdN2mAttribute.setInsertStatement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdN2mAttribute.setInsertStatement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddattribute.DdPushButtonAttribute">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdPushButtonAttribute</tt><big>(</big><em>comment</em>, <em>label</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdPushButtonAttribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdPushButtonAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>a DdAttribute that draws a pushButton in the mask. 
+the button must be implemented as subclass of ddui.DdPushButton</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ddattribute.DdTable">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdTable</tt><big>(</big><em>oid=None</em>, <em>schemaName='None'</em>, <em>tableName='None'</em>, <em>comment=''</em>, <em>title=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>holds all information for a DB table relation</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ddattribute.DdTableAttribute">
+<em class="property">class </em><tt class="descclassname">ddattribute.</tt><tt class="descname">DdTableAttribute</tt><big>(</big><em>relationTable</em>, <em>comment</em>, <em>label</em>, <em>relationFeatureIdField</em>, <em>attributes</em>, <em>maxRows</em>, <em>showParents</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdTableAttribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdTableAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>a DdAttribute for a relationTable</p>
+<dl class="method">
+<dt id="ddattribute.DdTableAttribute.buildSubsetString">
+<tt class="descname">buildSubsetString</tt><big>(</big><em>relationFeatureIdField</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdTableAttribute.buildSubsetString"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdTableAttribute.buildSubsetString" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddattribute.DdTableAttribute.setSubsetString">
+<tt class="descname">setSubsetString</tt><big>(</big><em>subsetString=None</em><big>)</big><a class="reference internal" href="_modules/ddattribute.html#DdTableAttribute.setSubsetString"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddattribute.DdTableAttribute.setSubsetString" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<span class="target" id="module-ddui"></span><div class="section" id="ddui">
+<h3>ddui<a class="headerlink" href="#ddui" title="Permalink to this headline">¶</a></h3>
+<p>Classes that make up or steer the DataDrivenUI</p>
+<dl class="class">
+<dt id="ddui.DataDrivenUi">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DataDrivenUi</tt><big>(</big><em>iface</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Creates the DataDrivenUi</p>
+<p>When subclassing this class, you want to rewrite createUi and use DdManager&#8217;s setUi
+method to apply your custom ui to the layer</p>
+<dl class="method">
+<dt id="ddui.DataDrivenUi.createUi">
+<tt class="descname">createUi</tt><big>(</big><em>thisTable</em>, <em>db</em>, <em>skip=</em><span class="optional">[</span><span class="optional">]</span>, <em>labels={}</em>, <em>fieldOrder=</em><span class="optional">[</span><span class="optional">]</span>, <em>minMax={}</em>, <em>showParents=True</em>, <em>showChildren=True</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.createUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.createUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a default ui for this table (DdTable instance)
+skip is an array with field names to not show
+labels is a dict with entries: &#8220;fieldname&#8221;: &#8220;label&#8221;
+fieldOrder is an array containing the field names in the order they should be shown
+minMax is a dict with entries: &#8220;fieldname&#8221;: [min, max]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DataDrivenUi.getAttributes">
+<tt class="descname">getAttributes</tt><big>(</big><em>thisTable</em>, <em>db</em>, <em>labels</em>, <em>minMax</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.getAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.getAttributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>query the DB and create DdAttributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DataDrivenUi.getForeignKeys">
+<tt class="descname">getForeignKeys</tt><big>(</big><em>thisTable</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.getForeignKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.getForeignKeys" title="Permalink to this definition">¶</a></dt>
+<dd><p>querys this table&#8217;s foreign keys and returns a dict
+attnum: [QString: Type of the lookup field, QString: sql to query lookup values, QString: Name of the value field in the lookup table, QString: Comment on lookup table]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DataDrivenUi.getN2mAttributes">
+<tt class="descname">getN2mAttributes</tt><big>(</big><em>db</em>, <em>thisTable</em>, <em>attName</em>, <em>attNum</em>, <em>labels</em>, <em>showChildren</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.getN2mAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.getN2mAttributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DataDrivenUi.getParent">
+<tt class="descname">getParent</tt><big>(</big><em>thisTable</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.getParent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.getParent" title="Permalink to this definition">¶</a></dt>
+<dd><p>deprecated</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DataDrivenUi.getParents">
+<tt class="descname">getParents</tt><big>(</big><em>thisTable</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.getParents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.getParents" title="Permalink to this definition">¶</a></dt>
+<dd><p>query the DB to get a table&#8217;s parents if any
+A table has a parent if its primary key is defined on one field only and is at the same time
+a foreign key to another table&#8217;s primary key. Thus there is a 1:1
+relationship between the two.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DataDrivenUi.isSupportedType">
+<tt class="descname">isSupportedType</tt><big>(</big><em>typ</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DataDrivenUi.isSupportedType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DataDrivenUi.isSupportedType" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdCheckBox">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdCheckBox</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QCheckBox) for a boolean field</p>
+<dl class="method">
+<dt id="ddui.DdCheckBox.checkInput">
+<tt class="descname">checkInput</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox.checkInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdCheckBox.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdCheckBox.getFeatureValue">
+<tt class="descname">getFeatureValue</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox.getFeatureValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox.getFeatureValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a boolean representing the value in this field for this feature</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdCheckBox.getValue">
+<tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdCheckBox.setValue">
+<tt class="descname">setValue</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdCheckBox.stateChanged">
+<tt class="descname">stateChanged</tt><big>(</big><em>newState</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdCheckBox.stateChanged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdCheckBox.stateChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot if this QCheckBox&#8217; state has changed</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdComboBox">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdComboBox</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QComboBox) for a foreign key</p>
+<dl class="method">
+<dt id="ddui.DdComboBox.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdComboBox.fill">
+<tt class="descname">fill</tt><big>(</big><em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox.fill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox.fill" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill the QComboBox with values according to the attribute from the db</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdComboBox.getFeatureValue">
+<tt class="descname">getFeatureValue</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox.getFeatureValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox.getFeatureValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a value representing the value in this field for this feature</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdComboBox.getValue">
+<tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdComboBox.setValue">
+<tt class="descname">setValue</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdComboBox.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdComboBox.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdComboBox.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdDateEdit">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdDateEdit</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDateEdit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDateEdit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QDateEdit) for a date field</p>
+<dl class="method">
+<dt id="ddui.DdDateEdit.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDateEdit.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDateEdit.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDateEdit.getFeatureValue">
+<tt class="descname">getFeatureValue</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDateEdit.getFeatureValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDateEdit.getFeatureValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a QDate representing the value in this field for this feature</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDateEdit.getValue">
+<tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDateEdit.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDateEdit.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDateEdit.setValue">
+<tt class="descname">setValue</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDateEdit.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDateEdit.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdDialogWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdDialogWidget</tt><a class="reference internal" href="_modules/ddui.html#DdDialogWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdWidget" title="ddui.DdWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdWidget</span></tt></a></p>
+<p>This is the mask ui</p>
+<dl class="method">
+<dt id="ddui.DdDialogWidget.addFormWidget">
+<tt class="descname">addFormWidget</tt><big>(</big><em>ddFormWidget</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDialogWidget.addFormWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget.addFormWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>add this DdFormWidget to the ui</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDialogWidget.checkInput">
+<tt class="descname">checkInput</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDialogWidget.checkInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDialogWidget.discard">
+<tt class="descname">discard</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDialogWidget.discard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget.discard" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDialogWidget.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDialogWidget.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDialogWidget.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDialogWidget.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdDialogWidget.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>DataDrivenInputMask</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdDialogWidget.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdDialogWidget.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdFormHelper">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdFormHelper</tt><big>(</big><em>thisDialog</em>, <em>layerId</em>, <em>featureId</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormHelper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormHelper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdFormWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdFormWidget</tt><big>(</big><em>ddTable</em>, <em>hasToolBox=False</em>, <em>layer=None</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdWidget" title="ddui.DdWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdWidget</span></tt></a></p>
+<p>DdForms are the content of DdDialog, each DdDialog needs at least one DdForm (tab)
+class arranges its input widgets either in a QToolBox or int the DdDialogWidget&#8217;s current tab</p>
+<dl class="method">
+<dt id="ddui.DdFormWidget.addInputWidget">
+<tt class="descname">addInputWidget</tt><big>(</big><em>ddInputWidget</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget.addInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget.addInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>insert this DdInputWidget into this DdForm</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdFormWidget.checkInput">
+<tt class="descname">checkInput</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget.checkInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdFormWidget.discard">
+<tt class="descname">discard</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget.discard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget.discard" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdFormWidget.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdFormWidget.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdFormWidget.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdFormWidget.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdFormWidget.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdInputWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdInputWidget</tt><big>(</big><em>ddAttribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdWidget" title="ddui.DdWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdWidget</span></tt></a></p>
+<p>abstract super class for any input widget, corresponds to a DdAttribute</p>
+<dl class="method">
+<dt id="ddui.DdInputWidget.createLabel">
+<tt class="descname">createLabel</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdInputWidget.createLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdInputWidget.createLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a QLabel object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdInputWidget.getLabel">
+<tt class="descname">getLabel</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdInputWidget.getLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdInputWidget.getLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the label for this DdInputWidget</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdInputWidget.getMaxValueFromTable">
+<tt class="descname">getMaxValueFromTable</tt><big>(</big><em>schemaName</em>, <em>tableName</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdInputWidget.getMaxValueFromTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdInputWidget.getMaxValueFromTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>querys schema.table in db to get the highest occuring values for this DdInputWidget&#8217;s attribute</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdInputWidget.registerChange">
+<tt class="descname">registerChange</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdInputWidget.registerChange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdInputWidget.registerChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot to be called when user changes the input</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdLineEdit">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdLineEdit</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdInputWidget" title="ddui.DdInputWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdInputWidget</span></tt></a></p>
+<p>abstract class for all Input Widgets that can be represented in one line,
+creates a QLineEdit as default InputWidget, adds it together with a QCheckBox (to store null values)
+and a label to a QFormLayout.</p>
+<dl class="method">
+<dt id="ddui.DdLineEdit.checkInput">
+<tt class="descname">checkInput</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.checkInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.chkStateChanged">
+<tt class="descname">chkStateChanged</tt><big>(</big><em>newState</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.chkStateChanged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.chkStateChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot: disables the input widget if the null checkbox is checked and vice versa</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.getFeatureValue">
+<tt class="descname">getFeatureValue</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.getFeatureValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.getFeatureValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a QString representing the value in this field for this feature;
+if the value is null, None is returned,
+if it is a new feature the default value is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.getFieldIndex">
+<tt class="descname">getFieldIndex</tt><big>(</big><em>layer</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.getFieldIndex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.getFieldIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the field index for this DdInputWidget&#8217;s attribute&#8217;s name in this layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.getValue">
+<tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.manageChk">
+<tt class="descname">manageChk</tt><big>(</big><em>thisValue</em><big>)</big><a class="headerlink" href="#ddui.DdLineEdit.manageChk" title="Permalink to this definition">¶</a></dt>
+<dd><p>check/uncheck the null checkbox depending on the value and
+the attribute&#8217;s notNull property</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.setValue">
+<tt class="descname">setValue</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.setValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets thisValue into the input widget</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEdit.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEdit.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEdit.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>setup the label and add the inputWidget to parents formLayout</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdLineEditChar">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdLineEditChar</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditChar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditChar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QLineEdit) for a char or varchar</p>
+<dl class="method">
+<dt id="ddui.DdLineEditChar.checkInput">
+<tt class="descname">checkInput</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditChar.checkInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditChar.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdLineEditDouble">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdLineEditDouble</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditDouble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditDouble" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QLineEdit) for a DoubleValue</p>
+<dl class="method">
+<dt id="ddui.DdLineEditDouble.getValue">
+<tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditDouble.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditDouble.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEditDouble.setValidator">
+<tt class="descname">setValidator</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditDouble.setValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditDouble.setValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets an appropriate QValidator for the QLineEdit
+if this DdInputWidget&#8217;s attribute has min/max values validator is set to them</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEditDouble.setValue">
+<tt class="descname">setValue</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditDouble.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditDouble.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEditDouble.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditDouble.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditDouble.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdLineEditInt">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdLineEditInt</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditInt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditInt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QLineEdit) for an IntegerValue</p>
+<dl class="method">
+<dt id="ddui.DdLineEditInt.getFeatureValue">
+<tt class="descname">getFeatureValue</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditInt.getFeatureValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditInt.getFeatureValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEditInt.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditInt.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditInt.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdLineEditInt.setValidator">
+<tt class="descname">setValidator</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdLineEditInt.setValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdLineEditInt.setValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>sets an appropriate QValidator for the QLineEdit
+if this DdInputWidget&#8217;s attribute has min/max values validator is set to them</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdManager">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdManager</tt><big>(</big><em>iface</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>DdManager manages all masks in the current project</p>
+<dl class="method">
+<dt id="ddui.DdManager.addAction">
+<tt class="descname">addAction</tt><big>(</big><em>layer</em>, <em>actionName=PyQt4.QtCore.QString(u'showDdForm')</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.addAction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.addAction" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to add an action to the layer with a self defined name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.editingStarted">
+<tt class="descname">editingStarted</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.editingStarted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.editingStarted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.editingStopped">
+<tt class="descname">editingStopped</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.editingStopped"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.editingStopped" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.findPostgresLayer">
+<tt class="descname">findPostgresLayer</tt><big>(</big><em>db</em>, <em>ddTable</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.findPostgresLayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.findPostgresLayer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.initLayer">
+<tt class="descname">initLayer</tt><big>(</big><em>layer</em>, <em>skip=</em><span class="optional">[</span><span class="optional">]</span>, <em>labels={}</em>, <em>fieldOrder=</em><span class="optional">[</span><span class="optional">]</span>, <em>minMax={}</em>, <em>showParents=True</em>, <em>createAction=True</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.initLayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.initLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method initLayer: initialize the layer with a data-driven input mask</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.loadPostGISLayer">
+<tt class="descname">loadPostGISLayer</tt><big>(</big><em>db</em>, <em>ddTable</em>, <em>displayName=None</em>, <em>geomColumn=PyQt4.QtCore.QString(u'')</em>, <em>whereClause=None</em>, <em>keyColumn=None</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.loadPostGISLayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.loadPostGISLayer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.quit">
+<tt class="descname">quit</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.quit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.quit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.removeAction">
+<tt class="descname">removeAction</tt><big>(</big><em>layer</em>, <em>actionName</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.removeAction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.removeAction" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to remove an action from the layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.setDb">
+<tt class="descname">setDb</tt><big>(</big><em>layer</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.setDb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.setDb" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to set the db for a layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.setUi">
+<tt class="descname">setUi</tt><big>(</big><em>layer</em>, <em>ui</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.setUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.setUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to exchange the default ui with a custom ui</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.showDdForm">
+<tt class="descname">showDdForm</tt><big>(</big><em>fid</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.showDdForm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.showDdForm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.showFeatureForm">
+<tt class="descname">showFeatureForm</tt><big>(</big><em>layer</em>, <em>feature</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.showFeatureForm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.showFeatureForm" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method showFeatureForm: show the data-driven input mask for a layer and a feature</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdN2mListWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdN2mListWidget</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mListWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mListWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdN2mWidget" title="ddui.DdN2mWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdN2mWidget</span></tt></a></p>
+<p>input widget (clickable QListWidget) for simple n2m relations</p>
+<dl class="method">
+<dt id="ddui.DdN2mListWidget.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mListWidget.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mListWidget.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mListWidget.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mListWidget.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mListWidget.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mListWidget.registerChange">
+<tt class="descname">registerChange</tt><big>(</big><em>thisItem</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mListWidget.registerChange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mListWidget.registerChange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mListWidget.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mListWidget.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mListWidget.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdN2mTableWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdN2mTableWidget</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdN2mWidget" title="ddui.DdN2mWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdN2mWidget</span></tt></a></p>
+<p>a input widget for n-to-m relations with more than one field in the relation table
+The input widget consists of a QTableWidget and an add (+) and a remove (-) button</p>
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.add">
+<tt class="descname">add</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot to be called when the user clicks on the add button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.appendRow">
+<tt class="descname">appendRow</tt><big>(</big><em>thisFeature</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.appendRow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.appendRow" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a new row to the QTableWidget</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.createFeature">
+<tt class="descname">createFeature</tt><big>(</big><em>fid=None</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.createFeature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.createFeature" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a new QgsFeature for the relation table with this fid</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.discard">
+<tt class="descname">discard</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.discard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.discard" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.doubleClick">
+<tt class="descname">doubleClick</tt><big>(</big><em>thisRow</em>, <em>thisColumn</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.doubleClick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.doubleClick" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot to be called when the user double clicks on the QTableWidget</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.fillRow">
+<tt class="descname">fillRow</tt><big>(</big><em>thisRow</em>, <em>thisFeature</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.fillRow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.fillRow" title="Permalink to this definition">¶</a></dt>
+<dd><p>fill thisRow with values from thisFeature</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.remove">
+<tt class="descname">remove</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot to be called when the user clicks on the remove button</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.selectionChanged">
+<tt class="descname">selectionChanged</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.selectionChanged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.selectionChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>slot to be called when the QTableWidget&#8217;s selection has changed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTableWidget.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTableWidget.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTableWidget.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdN2mTreeWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdN2mTreeWidget</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTreeWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTreeWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdN2mWidget" title="ddui.DdN2mWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdN2mWidget</span></tt></a></p>
+<p>input widget (clickable QTreeWidget) for n2m relations with more than one additional field in the related table</p>
+<dl class="method">
+<dt id="ddui.DdN2mTreeWidget.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTreeWidget.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTreeWidget.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTreeWidget.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTreeWidget.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTreeWidget.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTreeWidget.registerChange">
+<tt class="descname">registerChange</tt><big>(</big><em>selfthisItem</em>, <em>thisColumn</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTreeWidget.registerChange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTreeWidget.registerChange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdN2mTreeWidget.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mTreeWidget.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mTreeWidget.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdN2mWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdN2mWidget</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdInputWidget" title="ddui.DdInputWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdInputWidget</span></tt></a></p>
+<p>abstract class for any n-to-m relation</p>
+<dl class="method">
+<dt id="ddui.DdN2mWidget.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdN2mWidget.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdN2mWidget.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdPushButton">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdPushButton</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdPushButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdPushButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdInputWidget" title="ddui.DdInputWidget"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdInputWidget</span></tt></a></p>
+<p>abstract class, needs subclassing</p>
+<dl class="method">
+<dt id="ddui.DdPushButton.clicked">
+<tt class="descname">clicked</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdPushButton.clicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdPushButton.clicked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdPushButton.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdPushButton.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdPushButton.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>must be implemented in child class</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdPushButton.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdPushButton.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdPushButton.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>must be implemented in child class</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdPushButton.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdPushButton.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdPushButton.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdTextEdit">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdTextEdit</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdTextEdit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdTextEdit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ddui.DdLineEdit" title="ddui.DdLineEdit"><tt class="xref py py-class docutils literal"><span class="pre">ddui.DdLineEdit</span></tt></a></p>
+<p>input widget (QTextEdit) for a text field</p>
+<dl class="method">
+<dt id="ddui.DdTextEdit.createInputWidget">
+<tt class="descname">createInputWidget</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdTextEdit.createInputWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdTextEdit.createInputWidget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdTextEdit.getValue">
+<tt class="descname">getValue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdTextEdit.getValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdTextEdit.getValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdTextEdit.registerChange">
+<tt class="descname">registerChange</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdTextEdit.registerChange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdTextEdit.registerChange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdTextEdit.setValue">
+<tt class="descname">setValue</tt><big>(</big><em>thisValue</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdTextEdit.setValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdTextEdit.setValue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.DdWidget">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdWidget</tt><a class="reference internal" href="_modules/ddui.html#DdWidget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>abstract base class of all ui-widgets</p>
+<dl class="method">
+<dt id="ddui.DdWidget.checkInput">
+<tt class="descname">checkInput</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdWidget.checkInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdWidget.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd><p>check if input is valid
+returns True if not implemented in child class</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdWidget.discard">
+<tt class="descname">discard</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/ddui.html#DdWidget.discard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdWidget.discard" title="Permalink to this definition">¶</a></dt>
+<dd><p>discards the input</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdWidget.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdWidget.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdWidget.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>initialize this widget for feature in layer
+must be implemented in child classes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdWidget.save">
+<tt class="descname">save</tt><big>(</big><em>layer</em>, <em>feature</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdWidget.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdWidget.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>saves the input
+must be implemented in child classes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdWidget.setupUi">
+<tt class="descname">setupUi</tt><big>(</big><em>parent</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdWidget.setupUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdWidget.setupUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>create the ui
+must be implemented in child classes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ddui.QInt64Validator">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">QInt64Validator</tt><big>(</big><em>parent=None</em><big>)</big><a class="reference internal" href="_modules/ddui.html#QInt64Validator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.QInt64Validator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">PyQt4.QtGui.QValidator</span></tt></p>
+<p>a QValidator for int64 values</p>
+<dl class="method">
+<dt id="ddui.QInt64Validator.validate">
+<tt class="descname">validate</tt><big>(</big><em>input</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/ddui.html#QInt64Validator.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.QInt64Validator.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="ddui.ddFormInit">
+<tt class="descclassname">ddui.</tt><tt class="descname">ddFormInit</tt><big>(</big><em>dialog</em>, <em>layerId</em>, <em>featureId</em><big>)</big><a class="reference internal" href="_modules/ddui.html#ddFormInit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.ddFormInit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="ddui.ddFormInit1">
+<tt class="descclassname">ddui.</tt><tt class="descname">ddFormInit1</tt><big>(</big><em>dialog</em>, <em>layerId</em>, <em>featureId</em><big>)</big><a class="reference internal" href="_modules/ddui.html#ddFormInit1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.ddFormInit1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<span class="target" id="module-dddialog"></span><div class="section" id="dddialog">
+<h3>dddialog<a class="headerlink" href="#dddialog" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="dddialog.DdDialog">
+<em class="property">class </em><tt class="descclassname">dddialog.</tt><tt class="descname">DdDialog</tt><big>(</big><em>ddManager</em>, <em>ui</em>, <em>layer</em>, <em>feature</em>, <em>db</em>, <em>parent=None</em><big>)</big><a class="reference internal" href="_modules/dddialog.html#DdDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dddialog.DdDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each mask is a DdDialog instance, thus a child of QDialog</p>
+<dl class="method">
+<dt id="dddialog.DdDialog.accept">
+<tt class="descname">accept</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/dddialog.html#DdDialog.accept"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dddialog.DdDialog.accept" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dddialog.DdDialog.initialize">
+<tt class="descname">initialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/dddialog.html#DdDialog.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dddialog.DdDialog.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dddialog.DdDialog.reject">
+<tt class="descname">reject</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/dddialog.html#DdDialog.reject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dddialog.DdDialog.reject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dddialog.DdDialog.setTitle">
+<tt class="descname">setTitle</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/dddialog.html#DdDialog.setTitle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dddialog.DdDialog.setTitle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-dderror"></span><div class="section" id="dderror">
+<h3>dderror<a class="headerlink" href="#dderror" title="Permalink to this headline">¶</a></h3>
+<p>Error classes</p>
+<dl class="class">
+<dt id="dderror.DbError">
+<em class="property">class </em><tt class="descclassname">dderror.</tt><tt class="descname">DbError</tt><big>(</big><em>query</em><big>)</big><a class="reference internal" href="_modules/dderror.html#DbError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dderror.DbError" title="Permalink to this definition">¶</a></dt>
+<dd><p>error querying the DB</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="dderror.DdError">
+<em class="property">class </em><tt class="descclassname">dderror.</tt><tt class="descname">DdError</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/dderror.html#DdError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dderror.DdError" title="Permalink to this definition">¶</a></dt>
+<dd><p>General error</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="dderror.FatalError">
+<em class="property">exception </em><tt class="descclassname">dderror.</tt><tt class="descname">FatalError</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/dderror.html#FatalError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dderror.FatalError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Full Documentation</a><ul>
+<li><a class="reference internal" href="#module-datadriveninputmask">Modules</a><ul>
+<li><a class="reference internal" href="#datadriveninputmask">datadriveninputmask</a></li>
+<li><a class="reference internal" href="#ddattribute">ddattribute</a><ul>
+<li><a class="reference internal" href="#general-rules">General rules:</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ddui">ddui</a></li>
+<li><a class="reference internal" href="#dddialog">dddialog</a></li>
+<li><a class="reference internal" href="#dderror">dderror</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="apidoc.html"
+                        title="previous chapter">API Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/autodoc.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="apidoc.html" title="API Documentation"
+             >previous</a> |</li>
+        <li><a href="index.html">DataDrivenInputMask 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Bernhard Ströbl / Kommunale Immobilien Jena.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

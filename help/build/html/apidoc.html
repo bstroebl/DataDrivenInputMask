@@ -1,0 +1,171 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API Documentation &mdash; DataDrivenInputMask 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="DataDrivenInputMask 0.1 documentation" href="index.html" />
+    <link rel="next" title="Full Documentation" href="autodoc.html" />
+    <link rel="prev" title="Introduction" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="autodoc.html" title="Full Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">DataDrivenInputMask 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="api-documentation">
+<h1>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ddmanager">
+<h2>DdManager<a class="headerlink" href="#ddmanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="ddui.DdManager">
+<em class="property">class </em><tt class="descclassname">ddui.</tt><tt class="descname">DdManager</tt><big>(</big><em>iface</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>DdManager manages all masks in the current project</p>
+<dl class="method">
+<dt id="ddui.DdManager.initLayer">
+<tt class="descname">initLayer</tt><big>(</big><em>layer</em>, <em>skip=</em><span class="optional">[</span><span class="optional">]</span>, <em>labels={}</em>, <em>fieldOrder=</em><span class="optional">[</span><span class="optional">]</span>, <em>minMax={}</em>, <em>showParents=True</em>, <em>createAction=True</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.initLayer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.initLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method initLayer: initialize the layer with a data-driven input mask</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.showFeatureForm">
+<tt class="descname">showFeatureForm</tt><big>(</big><em>layer</em>, <em>feature</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.showFeatureForm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.showFeatureForm" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method showFeatureForm: show the data-driven input mask for a layer and a feature</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.addAction">
+<tt class="descname">addAction</tt><big>(</big><em>layer</em>, <em>actionName=PyQt4.QtCore.QString(u'showDdForm')</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.addAction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.addAction" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to add an action to the layer with a self defined name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.removeAction">
+<tt class="descname">removeAction</tt><big>(</big><em>layer</em>, <em>actionName</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.removeAction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.removeAction" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to remove an action from the layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.setDb">
+<tt class="descname">setDb</tt><big>(</big><em>layer</em>, <em>db</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.setDb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.setDb" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to set the db for a layer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ddui.DdManager.setUi">
+<tt class="descname">setUi</tt><big>(</big><em>layer</em>, <em>ui</em><big>)</big><a class="reference internal" href="_modules/ddui.html#DdManager.setUi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ddui.DdManager.setUi" title="Permalink to this definition">¶</a></dt>
+<dd><p>api method to exchange the default ui with a custom ui</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">API Documentation</a><ul>
+<li><a class="reference internal" href="#ddmanager">DdManager</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="autodoc.html"
+                        title="next chapter">Full Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/apidoc.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="autodoc.html" title="Full Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="index.html">DataDrivenInputMask 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Bernhard Ströbl / Kommunale Immobilien Jena.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
