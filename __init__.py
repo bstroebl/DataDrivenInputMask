@@ -29,7 +29,7 @@ def version():
 def icon():
     return "icon.png"
 def qgisMinimumVersion():
-    return "1.0"
+    return "1.8"
 def classFactory(iface):
     # load DataDrivenInputMask class from file DataDrivenInputMask
     from datadriveninputmask import DataDrivenInputMask
