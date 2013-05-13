@@ -828,7 +828,7 @@ class DataDrivenUi(object):
                 else: # 1:n relation
                     subType = "table"
                     maxRows = None
-                    showParents = False
+                    showParents = True
                     
                 try:
                     attLabel = labels[str(relationTable)]
