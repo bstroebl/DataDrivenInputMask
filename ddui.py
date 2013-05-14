@@ -109,17 +109,18 @@ class DdManager(object):
         return "<ddui.DdManager>"
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  createAction = True):
-        '''api method initLayer: initialize the layer with a data-driven input mask'''
+        '''api method initLayer: initialize the layer with a data-driven input mask
+        Returns a Boolean stating the success of the initialization'''
         
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
                                                            QtGui.QApplication.UnicodeUTF8).append(layer.name()))
-            return None
+            return False
         else:
             if QtCore.QString(u'PostgreSQL') != layer.dataProvider().storageType().left(10) :
                 DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
                                                                QtGui.QApplication.UnicodeUTF8).append(layer.name()))
-                return None
+                return False
             else:
                 db = self.__createDb(layer)
                 layerSrc = self.__analyzeSource(layer)
@@ -137,7 +138,7 @@ class DdManager(object):
                 if not self.__isTable(thisTable,  db):
                     DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table: ", None,
                                                                        QtGui.QApplication.UnicodeUTF8).append(layer.name()))
-                    return None
+                    return False
 
                 ddui = DataDrivenUi(self.iface)
                 ui = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents)
@@ -147,6 +148,8 @@ class DdManager(object):
                 
                 if createAction:
                     self.addAction(layer)
+                    
+                return True
  
     def addAction(self,  layer,  actionName = QtCore.QString(u'showDdForm')):
         '''api method to add an action to the layer with a self defined name'''
@@ -180,29 +183,29 @@ class DdManager(object):
             layer.actions().addAction(act.type(),  act.name(), act.action())
         
     def showFeatureForm(self,  layer,  feature):
-        '''api method showFeatureForm: show the data-driven input mask for a layer and a feature'''
+        '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
+        returns 1 if user clicked OK, 0 if CANCEL'''
         
-        try:
-            layerValues = self.ddLayers[layer.id()]
-        except KeyError:
-            self.initLayer(layer,  skip = [])
-            layerValues = self.ddLayers[layer.id()]
+        layerValues = self.__getLayerValues(layer)
+        
+        if layerValues != None:
+            #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
+            db = layerValues[1]
+            ui = layerValues[2]
+            dlg = DdDialog(self,  ui,  layer,  feature,  db)
+            dlg.show()
+            result = dlg.exec_()
 
-        #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
-        db = layerValues[1]
-        ui = layerValues[2]
-        dlg = DdDialog(self,  ui,  layer,  feature,  db)
-        dlg.show()
-        result = dlg.exec_()
-
-        if result == 1:
-            if QGis.QGIS_VERSION_INT >= 10900:
-                layer.emit(QtCore.SIGNAL('layerModified()'))
-            else:
-                layer.setModified()
-
+            if result == 1:
+                if QGis.QGIS_VERSION_INT >= 10900:
+                    layer.emit(QtCore.SIGNAL('layerModified()'))
+                else:
+                    layer.setModified()
+        else:
+            result = 0
+        
         return result
-
+        
     def showDdForm(self,  fid):
         aLayer = self.iface.activeLayer()
         feat = QgsFeature()
@@ -216,28 +219,23 @@ class DdManager(object):
 
     def setUi(self,  layer,  ui):
         '''api method to exchange the default ui with a custom ui'''
-        try:
-            layerValues = self.ddLayers[layer.id()]
-        except KeyError:
-            self.initLayer(layer,  skip = [])
-            layerValues = self.ddLayers[layer.id()]
-
-        #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
-        thisTable = layerValues[0]
-        db = layerValues[1]
-        self.ddLayers[layer.id()] = [thisTable,  db,  ui]
+        
+        layerValues = self.__getLayerValues(layer)
+        
+        if layerValues != None:
+            #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
+            thisTable = layerValues[0]
+            db = layerValues[1]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui]
 
     def setDb(self,  layer,  db):
         '''api method to set the db for a layer'''
-        try:
-            layerValues = self.ddLayers[layer.id()]
-        except KeyError:
-            self.initLayer(layer,  skip = [])
-            layerValues = self.ddLayers[layer.id()]
-
-        thisTable = layerValues[0]
-        ui = layerValues[2]
-        self.ddLayers[layer.id()] = [thisTable,  db,  ui]
+        layerValues = self.__getLayerValues(layer)
+        
+        if layerValues != None:
+            thisTable = layerValues[0]
+            ui = layerValues[2]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui]
 
     def findPostgresLayer(self, db,  ddTable):
         layerList = self.iface.legendInterface().layers()
@@ -291,45 +289,56 @@ class DdManager(object):
     def editingStarted(self):
         layer = self.iface.activeLayer()
 
-        try:
-            layerValues = self.ddLayers[layer.id()]
-        except KeyError:
-            self.initLayer(layer,  skip = [])
-            layerValues = self.ddLayers[layer.id()]
+        layerValues = self.__getLayerValues(layer)
+        
+        if layerValues != None:
+            db = layerValues[1]
 
-        #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
-        db = layerValues[1]
+            if not db:
+                db = self.__ceateDb(layer)
+                self.setDb(layer,  db)
 
-        if not db:
-            db = self.__ceateDb(layer)
-            self.setDb(layer,  db)
-
-        if not db.transaction():
-            DdError(QtGui.QApplication.translate("DdError", "Error starting transaction on DB ", None,
-                                                           QtGui.QApplication.UnicodeUTF8).append(db.databaseName()))
-            return None
+            if not db.transaction():
+                DdError(QtGui.QApplication.translate("DdError", "Error starting transaction on DB ", None,
+                                                               QtGui.QApplication.UnicodeUTF8).append(db.databaseName()))
+                return None
         
     def editingStopped(self):
         layer = self.iface.activeLayer()
-        db = self.ddLayers[layer.id()][1]
-        #QtGui.QMessageBox.information(None, "modified", str(layer.isModified()))
-        if layer.isModified():
-            #QtGui.QMessageBox.information(None, "modified", "rolling back")
-            if not db.rollback():
-                DdError(QtGui.QApplication.translate("DdError", "Error rolling back transaction on DB ", None,
-                                                           QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
-                return None
-        else:
-            #QtGui.QMessageBox.information(None, "not modified", "committing")
-            if not db.commit():
-                DdError(QtGui.QApplication.translate("DdError", "Error committing transaction on DB ", None,
-                                                           QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
-                return None
+        layerValues = self.__getLayerValues(layer)
+        
+        if layerValues != None:
+            db = layerValues[1]
+            #QtGui.QMessageBox.information(None, "modified", str(layer.isModified()))
+            if layer.isModified():
+                #QtGui.QMessageBox.information(None, "modified", "rolling back")
+                if not db.rollback():
+                    DdError(QtGui.QApplication.translate("DdError", "Error rolling back transaction on DB ", None,
+                                                               QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
+                    return None
+            else:
+                #QtGui.QMessageBox.information(None, "not modified", "committing")
+                if not db.commit():
+                    DdError(QtGui.QApplication.translate("DdError", "Error committing transaction on DB ", None,
+                                                               QtGui.QApplication.UnicodeUTF8).append(db.hostName()).append(".").append(db.databaseName()))
+                    return None
 
         # better keep the connection, if too many connections exist we must change this
         #self.__disconnectDb(db)
         #self.setDb(layer,  None)
 
+    def __getLayerValues(self,  layer):
+        '''Get this layer's from ddLayers or create them'''
+        try:
+            layerValues = self.ddLayers[layer.id()]
+        except KeyError:
+            if self.initLayer(layer,  skip = []):
+                layerValues = self.ddLayers[layer.id()]
+            else:
+                layerValues = None
+
+        return layerValues
+    
     def __getComment(self,  thisTable,  db):
         ''' query the DB to get a table's comment'''
         query = QtSql.QSqlQuery(db)
@@ -573,7 +582,7 @@ class DataDrivenUi(object):
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"
         fieldOrder is an array containing the field names in the order they should be shown
-        minMax is a dict with entries: "fieldname": [min, max]'''
+        minMax is a dict with entries: "fieldname": [min, max] (use for numerical fields only!'''
             
         ui = DdDialogWidget()
         forms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  showChildren)
