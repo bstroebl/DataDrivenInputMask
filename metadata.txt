@@ -24,7 +24,7 @@ version=0.1.1
 # tags are comma separated with spaces allowed
 tags=
 
-homepage=
+homepage=https://github.com/bstroebl/DataDrivenInputMask/wiki
 tracker=http://hub.qgis.org/projects/datadriveninputmask
 repository=https://github.com/bstroebl/DataDrivenInputMask
 icon=
