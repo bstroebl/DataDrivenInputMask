@@ -2362,7 +2362,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
         if result == 1: # user clicked OK
             # make sure user did not change parentFeatureId
-            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId),  False)
+            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  QtCore.QVariant(self.featureId))
             # refresh thisFeature with the new values
             if QGis.QGIS_VERSION_INT >= 10900:
                 self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
