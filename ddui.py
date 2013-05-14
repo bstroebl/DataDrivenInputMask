@@ -2294,7 +2294,7 @@ class DdN2mTableWidget(DdN2mWidget):
         if self.tableLayer.isEditable():
             if not self.tableLayer.rollBack():
                 DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8).appned(self.tableLayer.name()))
+                                                   QtGui.QApplication.UnicodeUTF8).append(self.tableLayer.name()))
                 return None
 
     def setupUi(self,  parent,  db):
