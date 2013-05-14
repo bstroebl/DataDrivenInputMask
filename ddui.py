@@ -679,7 +679,7 @@ class DataDrivenUi(object):
         return parents
 
     def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels,  showChildren):
-        # find those tables (n2mtable) where our pk is a fk
+        '''find those tables (n2mtable) where our pk is a fk'''
         #QtGui.QMessageBox.information(None, "Debug", "getN2mAttributes:" + thisTable.tableName)
         n2mAttributes = []
         pkQuery = QtSql.QSqlQuery(db)
@@ -718,17 +718,17 @@ class DataDrivenUi(object):
                 inPk = bool(pkQuery.value(8).toInt()[0])
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
 
-                if inPk:
-                    if numPkFields == 1:
+                if inPk: # either n:m or 1:1
+                    if numPkFields == 1: # 1:1 relation
 
                         if showChildren:
                             # show 1:1 related tables, too
                             subType = "table"
                             maxRows = 1
-                            showParents = True
+                            showParents = False
                         else:
                             continue
-                    elif numPkFields > 1:
+                    elif numPkFields > 1: # n:m relation
                         if numFields == 2:
                             # get the related table i.e. the table where the other FK field is the PK
                             relatedQuery = QtSql.QSqlQuery(db)
