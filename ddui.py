@@ -2228,11 +2228,14 @@ class DdN2mTableWidget(DdN2mWidget):
             self.tableLayer.removeSelection()
 
             if self.forEdit:
-                self.forEdit = self.tableLayer.startEditing()
-
+                self.forEdit = self.tableLayer.isEditable()
+                
                 if not self.forEdit:
-                    QtGui.QMessageBox.Warning(None,  "", QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8).append(self.tableLayer.name()))
+                    self.forEdit = self.tableLayer.startEditing()
+
+                    if not self.forEdit:
+                        QtGui.QMessageBox.Warning(None,  "", QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
+                                                                   QtGui.QApplication.UnicodeUTF8).append(self.tableLayer.name()))
 
             if self.forEdit:
                 if self.attribute.maxRows:
