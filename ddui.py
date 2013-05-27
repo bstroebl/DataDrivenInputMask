@@ -1597,13 +1597,17 @@ class DdLineEditDouble(DdLineEdit):
     def setValue(self,  thisValue):
         self.manageChk(thisValue)
         
-        if not thisValue.isEmpty():
+        if thisValue == None:
+            thisValue = QtCore.QString()
+        else:
             # convert double to a locale string representation
             thisDouble,  ok = thisValue.toDouble()
             
             if ok:
                 loc = QtCore.QLocale.system()
                 thisValue = loc.toString(thisDouble)
+            else:
+                thisValue = QtCore.QString()
             
         self.inputWidget.setText(thisValue)
     
