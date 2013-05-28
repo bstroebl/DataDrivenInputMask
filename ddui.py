@@ -449,9 +449,31 @@ class DdManager(object):
     def __createDb(self,  layer):
         '''create a QtSql.QSqlDatabase object  for the DB-connection this layer comes from'''
         layerSrc = self.__analyzeSource(layer)
-        db = self.__connectDb(layer.id(),  layerSrc[QtCore.QString(u"host")],  layerSrc[QtCore.QString(u"dbname")],
-            layerSrc[QtCore.QString(u"port")].toInt()[0],  layerSrc[QtCore.QString(u"user")],
-            layerSrc[QtCore.QString(u"password")])
+        host = layerSrc[QtCore.QString(u"host")]
+        dbname = layerSrc[QtCore.QString(u"dbname")]
+        
+        try:
+            user = layerSrc[QtCore.QString(u"user")]
+        except KeyError:
+            user,  ok = QtGui.QInputDialog.getText(None,  QtGui.QApplication.translate("DdWarning", "Username missing"),
+                                                QtGui.QApplication.translate("DdWarning", "Enter username for ", None,
+                                                QtGui.QApplication.UnicodeUTF8).append(dbname).append(u".").append(host))
+            if not ok:
+                return None
+        try:
+            password =  layerSrc[QtCore.QString(u"password")]
+        except KeyError:
+            password,  ok = QtGui.QInputDialog.getText(None,  QtGui.QApplication.translate("DdWarning", "Password missing"),
+                                                QtGui.QApplication.translate("DdWarning", "Enter password for ", None,
+                                                QtGui.QApplication.UnicodeUTF8).append(user).append(u"@").append(dbname).append(host), 
+                                                QtGui.QLineEdit.Password)
+            
+            if not ok:
+                return None
+        
+        db = self.__connectDb(layer.id(), host ,  dbname,
+            layerSrc[QtCore.QString(u"port")].toInt()[0],  user,
+            password)
         return db
 
     def __disconnectDb(self,  db):
