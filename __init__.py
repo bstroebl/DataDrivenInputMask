@@ -25,7 +25,7 @@ def name():
 def description():
     return "Applies a data-driven input mask to any PostGIS-Layer"
 def version():
-    return "Version 0.1.1"
+    return "Version 0.1.2"
 def icon():
     return "icon.png"
 def qgisMinimumVersion():
