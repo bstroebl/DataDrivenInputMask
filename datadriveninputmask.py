@@ -46,7 +46,7 @@ class DataDrivenInputMask:
             self.app.ddManager = ddManager
         # initialize locale
         localePath = ""
-        locale = QtCore.QSettings().value("locale/userLocale").toString()[0:2]
+        locale = QtCore.QSettings().value("locale/userLocale")[0:2]
 
         libPath = os.path.dirname(__file__)
         libPathFound = False
@@ -103,7 +103,7 @@ class DataDrivenInputMask:
         layer = self.iface.activeLayer()
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8).append(layer.name()))
+                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
         else:
             self.app.ddManager.initLayer(layer,  skip = [])
 
@@ -112,7 +112,7 @@ class DataDrivenInputMask:
         layer = self.iface.activeLayer()
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8).append(layer.name()))
+                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
         else:
             sel = layer.selectedFeatures()
 
@@ -121,4 +121,4 @@ class DataDrivenInputMask:
                 self.app.ddManager.showFeatureForm(layer,  feature)
             else:
                 DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8).append(layer.name()))
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())

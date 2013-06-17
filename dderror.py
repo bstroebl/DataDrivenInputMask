@@ -24,7 +24,7 @@ Error classes
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4 import QtGui,  QtSql,  QtCore
+from PyQt4 import QtGui
 
 class DdError(object):
     '''General error'''
@@ -39,8 +39,8 @@ class DbError(object):
     def __init__(self,  query):
         self.query = query
         QtGui.QMessageBox.warning(None, "DBError",  QtGui.QApplication.translate("DBError", "Database Error:", None,
-                                                               QtGui.QApplication.UnicodeUTF8).append( \
-                                                               QtCore.QString("%1 \n %2").arg(query.lastError().text()).arg(query.lastQuery())))
+                                                               QtGui.QApplication.UnicodeUTF8) + \
+                                                               "%1 \n %2".arg(query.lastError().text()).arg(query.lastQuery()))
         raise FatalError("DBError exiting")
     def __str__(self):
         return repr(self.query.lastError())

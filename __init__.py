@@ -20,16 +20,7 @@
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
-def name():
-    return "Data-driven Input Mask"
-def description():
-    return "Applies a data-driven input mask to any PostGIS-Layer"
-def version():
-    return "Version 0.1.3"
-def icon():
-    return "icon.png"
-def qgisMinimumVersion():
-    return "1.8"
+
 def classFactory(iface):
     # load DataDrivenInputMask class from file DataDrivenInputMask
     from datadriveninputmask import DataDrivenInputMask

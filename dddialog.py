@@ -47,14 +47,14 @@ class DdDialog(QtGui.QDialog):
 
     def setTitle(self):
         title = self.layer.name()
-        title.append(" - ")
+        title += " - "
 
         if self.feature.id() < 0:
-            title.append(QtGui.QApplication.translate("DdInfo", "New Feature",
-                     None, QtGui.QApplication.UnicodeUTF8))
+            title += QtGui.QApplication.translate("DdInfo", "New Feature",
+                     None, QtGui.QApplication.UnicodeUTF8)
         else:
-            title.append(QtGui.QApplication.translate("DdInfo", "Feature",
-                    None, QtGui.QApplication.UnicodeUTF8)).append(" ").append(str(self.feature.id()))
+            title += QtGui.QApplication.translate("DdInfo", "Feature",
+                    None, QtGui.QApplication.UnicodeUTF8) + " " + str(self.feature.id())
 
         self.setWindowTitle(title)
 
@@ -64,7 +64,7 @@ class DdDialog(QtGui.QDialog):
     def accept(self):
         if self.ui.checkInput():
             hasChanges = self.ui.save(self.layer,  self.feature,  self.db)
-            
+
             if hasChanges:
                 self.done(1)
             else:

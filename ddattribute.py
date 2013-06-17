@@ -44,28 +44,28 @@ class DdTable(object):
     '''holds all information for a DB table relation'''
     def __init__(self,  oid = None,  schemaName = "None", tableName = "None",  comment = "",  title = None):
         self.oid = oid
-        self.schemaName = QtCore.QString(schemaName)
-        self.tableName = QtCore.QString(tableName)
-        self.comment = QtCore.QString(comment)
+        self.schemaName = schemaName
+        self.tableName = tableName
+        self.comment = comment
         self.title = title
 
     def __str__(self):
-        return "<ddattribute.DdTable %s.%s>" % (str(self.schemaName),  str(self.tableName))
+        return "<ddattribute.DdTable %s.%s>" % (self.schemaName,  self.tableName)
 
 class DdAttribute(object):
     '''abstract super class for all DdAttributes'''
 
     def __init__(self,  table,  type,  notNull,  name,  comment ,  label,  min = None,  max = None):
         self.table = table
-        self.type = QtCore.QString(type)
+        self.type = type
         self.notNull = notNull
-        self.name = QtCore.QString(name)
-        self.comment = QtCore.QString(comment)
+        self.name = name
+        self.comment = comment
         self.label = label
         self.setMinMax(min,  max)
 
     def __str__(self):
-        return "<ddattribute.DdAttribute %s>" % str(self.name)
+        return "<ddattribute.DdAttribute %s>" % self.name
 
     def isTypeInt(self):
         return (self.type == "int2") or (self.type == "int4") or (self.type == "int8")
@@ -83,11 +83,11 @@ class DdAttribute(object):
             labelString = self.name
 
         return labelString
-        
+
     def setMinMax(self,  min,  max):
         self.min = None
         self.max = None
-        
+
         if self.isTypeInt:
             if min != None:
                 self.min = int(round(min))
@@ -96,7 +96,7 @@ class DdAttribute(object):
                     self.min = -32768
                 elif self.type == "int4":
                     self.min = -2147483648
-           
+
             if max != None:
                 self.max = int(round(max))
             else:
@@ -107,10 +107,10 @@ class DdAttribute(object):
         elif self.isTypeFloat:
             if min != None:
                 self.min = float(min)
-            
+
             if max != None:
                 self.max = float(max)
-            
+
 class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
     def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label = None,  min = None,  max = None):
@@ -123,22 +123,23 @@ class DdLayerAttribute(DdAttribute):
         self.num = attNum # number of the attribute in the table pg_attribute.attNum
 
     def __str__(self):
-        return "<ddattribute.DdLayerAttribute %s>" % str(self.name)
+        return "<ddattribute.DdLayerAttribute %s>" % self.name
 
 class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
     def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK,  default ,  hasDefault,  queryForCbx,  label = None):
         DdLayerAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK,  True,  default,  hasDefault,  -1,  label)
-        self.queryForCbx = QtCore.QString(queryForCbx)
+        self.queryForCbx = queryForCbx
 
     def __str__(self):
-        return "<ddattribute.DdFkLayerAttribute %s>" % str(self.name)
+        return "<ddattribute.DdFkLayerAttribute %s>" % self.name
 
 class DdTableAttribute(DdAttribute):
     '''a DdAttribute for a relationTable'''
     def __init__(self,  relationTable, comment ,  label,   \
                  relationFeatureIdField,  attributes,  maxRows,  showParents):
         DdAttribute.__init__(self,  relationTable,  "table",  False,  relationTable.tableName,  comment,  label)
+
         self.relationFeatureIdField = relationFeatureIdField
         self.attributes = attributes # an array with DdAttributes
 
@@ -157,7 +158,7 @@ class DdTableAttribute(DdAttribute):
 
     def buildSubsetString(self,  relationFeatureIdField):
         ''''''
-        subsetString = QtCore.QString("\"").append(relationFeatureIdField).append("\" = ")
+        subsetString = "\"" + relationFeatureIdField + "\" = "
         return subsetString
 
     def setSubsetString(self,  subsetString = None):
@@ -173,7 +174,8 @@ class DdN2mAttribute(DdAttribute):
     def __init__(self,  relationTable,  relatedTable,  subType,  comment ,  label,   \
                  relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = []):
         DdAttribute.__init__(self,  relationTable,  "n2m",  False,  relationTable.tableName,  comment,  label)
-        self.subType = QtCore.QString(subType)
+
+        self.subType = subType
         self.relatedTable = relatedTable
         self.relationFeatureIdField = relationFeatureIdField
         self.relationRelatedIdField = relationRelatedIdField
@@ -192,8 +194,8 @@ class DdN2mAttribute(DdAttribute):
     def buildDisplayStatement(self,  relationSchema,  relationTable, relatedSchema,  relatedTable,  relationFeatureIdField, \
                               relatedIdField,  relatedDisplayField,  relationRelatedIdField,  fieldList):
 
-        displayStatement = QtCore.QString("SELECT disp.\"").append(relatedIdField).append("\", disp.\"").append(relatedDisplayField).append("\",")
-        displayStatement.append(" CASE COALESCE(lnk.\"").append(relationFeatureIdField).append("\", 0) WHEN 0 THEN 0 ELSE 2 END as checked")
+        displayStatement ="SELECT disp.\"" + relatedIdField + "\", disp.\"" + relatedDisplayField + "\","
+        displayStatement += " CASE COALESCE(lnk.\"" + relationFeatureIdField + "\", 0) WHEN 0 THEN 0 ELSE 2 END as checked"
 
         # for "list"  this is how it is supposed to look like
         #SELECT disp."id", disp."eigenschaft", CASE COALESCE(lnk."polygon_gid", 0) WHEN 0 THEN 0 ELSE 2 END as checked
@@ -201,30 +203,30 @@ class DdN2mAttribute(DdAttribute):
         #LEFT JOIN (SELECT * FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId) lnk ON disp."id" = lnk."eigenschaft_id"
         #ORDER BY disp."eigenschaft"
 
-        if self.subType ==  QtCore.QString("tree"):
+        if self.subType ==  "tree":
             for aField in fieldList:
-                displayStatement.append(", \'").append(aField).append(": \' || COALESCE(disp.\"").append(aField).append("\", \'NULL\')")
+                displayStatement += ", \'" + aField + ": \' || COALESCE(disp.\"" + aField + "\", \'NULL\')"
 
-        displayStatement.append(" FROM \"").append(relatedSchema).append("\".\"").append(relatedTable).append("\" disp")
-        displayStatement.append(" LEFT JOIN (SELECT * FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
-        displayStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId) lnk")
-        displayStatement.append(" ON disp.\"").append(relatedIdField).append("\" = lnk.\"") .append(relationRelatedIdField).append("\"")
-        displayStatement.append( " ORDER BY checked DESC, disp.\"").append(relatedDisplayField).append("\"")
+        displayStatement += " FROM \"" + relatedSchema + "\".\"" + relatedTable + "\" disp"
+        displayStatement += " LEFT JOIN (SELECT * FROM \"" + relationSchema + "\".\"" + relationTable + "\""
+        displayStatement += " WHERE \"" + relationFeatureIdField + "\" = :featureId) lnk"
+        displayStatement += " ON disp.\"" + relatedIdField + "\" = lnk.\"" + relationRelatedIdField + "\""
+        displayStatement +=  " ORDER BY checked DESC, disp.\"" + relatedDisplayField + "\""
 
         return displayStatement
 
     def buildInsertStatement(self,  relationSchema,  relationTable,  relationFeatureIdField,  relationRelatedIdField,  fieldList):
         # INSERT INTO "alchemy"."polygon_has_eigenschaft"("polygon_gid", "eigenschaft_id") VALUES (:featureId, :itemId)
-        insertStatement = QtCore.QString("INSERT INTO \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
-        insertStatement.append("(\"").append(relationFeatureIdField).append("\", \"").append(relationRelatedIdField).append("\")")
-        insertStatement.append(" VALUES (:featureId, :itemId)")
+        insertStatement = "INSERT INTO \"" + relationSchema + "\".\"" + relationTable + "\""
+        insertStatement += "(\"" + relationFeatureIdField + "\", \"" + relationRelatedIdField + "\")"
+        insertStatement += " VALUES (:featureId, :itemId)"
 
         return insertStatement
 
     def buildDeleteStatement(self,  relationSchema,  relationTable, relationFeatureIdField):
         # DELETE FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId
-        deleteStatement = QtCore.QString("DELETE FROM \"").append(relationSchema).append("\".\"").append(relationTable).append("\"")
-        deleteStatement.append(" WHERE \"").append(relationFeatureIdField).append("\" = :featureId")
+        deleteStatement = "DELETE FROM \"" + relationSchema + "\".\"" + relationTable + "\""
+        deleteStatement += " WHERE \"" + relationFeatureIdField + "\" = :featureId"
 
         return deleteStatement
 
@@ -249,11 +251,11 @@ class DdN2mAttribute(DdAttribute):
         self.deleteStatement = deleteStatement
 
 class DdPushButtonAttribute(DdAttribute):
-    '''a DdAttribute that draws a pushButton in the mask. 
+    '''a DdAttribute that draws a pushButton in the mask.
     the button must be implemented as subclass of ddui.DdPushButton'''
     def __init__(self,  comment ,  label):
         DdAttribute.__init__(self,  None,  "pushButton",  False,  "",  comment,  label)
         pass
 
     def __str__(self):
-        return "<ddattribute.DdPushButtonAttribute %s>" % str(self.name)
+        return "<ddattribute.DdPushButtonAttribute %s>" % self.name
