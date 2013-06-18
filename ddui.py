@@ -2214,12 +2214,12 @@ class DdN2mTableWidget(DdN2mWidget):
 
             if anAtt.isFK:
                 values = self.fkValues[anAtt.name]
-                aValue = values[aValue]
-
-                if not aValue: # i.e. aVAlue == None
+                try:
+                    aValue = values[aValue]
+                except KeyError:
                     aValue = 'NULL'
 
-            item = QtGui.QTableWidgetItem(aValue)
+            item = QtGui.QTableWidgetItem(unicode(aValue))
 
             if i == 0:
                 item.feature = thisFeature

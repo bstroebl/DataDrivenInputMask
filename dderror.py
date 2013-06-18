@@ -40,7 +40,7 @@ class DbError(object):
         self.query = query
         QtGui.QMessageBox.warning(None, "DBError",  QtGui.QApplication.translate("DBError", "Database Error:", None,
                                                                QtGui.QApplication.UnicodeUTF8) + \
-                                                               "%1 \n %2".arg(query.lastError().text()).arg(query.lastQuery()))
+                                                               "%(error)s \n %(query)s" % {"error": query.lastError().text(),  "query": query.lastQuery()})
         raise FatalError("DBError exiting")
     def __str__(self):
         return repr(self.query.lastError())
