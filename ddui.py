@@ -1724,6 +1724,10 @@ class DdComboBox(DdLineEdit):
 
             while query.next(): # returns false when all records are done
                 sValue = query.value(0)
+
+                if not isinstance(sValue,  unicode):
+                    sValue = str(sValue)
+
                 keyValue = query.value(1)
                 self.inputWidget.addItem(sValue, keyValue)
 
