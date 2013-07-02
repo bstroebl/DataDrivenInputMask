@@ -242,8 +242,21 @@ class DdManager(object):
 
         return procLayer
 
+    def getGroupIndex(self,  groupName):
+        '''Find the index for groupName in the legend'''
+        retValue = -1
+        groups = self.iface.legendInterface().groups()
+
+        for i in range(len(groups)):
+            if groups[i] == groupName:
+                retValue = i
+                break
+
+        return retValue
+
     def loadPostGISLayer(self,  db, ddTable, displayName = None,
-        geomColumn = None, whereClause = None, keyColumn = None):
+        geomColumn = None, whereClause = None, keyColumn = None,
+        intoDdGroup = True):
 
         if not displayName:
             displayName = ddTable.schemaName + "." + ddTable.tableName
@@ -267,6 +280,14 @@ class DdManager(object):
             uri.setKeyColumn(keyColumn)
         vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres")
         tLayer = QgsMapLayerRegistry.instance().addMapLayers([vlayer])
+        if intoDdGroup:
+            groupIdx = self.getGroupIndex("DataDrivenInputMask")
+            legendIface= self.iface.legendInterface()
+
+            if groupIdx == -1:
+                groupIdx = legendIface.addGroup("DataDrivenInputMask",  False)
+
+            legendIface.moveLayer(vlayer,  groupIdx)
         return vlayer
 
     def quit(self):
