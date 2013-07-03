@@ -2246,7 +2246,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
         for i in range(len(self.attribute.attributes)):
             anAtt = self.attribute.attributes[i]
-            aValue = thisFeature[anAtt.name]
+            aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
 
             if anAtt.isFK:
                 values = self.fkValues[anAtt.name]
@@ -2267,10 +2267,6 @@ class DdN2mTableWidget(DdN2mWidget):
         thisRow = self.inputWidget.rowCount() # identical with index of row to be appended as row indices are 0 based
         self.inputWidget.setRowCount(thisRow + 1) # append a row
         self.fillRow(thisRow, thisFeature)
-
-
-
-
 
     def setupUi(self,  parent,  db):
         frame = QtGui.QFrame(parent)
