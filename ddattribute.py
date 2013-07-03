@@ -37,8 +37,7 @@ General rules:
  *                                                                         *
  ***************************************************************************/
 """
-
-from PyQt4 import QtCore
+from PyQt4 import QtGui
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
@@ -110,6 +109,9 @@ class DdAttribute(object):
 
             if max != None:
                 self.max = float(max)
+
+    def debug(self,  msg):
+        QtGui.QMessageBox.information(None, "Debug",  msg)
 
 class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
@@ -186,10 +188,21 @@ class DdN2mAttribute(DdAttribute):
         self.setDisplayStatement()
         self.setInsertStatement()
         self.setDeleteStatement()
-
+        self.setSubsetString()
 
     def __str__(self):
         return "<ddattribute.DdN2mAttribute %s>" % str(self.name)
+
+    def buildSubsetString(self,  relationFeatureIdField):
+        ''''''
+        subsetString = "\"" + relationFeatureIdField + "\" = "
+        return subsetString
+
+    def setSubsetString(self,  subsetString = None):
+        if not subsetString:
+            subsetString = self.buildSubsetString(self.relationFeatureIdField)
+
+        self.subsetString = subsetString
 
     def buildDisplayStatement(self,  relationSchema,  relationTable, relatedSchema,  relatedTable,  relationFeatureIdField, \
                               relatedIdField,  relatedDisplayField,  relationRelatedIdField,  fieldList):
