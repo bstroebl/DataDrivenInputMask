@@ -1491,6 +1491,7 @@ class DdLineEdit(DdInputWidget):
     def chkStateChanged(self,  newState):
         '''slot: disables the input widget if the null checkbox is checked and vice versa'''
         self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+        self.hasChanges = True
 
     def initialize(self,  layer,  feature,  db):
         thisValue = self.getFeatureValue(layer,  feature,  db)
