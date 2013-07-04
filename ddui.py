@@ -1538,16 +1538,13 @@ class QInt64Validator(QtGui.QValidator):
         self.max = 9223372036854775807
 
     def validate(self, input, pos):
-        thisValue = input.toLongLong()
+        thisLong = int(input)
 
-        if thisValue[1]: # boolean
-            thisLong = thisValue[0]
-            if self.min < thisLong and self.max > thisLong:
-                return QtGui.QValidator.Acceptable,  pos
-            else:
-                return QtGui.QValidator.Invalid,  pos
+        if self.min < thisLong and self.max > thisLong:
+            return QtGui.QValidator.Acceptable,  pos
         else:
             return QtGui.QValidator.Invalid,  pos
+
 
 class DdLineEditInt(DdLineEdit):
     '''input widget (QLineEdit) for an IntegerValue'''
