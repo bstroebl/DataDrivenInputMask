@@ -102,7 +102,7 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  createAction = True):
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  createAction = True,  db = None):
         '''api method initLayer: initialize the layer with a data-driven input mask
         Returns a Boolean stating the success of the initialization'''
 
@@ -116,7 +116,9 @@ class DdManager(object):
                                                                QtGui.QApplication.UnicodeUTF8) + layer.name())
                 return False
             else:
-                db = self.__createDb(layer)
+                if not db:
+                    db = self.__createDb(layer)
+
                 layerSrc = self.__analyzeSource(layer)
                 relation = layerSrc["table"].split('"."')
                 schema = relation[0].replace('"', '')
@@ -223,6 +225,8 @@ class DdManager(object):
 
         if layerValues != None:
             thisTable = layerValues[0]
+            oldDb = layerValues[1]
+            self.__disconnectDb(oldDb)
             ui = layerValues[2]
             self.ddLayers[layer.id()] = [thisTable,  db,  ui]
 
