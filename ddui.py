@@ -1910,14 +1910,17 @@ class DdTextEdit(DdLineEdit):
         self.hasChanges = True
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QTextEdit(parent)
+        inputWidget = QtGui.QPlainTextEdit(parent)
+        inputWidget.setTabChangesFocus(True)
         inputWidget.setObjectName("txt" + parent.objectName() + self.attribute.name)
         inputWidget.textChanged.connect(self.registerChange)
         return inputWidget
 
     def setValue(self,  thisValue):
-        if not thisValue:
-            self.chk.setChecked(True)
+        self.manageChk(thisValue)
+
+        if thisValue == None:
+            thisValue = ""
 
         self.inputWidget.setPlainText(thisValue)
 
