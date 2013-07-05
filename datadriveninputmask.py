@@ -75,7 +75,7 @@ class DataDrivenInputMask:
         self.action = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Initialize Layer",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
-        QtCore.QObject.connect(self.action, QtCore.SIGNAL("triggered()"), self.initializeLayer)
+        self.action.triggered.connect(self.initializeLayer)
 
         # Add toolbar button and menu item
         self.menuLabel = QtGui.QApplication.translate("DdLabel", "&Data-driven Input Mask",
@@ -86,7 +86,7 @@ class DataDrivenInputMask:
         self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
-        QtCore.QObject.connect(self.actionSel, QtCore.SIGNAL("triggered()"), self.showInputForm)
+        self.actionSel.triggered.connect(self.showInputForm)
 
         # Add toolbar button and menu item
         self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
