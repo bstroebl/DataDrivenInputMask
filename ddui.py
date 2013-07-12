@@ -1211,6 +1211,7 @@ class DdFormWidget(DdWidget):
 
         self.feature = None
         self.parent = None
+        self.oldSubsetString = ""
         self.inputWidgets = []
 
     def __str__(self):
@@ -1295,19 +1296,48 @@ class DdFormWidget(DdWidget):
         self.inputWidgets.append(ddInputWidget)
 
     def initialize(self,  layer,  feature,  db):
+        self.oldSubsetString = ""
+
         if layer.id() == self.layer.id():
             self.feature = feature
             self.wasEditable = layer.isEditable()
         else:
-            self.feature = QgsFeature()
-            featureFound = self.layer.getFeatures(QgsFeatureRequest().setFilterFid(feature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(self.feature)
+            layerPkList = layer.pendingPkAttributesList()
 
-            if not featureFound:
-                self.feature = None
-                #QtGui.QMessageBox.information(None,"!featureFound", str(feature.id()))
+            if len(layerPkList) != 1:
+                self.feature = None # no combined keys
+            else:
+                layerPkIdx = layerPkList[0]
+                pkValue = feature[layerPkIdx]
 
-            if layer.isEditable():
-                self.parent.setEnabled(self.__setLayerEditable())
+                if pkValue == None:
+                    self.feature = None
+                else:
+                    pkValue = str(pkValue)
+                    thisPkList = self.layer.pendingPkAttributesList()
+
+                    if len(thisPkList) != 1:
+                        self.feature = None
+                    else:
+                        self.oldSubsetString = self.layer.subsetString()
+                        thisPkField = self.layer.pendingFields().field(thisPkList[0])
+
+                        if thisPkField.typeName().find("char") != -1:
+                            pkValue = "\'" + pkValue + "\'" # quote value as string
+
+                        newSubsetString = "\"" + thisPkField.name() + "\"=" + pkValue
+                        self.layer.setSubsetString(newSubsetString)
+                        self.layer.reload()
+
+                        if self.layer.featureCount() != 1:
+                            # there is no or several features matching our feature
+                            self.feature = None
+                        else:
+                            self.feature = QgsFeature()
+                            featureFound = self.layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(self.feature)
+
+                            if layer.isEditable():
+                                self.parent.setEnabled(self.__setLayerEditable())
 
         if self.feature:
             for anInputWidget in self.inputWidgets:
@@ -1345,6 +1375,9 @@ class DdFormWidget(DdWidget):
                                                    QtGui.QApplication.UnicodeUTF8) + self.layer.name())
         if self.wasEditable:
             self.layer.startEditing()
+
+        # reset previous subset string
+        self.layer.setSubsetString(self.oldSubsetString)
         return hasChanges
 
     def discard(self):
@@ -1357,6 +1390,9 @@ class DdFormWidget(DdWidget):
                                                    QtGui.QApplication.UnicodeUTF8) + self.layer.name())
                 if self.wasEditable:
                     self.layer.startEditing()
+
+        # reset previous subset string
+        self.layer.setSubsetString(self.oldSubsetString)
 
 class DdInputWidget(DdWidget):
     '''abstract super class for any input widget, corresponds to a DdAttribute'''
