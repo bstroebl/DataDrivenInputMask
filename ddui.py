@@ -486,7 +486,7 @@ class DdManager(object):
 
             if not ok:
                 return None
-        self.__debug("__createDb", str(host))
+
         if host == None:
             db = self.__connectServiceDb(layer.id(),  service, user, password)
         else:
