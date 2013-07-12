@@ -437,11 +437,35 @@ class DdManager(object):
         else:
             return db
 
+    def __connectServiceDb(self,  qSqlDatabaseName,  service,  username,  passwd):
+        '''connect to the PostgreSQL DB via pg_service'''
+        db = QtSql.QSqlDatabase.addDatabase ("QPSQL",  qSqlDatabaseName)
+        db.setConnectOptions("service=" + service)
+        db.setUserName(username)
+        db.setPassword(passwd)
+        ok = db.open()
+
+        if not ok:
+            DdError(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None,
+                                                 QtGui.QApplication.UnicodeUTF8) + database)
+            return None
+        else:
+            return db
+
     def __createDb(self,  layer):
         '''create a QtSql.QSqlDatabase object  for the DB-connection this layer comes from'''
         layerSrc = self.__analyzeSource(layer)
-        host = layerSrc["host"]
-        dbname = layerSrc["dbname"]
+
+        try:
+            service = layerSrc["service"]
+            host = None
+        except KeyError:
+            try:
+                host = layerSrc["host"]
+            except KeyError:
+                host = '127.0.0.1' # we assume localhost
+
+            dbname = layerSrc["dbname"]
 
         try:
             user = layerSrc["user"]
@@ -451,6 +475,7 @@ class DdManager(object):
                                                 QtGui.QApplication.UnicodeUTF8) + dbname + "." + host)
             if not ok:
                 return None
+
         try:
             password =  layerSrc["password"]
         except KeyError:
@@ -461,10 +486,13 @@ class DdManager(object):
 
             if not ok:
                 return None
-
-        db = self.__connectDb(layer.id(), host ,  dbname,
-            int(layerSrc["port"]),  user,
-            password)
+        self.__debug("__createDb", str(host))
+        if host == None:
+            db = self.__connectServiceDb(layer.id(),  service, user, password)
+        else:
+            db = self.__connectDb(layer.id(), host ,  dbname,
+                int(layerSrc["port"]),  user,
+                password)
         return db
 
     def __disconnectDb(self,  db):
