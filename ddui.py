@@ -29,7 +29,7 @@ from PyQt4 import QtCore,  QtGui,  QtSql
 from qgis.core import *
 from dderror import DdError,  DbError
 from ddattribute import *
-from dddialog import DdDialog
+from dddialog import DdDialog,  DdSearchDialog
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
@@ -102,7 +102,8 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  createAction = True,  db = None):
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  searchFields = [],  \
+        showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True):
         '''api method initLayer: initialize the layer with a data-driven input mask
         Returns a Boolean stating the success of the initialization'''
 
@@ -123,7 +124,6 @@ class DdManager(object):
                 relation = layerSrc["table"].split('"."')
                 schema = relation[0].replace('"', '')
                 table = relation[1].replace('"', '')
-                #QtGui.QMessageBox.information(None, "",  schema + '.' + table)
                 thisTable = DdTable(schemaName = schema,  tableName = table,  title = layer.name())
                 thisTable.oid = self.__getOid(thisTable,  db)
                 comment = self.__getComment(thisTable,  db)
@@ -137,9 +137,24 @@ class DdManager(object):
                     return False
 
                 ddui = DataDrivenUi(self.iface)
-                ui = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents)
-                self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
-                self.ddLayers[layer.id()] = [thisTable,  db,  ui]
+                ui,  searchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  \
+                                              searchFields, showParents,  True,  inputMask,  searchMask)
+
+                if not inputMask or not searchMask:
+                    try:
+                        layerValues = self.ddLayers[layer.id]
+                    except KeyError:
+                        layerValues = None
+
+                    if layerValues != None:
+                        if not inputMask:
+                            ui = layerValues[2] # keep current
+                        if not searchMask:
+                            searchUi = layerValues[3] # keep current
+                #else:
+                    #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
+
+                self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
                 self.__connectSignals(layer)
 
                 if createAction:
@@ -182,7 +197,7 @@ class DdManager(object):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
         returns 1 if user clicked OK, 0 if CANCEL'''
 
-        layerValues = self.__getLayerValues(layer)
+        layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
         if layerValues != None:
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -199,6 +214,21 @@ class DdManager(object):
             result = 0
 
         return result
+
+    def showSearchForm(self,  layer):
+        '''api method showSearchForm: show the data-driven search mask for a layer
+        returns 1 if user clicked OK, 0 if CANCEL'''
+        layerValues = self.__getLayerValues(layer,  inputMask = False,  searchMask = True)
+
+        if layerValues != None:
+            #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
+            db = layerValues[1]
+            searchUi = layerValues[3]
+            dlg = DdSearchDialog(self,  searchUi,  layer,  db)
+            dlg.show()
+            result = dlg.exec_()
+
+            return result
 
     def showDdForm(self,  fid):
         aLayer = self.iface.activeLayer()
@@ -217,7 +247,8 @@ class DdManager(object):
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
             thisTable = layerValues[0]
             db = layerValues[1]
-            self.ddLayers[layer.id()] = [thisTable,  db,  ui]
+            searchUi = layerValues[3]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
 
     def setDb(self,  layer,  db):
         '''api method to set the db for a layer'''
@@ -228,7 +259,8 @@ class DdManager(object):
             oldDb = layerValues[1]
             self.__disconnectDb(oldDb)
             ui = layerValues[2]
-            self.ddLayers[layer.id()] = [thisTable,  db,  ui]
+            searchUi = layerValues[3]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
 
     def findPostgresLayer(self, db,  ddTable):
         layerList = self.iface.legendInterface().layers()
@@ -318,8 +350,8 @@ class DdManager(object):
         #self.__disconnectDb(db)
         #self.setDb(layer,  None)
 
-    def __getLayerValues(self,  layer):
-        '''Get this layer's from ddLayers or create them'''
+    def __getLayerValues(self,  layer,  inputMask = True,  searchMask = True):
+        '''Get this layer's values from ddLayers or create them'''
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
@@ -327,6 +359,17 @@ class DdManager(object):
                 layerValues = self.ddLayers[layer.id()]
             else:
                 layerValues = None
+
+        if layerValues != None:
+            # check if needed masks are initialized
+            inputMask = (inputMask and layerValues[2] == None)
+            searchMask = (searchMask and layerValues[3] == None)
+
+            if inputMask or searchMask:
+                if self.initLayer(layer,  skip = [],  inputMask = inputMask,  searchMask = searchMask):
+                    layerValues = self.ddLayers[layer.id()]
+                else:
+                    layerValues = None
 
         return layerValues
 
@@ -513,10 +556,11 @@ class DataDrivenUi(object):
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  showChildren):
-        """create the forms (DdFom instances) shown in the tabs of  the Dialog (DdDialog instance)"""
+    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  minMax, searchFields, showParents,  showChildren):
+        """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
+        ddSearchForms = []
         ddAttributes = self.getAttributes(thisTable, db,  labels,  minMax)
 
         for anAtt in ddAttributes:
@@ -573,9 +617,12 @@ class DataDrivenUi(object):
             #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
 
         ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
+        ddSearchFormWidget = DdFormWidget(thisTable,  needsToolBox)
 
         for anAttribute in orderedAttributes:
             #QtGui.QMessageBox.information(None, "orderedAttribute",  anAttribute.name)
+            addToSearch = True
+
             if anAttribute.type == "text":
                 ddInputWidget = DdTextEdit(anAttribute)
             elif anAttribute.type == "n2m":
@@ -586,6 +633,7 @@ class DataDrivenUi(object):
                     ddInputWidget = DdN2mTreeWidget(anAttribute)
             elif anAttribute.type == "table":
                 ddInputWidget = DdN2mTableWidget(anAttribute)
+                addToSearch = False
             else: # on line attributes
                 if anAttribute.isFK:
                     ddInputWidget = DdComboBox(anAttribute)
@@ -604,7 +652,15 @@ class DataDrivenUi(object):
 
             ddFormWidget.addInputWidget(ddInputWidget)
 
+            if addToSearch:
+                if len(searchFields) > 0:
+                   addToSearch = (searchFields.count(anAttribute.name) > 0)
+
+                if addToSearch:
+                    ddSearchFormWidget.addInputWidget(ddInputWidget)
+
         ddForms.append(ddFormWidget)
+        ddSearchForms.append(ddSearchFormWidget)
 
         #QtGui.QMessageBox.information(None, "attributes for",  thisTable.tableName + ": \n" + msg)
 
@@ -613,25 +669,39 @@ class DataDrivenUi(object):
             skip.append(thisTable.tableName)
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  False)
+                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  minMax,  searchFields, showParents,  False)
                 ddForms = ddForms + parentForms
+                ddSearchForms = ddSearchForms + parentSearchForms
 
-        return ddForms
+        return [ddForms,  ddSearchForms]
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  showParents = True,  showChildren = True):
+    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  \
+        searchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True):
         '''creates a default ui for this table (DdTable instance)
         skip is an array with field names to not show
         labels is a dict with entries: "fieldname": "label"
         fieldOrder is an array containing the field names in the order they should be shown
-        minMax is a dict with entries: "fieldname": [min, max] (use for numerical fields only!'''
+        minMax is a dict with entries: "fieldname": [min, max] (use for numerical fields only!
+        searchFields is an array with fields to be shown in the search form, if empty all fields are shown'''
 
-        ui = DdDialogWidget()
-        forms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  showParents,  showChildren)
+        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  searchFields,  showParents,  showChildren)
 
-        for ddFormWidget in forms:
-            ui.addFormWidget(ddFormWidget)
+        if  inputMask:
+            ui = DdDialogWidget()
 
-        return ui
+            for ddFormWidget in forms:
+                ui.addFormWidget(ddFormWidget)
+        else:
+            ui = None
+
+        if searchMask:
+            searchUi = DdDialogWidget()
+            for ddFormWidget in searchForms:
+                searchUi.addFormWidget(ddFormWidget)
+        else:
+            searchUi = None
+
+        return [ui, searchUi]
 
     def getParent(self,  thisTable,  db):
         ''' deprecated'''
@@ -1140,6 +1210,11 @@ class DdWidget(object):
         '''discards the input'''
         pass
 
+    def search(self,  layer):
+        '''creates search string
+        must be implemented in child classes'''
+        raise NotImplementedError("Should have implemented search")
+
     def debug(self,  msg):
         QtGui.QMessageBox.information(None, "debug",  unicode(msg))
 
@@ -1226,6 +1301,19 @@ class DdDialogWidget(DdWidget):
         for aForm in self.forms:
             aForm.discard()
 
+    def search(self,  layer):
+        searchSql = ""
+        for aForm in self.forms:
+            thisSearch = aForm.search(layer)
+
+            if thisSearch != "":
+                if searchSql != "":
+                    searchSql += " AND "
+
+                searchSql += thisSearch
+
+        return searchSql
+
 class DdFormWidget(DdWidget):
     '''DdForms are the content of DdDialog, each DdDialog needs at least one DdForm (tab).
     The class arranges its input widgets either in a QToolBox or in the DdDialogWidget's current tab'''
@@ -1249,10 +1337,10 @@ class DdFormWidget(DdWidget):
         pParent = self.parent
 
         while (True):
+            #QtGui.QMessageBox.information(None, "pParent",  str(self.parent) + "" + str(pParent))
             pParent = pParent.parentWidget()
-            #QtGui.QMessageBox.information(None, "pParent",  str(parent) + "" + str(pParent))
 
-            if isinstance(pParent,  DdDialog):
+            if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
                 self.parentDialog = pParent
                 break
 
@@ -1326,52 +1414,67 @@ class DdFormWidget(DdWidget):
     def initialize(self,  layer,  feature,  db):
         self.oldSubsetString = ""
 
-        if layer.id() == self.layer.id():
-            self.feature = feature
-            self.wasEditable = layer.isEditable()
+        if feature.id() == -3333: # search feature
+            for anInputWidget in self.inputWidgets:
+                anInputWidget.initialize(self.layer,  feature,  db)
         else:
-            layerPkList = layer.pendingPkAttributesList()
-
-            if len(layerPkList) != 1:
-                self.feature = None # no combined keys
+            if layer.id() == self.layer.id():
+                self.feature = feature
+                self.wasEditable = layer.isEditable()
             else:
-                layerPkIdx = layerPkList[0]
-                pkValue = feature[layerPkIdx]
+                layerPkList = layer.pendingPkAttributesList()
 
-                if pkValue == None:
-                    self.feature = None
+                if len(layerPkList) != 1:
+                    self.feature = None # no combined keys
                 else:
-                    pkValue = str(pkValue)
-                    thisPkList = self.layer.pendingPkAttributesList()
+                    layerPkIdx = layerPkList[0]
+                    pkValue = feature[layerPkIdx]
 
-                    if len(thisPkList) != 1:
+                    if pkValue == None:
                         self.feature = None
                     else:
-                        self.oldSubsetString = self.layer.subsetString()
-                        thisPkField = self.layer.pendingFields().field(thisPkList[0])
+                        pkValue = str(pkValue)
+                        thisPkList = self.layer.pendingPkAttributesList()
 
-                        if thisPkField.typeName().find("char") != -1:
-                            pkValue = "\'" + pkValue + "\'" # quote value as string
-
-                        newSubsetString = "\"" + thisPkField.name() + "\"=" + pkValue
-                        self.layer.setSubsetString(newSubsetString)
-                        self.layer.reload()
-
-                        if self.layer.featureCount() != 1:
-                            # there is no or several features matching our feature
+                        if len(thisPkList) != 1:
                             self.feature = None
                         else:
-                            self.feature = QgsFeature()
-                            featureFound = self.layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(self.feature)
+                            self.oldSubsetString = self.layer.subsetString()
+                            thisPkField = self.layer.pendingFields().field(thisPkList[0])
 
-                            if layer.isEditable():
-                                self.parent.setEnabled(self.__setLayerEditable())
+                            if thisPkField.typeName().find("char") != -1:
+                                pkValue = "\'" + pkValue + "\'" # quote value as string
 
-        if self.feature:
+                            newSubsetString = "\"" + thisPkField.name() + "\"=" + pkValue
+                            self.layer.setSubsetString(newSubsetString)
+                            self.layer.reload()
+                            self.layer.selectAll()
+
+                            if self.layer.selectedFeatureCount() != 1:
+                                # there is no or several features matching our feature
+                                self.feature = None
+                            else:
+                                self.feature = self.layer.selectedFeatures()[0]
+                                if layer.isEditable():
+                                    self.parent.setEnabled(self.__setLayerEditable())
+                                else:
+                                    self.parent.setEnabled(False)
+                                self.layer.removeSelection()
+                                #QgsFeature()
+
+                                #if self.layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(self.feature):
+                                #    if layer.isEditable():
+                                #        self.parent.setEnabled(self.__setLayerEditable())
+                                #    else:
+                                #        self.parent.setEnabled(False)
+                                #else:
+                                #    self.feature = None
+
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer,  self.feature,  db)
-        else:
-            self.parent.setEnabled(False)
+
+            if not self.feature:
+                self.parent.setEnabled(False)
 
         #QtGui.QMessageBox.information(None,  "initializing Form",  "passed layer: "+ layer.name() + "\n self.layer: " + self.layer.name() + "\n self.ddTable: " + self.ddTable.tableName + "\n self.feature: " + str(self.feature) + "\n self.parent.isEnabled: " + str(self.parent.isEnabled()))
 
@@ -1386,6 +1489,36 @@ class DdFormWidget(DdWidget):
 
         return inputOk
 
+    def search(self,  layer):
+        searchSql = ""
+        parentSql = ""
+        if self.parent.isEnabled():
+            for anInputWidget in self.inputWidgets:
+                thisSearch = anInputWidget.search(self.layer)
+
+                if thisSearch != "":
+                    if searchSql != "":
+                        searchSql += " AND "
+
+                    searchSql += thisSearch
+
+            if searchSql != "":
+                if layer.id() != self.layer.id(): # this is a parent layer
+                    layerPkList = layer.pendingPkAttributesList()
+                    selfLayerPkList = self.layer.pendingPkAttributesList()
+
+                    if len(layerPkList) == 1 and len(selfLayerPkList) == 1:
+                        layerPkName = layer.dataProvider().fields()[layerPkList[0]].name()
+                        selfLayerPkName = self.layer.dataProvider().fields()[selfLayerPkList[0]].name()
+                        parentSql = "\"" + layerPkName + "\" IN (SELECT \"" + selfLayerPkName + "\" FROM \"" + \
+                                            self.ddTable.schemaName + "\".\"" + self.ddTable.tableName + "\" WHERE "
+
+            if parentSql != "":
+                searchSql = parentSql + searchSql + ")"
+
+        self.close()
+        return searchSql
+
     def save(self,  layer,  feature,  db):
         hasChanges = False
         if self.parent.isEnabled():
@@ -1396,16 +1529,15 @@ class DdFormWidget(DdWidget):
         if hasChanges:
             if not self.layer.commitChanges():
                 DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + self.layer.name())
+                                                   QtGui.QApplication.UnicodeUTF8) + " " + self.layer.name())
         else:
             if not self.layer.rollBack():
                 DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + self.layer.name())
+                                                   QtGui.QApplication.UnicodeUTF8) + " " + self.layer.name())
         if self.wasEditable:
             self.layer.startEditing()
 
-        # reset previous subset string
-        self.layer.setSubsetString(self.oldSubsetString)
+        self.close()
         return hasChanges
 
     def discard(self):
@@ -1415,12 +1547,19 @@ class DdFormWidget(DdWidget):
                     anInputWidget.discard()
                 if not self.layer.rollBack():
                     DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + self.layer.name())
+                                                   QtGui.QApplication.UnicodeUTF8) + " "+ self.layer.name())
                 if self.wasEditable:
                     self.layer.startEditing()
 
+        self.close()
+
+    def close(self):
         # reset previous subset string
         self.layer.setSubsetString(self.oldSubsetString)
+        self.layer.reload()
+
+        if self.layer.geometryType() != 4:
+            self.parentDialog.ddManager.iface.mapCanvas().refresh()
 
 class DdInputWidget(DdWidget):
     '''abstract super class for any input widget, corresponds to a DdAttribute'''
@@ -1538,29 +1677,64 @@ class DdLineEdit(DdInputWidget):
         '''setup the label and add the inputWidget to parents formLayout'''
         #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
         self.label = self.createLabel(parent)
+        hLayout = QtGui.QHBoxLayout(parent)
+        self.searchCbx = QtGui.QComboBox(parent)
+        searchItems = ["=",  "!="]
+
+        if not self.attribute.isFK:
+            if self.attribute.isTypeChar():
+                searchItems += ["LIKE",  "ILIKE"]
+            elif (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
+                searchItems += [ ">",  "<",  ">=",  "<="]
+            else:
+                if  self.attribute.type == "text":
+                    searchItems += ["LIKE",  "ILIKE"]
+                elif  self.attribute.type == "date":
+                    searchItems += [ ">",  "<",  ">=",  "<="]
+
+        if not self.attribute.notNull:
+            searchItems += ["IS NULL"]
+
+        self.searchCbx.addItems(searchItems)
+        hLayout.addWidget(self.searchCbx)
         self.inputWidget = self.createInputWidget(parent)
         self.inputWidget.setToolTip(self.attribute.comment)
-        hLayout = QtGui.QHBoxLayout(parent)
         hLayout.addWidget(self.inputWidget)
         self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
                                                            QtGui.QApplication.UnicodeUTF8),  parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check this if you want to save an empty (or null) value.", None,
+        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want to save an empty (or null) value.", None,
                                                            QtGui.QApplication.UnicodeUTF8))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
+        hLayout.addStretch() # push the chk to the right of the dialog
         hLayout.addWidget(self.chk)
         parent.layout().addRow(self.label,  hLayout)
 
     def chkStateChanged(self,  newState):
         '''slot: disables the input widget if the null checkbox is checked and vice versa'''
         self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+        self.searchCbx.setEnabled(newState == QtCore.Qt.Unchecked)
         self.hasChanges = True
 
     def initialize(self,  layer,  feature,  db):
-        thisValue = self.getFeatureValue(layer,  feature,  db)
-        self.setValue(thisValue)
-        self.hasChanges = (feature.id() < 0) # register this change only for new feature
+        if feature == None:
+            self.searchCbx.setVisible(False)
+            self.manageChk(None)
+        else:
+            if feature.id() == -3333: # searchFeature
+                self.chk.setChecked(True)
+                self.chk.setVisible(True)
+                self.chk.setText(QtGui.QApplication.translate("DdInfo", "Ignore", None,
+                                                               QtGui.QApplication.UnicodeUTF8))
+                self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want this field to be ignored in the search.", None,
+                                                               QtGui.QApplication.UnicodeUTF8))
+                self.searchCbx.setVisible(True)
+            else:
+                self.searchCbx.setVisible(False)
+                thisValue = self.getFeatureValue(layer,  feature,  db)
+                self.setValue(thisValue)
+                self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
     def checkInput(self):
         thisValue = self.getValue()
@@ -1593,6 +1767,36 @@ class DdLineEdit(DdInputWidget):
             layer.changeAttributeValue(feature.id(),  fieldIndex,  thisValue,  False)
 
         return self.hasChanges
+
+    def search(self,  layer):
+        '''create search sql-string'''
+        searchSql = ""
+        thisValue = self.getValue()
+        operator = self.searchCbx.currentText()
+
+        if not self.chk.isChecked():
+            if operator == "IS NULL":
+                searchSql += "\"" + self.attribute.name + "\" " + operator
+            else:
+                if thisValue != None:
+                    if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
+                        thisValue = str(thisValue)
+                    elif self.attribute.isTypeChar():
+                        thisValue = "\'" + unicode(thisValue) + "\'"
+                    else:
+                        if self.attribute.type == "bool":
+                            if thisValue:
+                                thisValue = "\'t\'"
+                            else:
+                                thisValue = "\'f\'"
+                        elif self.attribute.type == "text":
+                            thisValue = "\'" + unicode(thisValue) + "\'"
+                        elif self.attribute.type == "date":
+                            thisValue = thisValue.toString("yyyy-MM-dd")
+
+                    searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
+
+        return searchSql
 
 class QInt64Validator(QtGui.QValidator):
     '''a QValidator for int64 values'''
@@ -1680,12 +1884,11 @@ class DdLineEditDouble(DdLineEdit):
             thisValue = ""
         else:
             # convert double to a locale string representation
-            thisDouble,  ok = thisValue.toDouble()
-
-            if ok:
+            try:
+                thisDouble = float(thisValue)
                 loc = QtCore.QLocale.system()
                 thisValue = loc.toString(thisDouble)
-            else:
+            except ValueError:
                 thisValue = ""
 
         self.inputWidget.setText(thisValue)
@@ -2018,7 +2221,7 @@ class DdN2mWidget(DdInputWidget):
         while (True):
             pParent = pParent.parentWidget()
 
-            if isinstance(pParent,  DdDialog):
+            if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
                 self.parentDialog = pParent
                 break
 
@@ -2035,7 +2238,8 @@ class DdN2mWidget(DdInputWidget):
         try:
             self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
         except KeyError:
-            self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  showParents = doShowParents)
+            self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  \
+                                                  showParents = doShowParents,  searchMask = False) # reinitialize inputMask only
 
         self.featureId = feature.id()
 
@@ -2045,10 +2249,11 @@ class DdN2mWidget(DdInputWidget):
         #QtGui.QMessageBox.information(None, "",  subsetString + "\n" + self.attribute.name)
         self.tableLayer.setSubsetString(subsetString)
         self.tableLayer.reload()
-
         self.forEdit = self.featureId > 0
+
         if self.forEdit:
             self.forEdit = layer.isEditable()
+
             if self.forEdit:
                 self.forEdit = self.tableLayer.isEditable()
 
@@ -2075,26 +2280,27 @@ class DdN2mWidget(DdInputWidget):
         return newFeature
 
     def save(self,  layer,  feature,  db):
-        if self.hasChanges:
-            if self.tableLayer.isEditable():
-                if self.tableLayer.isModified():
-                    if self.tableLayer.commitChanges():
-                        return True
+        if self.forEdit:
+            if self.hasChanges:
+                if self.tableLayer.isEditable():
+                    if self.tableLayer.isModified():
+                        if self.tableLayer.commitChanges():
+                            return True
+                        else:
+                            DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
+                                                                       QtGui.QApplication.UnicodeUTF8)  + " " + self.tableLayer.name())
+                            self.discard()
                     else:
-                        DdError(QtGui.QApplication.translate("DdError", "Could not save changes to layer: ", None,
-                                                                   QtGui.QApplication.UnicodeUTF8)  + self.tableLayer.name())
                         self.discard()
-                else:
-                    self.discard()
-        else:
-            self.discard()
+            else:
+                self.discard()
         return False
 
     def discard(self):
         if self.tableLayer.isEditable():
             if not self.tableLayer.rollBack():
                 DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name())
+                                                   QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
                 return None
 
 class DdN2mListWidget(DdN2mWidget):
@@ -2112,7 +2318,7 @@ class DdN2mListWidget(DdN2mWidget):
             relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
             itemId = thisItem.id
 
-            if thisItem.checkState(0) == 2:
+            if thisItem.checkState() == 2:
                 feat = self.createFeature()
                 feat.setAttribute(featureIdField,  self.featureId)
                 feat.setAttribute(relatedIdField,  itemId)
@@ -2126,7 +2332,8 @@ class DdN2mListWidget(DdN2mWidget):
                             idToDelete = aFeature.id()
                             self.tableLayer.deleteFeature(idToDelete)
                             break
-            self.hasChanges = True
+
+        self.hasChanges = True
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QListWidget(parent) # defaultInputWidget
@@ -2135,27 +2342,51 @@ class DdN2mListWidget(DdN2mWidget):
         return inputWidget
 
     def initialize(self,  layer,  feature,  db):
-        self.initializeLayer(layer,  feature,  db)
-        query = QtSql.QSqlQuery(db)
-        query.prepare(self.attribute.displayStatement)
-        query.bindValue(":featureId", feature.id())
-        query.exec_()
+        if feature != None:
+            self.initializeLayer(layer,  feature,  db)
+            query = QtSql.QSqlQuery(db)
+            query.prepare(self.attribute.displayStatement)
+            query.bindValue(":featureId", feature.id())
+            query.exec_()
 
-        if query.isActive():
-            self.inputWidget.clear()
-            self.inputWidget.itemChanged.disconnect(self.registerChange)
-            while query.next(): # returns false when all records are done
-                parentId = int(query.value(0))
-                parent = unicode(query.value(1))
-                checked = int(query.value(2))
-                parentItem = QtGui.QListWidgetItem(parent)
-                parentItem.id = parentId
-                parentItem.setCheckState(checked)
-                self.inputWidget.addItem(parentItem)
-            query.finish()
-            self.inputWidget.itemChanged.connect(self.registerChange)
-        else:
-            DbError(query)
+            if query.isActive():
+                self.inputWidget.clear()
+                self.inputWidget.itemChanged.disconnect(self.registerChange)
+                while query.next(): # returns false when all records are done
+                    parentId = int(query.value(0))
+                    parent = unicode(query.value(1))
+                    checked = int(query.value(2))
+                    parentItem = QtGui.QListWidgetItem(parent)
+                    parentItem.id = parentId
+                    parentItem.setCheckState(checked)
+                    self.inputWidget.addItem(parentItem)
+                query.finish()
+                self.inputWidget.itemChanged.connect(self.registerChange)
+            else:
+                DbError(query)
+
+    def search(self,  layer):
+        searchSql = ""
+
+        if self.hasChanges:
+            layerPkList = layer.pendingPkAttributesList()
+            ids = ""
+
+            for i in range(self.inputWidget.count() -1):
+                anItem = self.inputWidget.item(i)
+                if anItem.checkState() == 2:
+                    if ids != "":
+                        ids += ","
+                    ids += str(anItem.id)
+
+            if len(layerPkList) == 1 and ids != "":
+                layerPkName = layer.dataProvider().fields()[layerPkList[0]].name()
+                selfLayerPkName = self.attribute.relationFeatureIdField
+                searchSql = "\"" + layerPkName + "\" IN (SELECT \"" + selfLayerPkName + "\" FROM \"" + \
+                                    self.attribute.table.schemaName + "\".\"" + self.attribute.table.tableName + "\" WHERE \"" + \
+                                    self.attribute.relationRelatedIdField + "\" IN (" + ids + "))"
+
+        return searchSql
 
 class DdN2mTreeWidget(DdN2mWidget):
     '''input widget (clickable QTreeWidget) for n2m relations with more than one additional field in the related table
@@ -2168,8 +2399,8 @@ class DdN2mTreeWidget(DdN2mWidget):
         return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
 
     def registerChange(self,  thisItem,  thisColumn):
-        if self.forEdit:
-            if thisColumn == 0:
+        if thisColumn == 0:
+            if self.forEdit:
                 featureIdField = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
                 relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
                 itemId = thisItem.id
@@ -2188,7 +2419,8 @@ class DdN2mTreeWidget(DdN2mWidget):
                                 idToDelete = aFeature.id()
                                 self.tableLayer.deleteFeature(idToDelete)
                                 break
-                self.hasChanges = True
+
+            self.hasChanges = True
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QTreeWidget(parent)
@@ -2200,41 +2432,65 @@ class DdN2mTreeWidget(DdN2mWidget):
         return inputWidget
 
     def initialize(self,  layer,  feature,  db):
-        self.initializeLayer(layer,  feature,  db)
-        query = QtSql.QSqlQuery(db)
-        query.prepare(self.attribute.displayStatement)
-        query.bindValue(":featureId", self.featureId)
-        query.exec_()
+        if feature != None:
+            self.initializeLayer(layer,  feature,  db)
+            query = QtSql.QSqlQuery(db)
+            query.prepare(self.attribute.displayStatement)
+            query.bindValue(":featureId", self.featureId)
+            query.exec_()
 
-        if query.isActive():
-            self.inputWidget.clear()
-            self.inputWidget.itemChanged.disconnect(self.registerChange)
+            if query.isActive():
+                self.inputWidget.clear()
+                self.inputWidget.itemChanged.disconnect(self.registerChange)
 
-            while query.next(): # returns false when all records are done
-                parentId = int(query.value(0))
-                parent = unicode(query.value(1))
-                checked = int(query.value(2))
-                parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
-                parentItem.id = parentId
-                parentItem.setCheckState(0,  checked)
-                parentItem.setText(0,  parent)
+                while query.next(): # returns false when all records are done
+                    parentId = int(query.value(0))
+                    parent = unicode(query.value(1))
+                    checked = int(query.value(2))
+                    parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
+                    parentItem.id = parentId
+                    parentItem.setCheckState(0,  checked)
+                    parentItem.setText(0,  parent)
 
-                for i in range(len(self.attribute.fieldList)):
-                    val = query.value(i + 3)
+                    for i in range(len(self.attribute.fieldList)):
+                        val = query.value(i + 3)
 
-                    if val != None:
-                        childItem = QtGui.QTreeWidgetItem(parentItem)
-                        childItem.setText(0,  val)
-                        parentItem.addChild(childItem)
-                    else: # no more fields left
-                        break
+                        if val != None:
+                            childItem = QtGui.QTreeWidgetItem(parentItem)
+                            childItem.setText(0,  val)
+                            parentItem.addChild(childItem)
+                        else: # no more fields left
+                            break
 
-                parentItem.setExpanded(False)
-                self.inputWidget.addTopLevelItem(parentItem)
-            query.finish()
-            self.inputWidget.itemChanged.connect(self.registerChange)
-        else:
-            DbError(query)
+                    parentItem.setExpanded(False)
+                    self.inputWidget.addTopLevelItem(parentItem)
+                query.finish()
+                self.inputWidget.itemChanged.connect(self.registerChange)
+            else:
+                DbError(query)
+
+    def search(self,  layer):
+        searchSql = ""
+
+        if self.hasChanges:
+            layerPkList = layer.pendingPkAttributesList()
+            ids = ""
+
+            for i in range(self.inputWidget.topLevelItemCount() -1):
+                anItem = self.inputWidget.topLevelItem(i)
+                if anItem.checkState(0) == 2:
+                    if ids != "":
+                        ids += ","
+                    ids += str(anItem.id)
+
+            if len(layerPkList) == 1 and ids != "":
+                layerPkName = layer.dataProvider().fields()[layerPkList[0]].name()
+                selfLayerPkName = self.attribute.relationFeatureIdField
+                searchSql = "\"" + layerPkName + "\" IN (SELECT \"" + selfLayerPkName + "\" FROM \"" + \
+                                    self.attribute.table.schemaName + "\".\"" + self.attribute.table.tableName + "\" WHERE \"" + \
+                                    self.attribute.relationRelatedIdField + "\" IN (" + ids + "))"
+
+        return searchSql
 
 class DdN2mTableWidget(DdN2mWidget):
     '''a input widget for n-to-m relations with more than one field in the relation table
@@ -2268,12 +2524,10 @@ class DdN2mTableWidget(DdN2mWidget):
         return inputWidget
 
     def initialize(self,  layer,  feature,  db):
-        self.initializeLayer(layer,  feature,  db,  self.attribute.showParents)
-        #self.inputWidget.clear()
+        if feature != None:
+            self.initializeLayer(layer,  feature,  db,  self.attribute.showParents)
+            #self.inputWidget.clear()
 
-        if not self.forEdit:
-            self.addButton.setEnabled(False)
-        else:
             # read the values for any foreignKeys
             for anAtt in self.attribute.attributes:
                 if anAtt.isFK:
@@ -2306,8 +2560,11 @@ class DdN2mTableWidget(DdN2mWidget):
 
             self.tableLayer.removeSelection()
 
-            if self.attribute.maxRows:
-                self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+            if self.forEdit:
+                if self.attribute.maxRows:
+                    self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+            else:
+                self.addButton.setEnabled(False)
 
     def fillRow(self, thisRow, thisFeature):
         '''fill thisRow with values from thisFeature'''
@@ -2369,7 +2626,7 @@ class DdN2mTableWidget(DdN2mWidget):
         while (True):
             pParent = pParent.parentWidget()
 
-            if isinstance(pParent,  DdDialog):
+            if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
                 self.parentDialog = pParent
                 break
 

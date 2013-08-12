@@ -82,7 +82,7 @@ class DataDrivenInputMask:
                                                                  None, QtGui.QApplication.UnicodeUTF8)
         self.iface.addPluginToMenu(self.menuLabel, self.action)
 
-         # Create action that will start plugin configuration
+        # Create action that will start plugin configuration
         self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # connect the action to the run method
@@ -91,12 +91,22 @@ class DataDrivenInputMask:
         # Add toolbar button and menu item
         self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
 
+        # Create action that will start plugin configuration
+        self.actionSearch = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Search Form",
+                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        # connect the action to the run method
+        self.actionSearch.triggered.connect(self.showSearchForm)
+
+        # Add menu item
+        self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
+
     def unload(self):
         """Remove the plugin menu item and icon"""
         self.app.ddManager.quit()
         #QtGui.QMessageBox.information(None, "", "unload")
         self.iface.removePluginMenu(self.menuLabel, self.action)
         self.iface.removePluginMenu(self.menuLabel, self.actionSel)
+        self.iface.removePluginMenu(self.menuLabel, self.actionSearch)
 
     def initializeLayer(self):
         """Create the mask for the active layer"""
@@ -122,3 +132,12 @@ class DataDrivenInputMask:
             else:
                 DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
                                                                QtGui.QApplication.UnicodeUTF8) + layer.name())
+
+    def showSearchForm(self):
+        """Show the search form for the active layer"""
+        layer = self.iface.activeLayer()
+        if 0 != layer.type():   # not a vector layer
+            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
+                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
+        else:
+            self.app.ddManager.showSearchForm(layer)
