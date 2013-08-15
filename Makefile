@@ -23,7 +23,7 @@ PLUGIN_UPLOAD = $(CURDIR)/plugin_upload.py
 # Makefile for a PyQGIS plugin
 
 # translation
-SOURCES = datadriveninputmask.py __init__.py dddialog.py ddui.py
+SOURCES = datadriveninputmask.py __init__.py dddialog.py ddui.py ddmanager.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
 TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
@@ -31,7 +31,7 @@ TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
 PLUGINNAME = DataDrivenInputMask
 
-PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py
+PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py ddmanager.py
 
 EXTRAS = metadata.txt
 

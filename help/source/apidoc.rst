@@ -4,7 +4,7 @@ API Documentation
 DdManager
 ```````````````
 
-.. autoclass:: ddui.DdManager
+.. autoclass:: ddmanager.DdManager
     :members: initLayer, showFeatureForm, addAction, removeAction, setDb, setUi
     
 

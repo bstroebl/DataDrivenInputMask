@@ -9,6 +9,10 @@ Modules
     :members:
     :undoc-members:
 
+.. automodule:: ddmanager
+    :members:
+    :undoc-members:
+
 .. automodule:: ddattribute
     :members:
     :undoc-members:

@@ -27,8 +27,7 @@ Applies a data-driven input mask to any PostGIS-Layer
 from PyQt4 import QtCore,  QtGui
 from qgis.core import *
 from dderror import DdError
-
-from ddui import DdManager
+from ddmanager import DdManager
 import os.path, sys
 
 class DataDrivenInputMask:
