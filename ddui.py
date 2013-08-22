@@ -29,7 +29,6 @@ from PyQt4 import QtCore,  QtGui,  QtSql
 from qgis.core import *
 from dderror import DdError,  DbError
 from ddattribute import *
-from dddialog import DdDialog,  DdSearchDialog
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
@@ -2175,10 +2174,6 @@ class DdN2mTableWidget(DdN2mWidget):
                 self.parentDialog = pParent
                 break
 
-
-
-
-
     # SLOTS
     def selectionChanged(self):
         '''slot to be called when the QTableWidget's selection has changed'''
@@ -2188,7 +2183,7 @@ class DdN2mTableWidget(DdN2mWidget):
         '''slot to be called when the user double clicks on the QTableWidget'''
         featureItem = self.inputWidget.item(thisRow,  0)
         thisFeature = featureItem.feature
-        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
+        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = False)
 
         if result == 1: # user clicked OK
             # make sure user did not change parentFeatureId

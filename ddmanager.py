@@ -136,10 +136,14 @@ class DdManager(object):
         for act in wereActions:
             layer.actions().addAction(act.type(),  act.name(), act.action())
 
-    def showFeatureForm(self,  layer,  feature):
+    def showFeatureForm(self,  layer,  feature,  showParents = True):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
         returns 1 if user clicked OK, 0 if CANCEL'''
 
+        parentsInMask = self.__hasParentsInMask
+
+        if parentsInMask and not showParents:
+            self.initLayer(layer)
         layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
         if layerValues != None:
@@ -180,10 +184,6 @@ class DdManager(object):
 
         if featureFound:
             self.showFeatureForm(aLayer,  feat)
-
-    def hasParentsInMask(self,  layer):
-        layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
-        return layerValues[4]
 
     def setUi(self,  layer,  ui):
         '''api method to exchange the default ui with a custom ui'''
@@ -319,6 +319,10 @@ class DdManager(object):
                     layerValues = None
 
         return layerValues
+
+    def __hasParentsInMask(self,  layer):
+        layerValues = self.__getLayerValues(layer)
+        return layerValues[4]
 
     def __getComment(self,  thisTable,  db):
         ''' query the DB to get a table's comment'''
