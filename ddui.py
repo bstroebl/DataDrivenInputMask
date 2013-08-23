@@ -29,6 +29,7 @@ from PyQt4 import QtCore,  QtGui,  QtSql
 from qgis.core import *
 from dderror import DdError,  DbError
 from ddattribute import *
+from dddialog import DdDialog,  DdSearchDialog
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
@@ -221,12 +222,16 @@ class DataDrivenUi(object):
 
     def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  \
         searchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True):
-        '''creates a default ui for this table (DdTable instance)
-        skip is an array with field names to not show
-        labels is a dict with entries: "fieldname": "label"
-        fieldOrder is an array containing the field names in the order they should be shown
-        minMax is a dict with entries: "fieldname": [min, max] (use for numerical fields only!
-        searchFields is an array with fields to be shown in the search form, if empty all fields are shown'''
+        '''creates default uis for this table (DdTable instance)
+        skip [array [string]]: field names to not show
+        labels [dict] with entries: "fieldname": "label"
+        fieldOrder [array[string]]: containing the field names in the order they should be shown
+        minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
+        searchFields [array[string]] with fields to be shown in the search form, if empty all fields are shown
+        showParents [Boolean] show tabs for 1-to-1 relations (parents)
+        showChildren [Boolean]: show tabs for 1-to-1 relations (children)
+        inputMask [Boolean]: create a data-edit mask
+        searchMask [Boolean]: create a data-search mask'''
 
         forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  searchFields,  showParents,  showChildren)
 
@@ -948,7 +953,8 @@ class DdFormWidget(DdWidget):
                         break
                 ddInputWidget.setupUi(parent,  db)
 
-        self.layer = self.__getLayer(db)
+        if self.layer == None: # has not been passed to __init__
+            self.layer = self.__getLayer(db)
 
     def addInputWidget(self,  ddInputWidget):
         '''insert this DdInputWidget into this DdForm'''

@@ -46,9 +46,21 @@ class DdManager(object):
         return "<ddui.DdManager>"
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  searchFields = [],  \
-        showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True):
+        showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
+        inputUi = None,  searchUi = None):
         '''api method initLayer: initialize the layer with a data-driven input mask
-        Returns a Boolean stating the success of the initialization'''
+        Returns a Boolean stating the success of the initialization
+        Paramters: see also ddui.DataDrivenUi.createUi()
+        createAction [Boolean]: add an action to the layer's list of actions
+        db [QtSql.QSqlDatabase]
+        inputUi [ddui.DdDialogWidget]: apply this inputUi
+        searchUi [ddui.DdDialogWidget]: apply this as search ui'''
+
+        if inputUi != None:
+            inputMask = False # do not make on but use the one provided
+
+        if searchUi != None:
+            searchMask = False # do not make on but use the one provided
 
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
@@ -79,25 +91,38 @@ class DdManager(object):
                                                                        QtGui.QApplication.UnicodeUTF8) + layer.name())
                     return False
 
-                ddui = DataDrivenUi(self.iface)
-                ui,  searchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  \
-                                              searchFields, showParents,  True,  inputMask,  searchMask)
+                if inputMask or searchMask:
+                    # we want at least one automatically created mask
+                    ddui = DataDrivenUi(self.iface)
+                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  \
+                                                  searchFields, showParents,  True,  inputMask,  searchMask)
+
+                    if inputUi == None:
+                        # use the automatically created mask if none has been provided
+                        inputUi = autoInputUi
+
+                    if searchUi == None:
+                        searchUi = autoSearchUi
 
                 if not inputMask or not searchMask:
+                    # at least one mask shall not be initialized
                     try:
                         layerValues = self.ddLayers[layer.id]
+                        # see if the layer has been initialized already
                     except KeyError:
                         layerValues = None
 
                     if layerValues != None:
-                        if not inputMask:
-                            ui = layerValues[2] # keep current
-                        if not searchMask:
+                        # layer has been initialized before!
+                        if not inputMask and inputUi == None:
+                            # user did not provide a mask
+                            inputUi = layerValues[2] # keep current
+                        if not searchMask and searchUi == None:
                             searchUi = layerValues[3] # keep current
                 #else:
                     #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
 
-                self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents]
+                self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents]
                 self.__connectSignals(layer)
 
                 if createAction:
