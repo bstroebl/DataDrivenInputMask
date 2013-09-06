@@ -883,16 +883,6 @@ class DdFormWidget(DdWidget):
         return "<ddui.DdFormWidget>"
 
     def __getLayer(self,  db):
-        pParent = self.parent
-
-        while (True):
-            #QtGui.QMessageBox.information(None, "pParent",  str(self.parent) + "" + str(pParent))
-            pParent = pParent.parentWidget()
-
-            if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
-                self.parentDialog = pParent
-                break
-
         # find the layer in the project
         layer = self.parentDialog.ddManager.findPostgresLayer(db,  self.ddTable)
 
@@ -917,8 +907,17 @@ class DdFormWidget(DdWidget):
         return ok
 
     def setupUi(self,  parent,  db):
-        #QtGui.QMessageBox.information(None, "DdFormWidget setupUi", parent.objectName())
         self.parent = parent
+        pParent = self.parent
+
+        while (True):
+            # get the DdDialog instance to ahve access to ddManager
+            pParent = pParent.parentWidget()
+
+            if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
+                self.parentDialog = pParent
+                break
+
         sorted = False
         labels = []
         for ddInputWidget in self.inputWidgets:
