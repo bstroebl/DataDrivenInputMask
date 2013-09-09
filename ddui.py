@@ -101,6 +101,9 @@ class DataDrivenUi(object):
     def __str__(self):
         return "<ddui.DataDrivenUi>"
 
+    def __debug(self,  title,  str):
+        QgsMessageLog.logMessage(title + "\n" + str)
+
     def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  minMax, searchFields, showParents,  showChildren):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
@@ -1774,7 +1777,7 @@ class DdN2mWidget(DdInputWidget):
                 self.parentDialog = pParent
                 break
 
-    def initializeLayer(self,  layer,  feature,  db,  doShowParents = False):
+    def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False):
         # find the layer in the project
         self.tableLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.table)
 
@@ -1782,20 +1785,19 @@ class DdN2mWidget(DdInputWidget):
             # load the layer into the project
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 
-        #QtGui.QMessageBox.information(None, "setupUi",  self.attribute.name + ": " + self.tableLayer.name())
-        # create a DdUi for the layer without the featureIdField it it has not yet been created
-        try:
-            self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
-        except KeyError:
-            self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  \
-                                                  showParents = doShowParents,  searchMask = False) # reinitialize inputMask only
+        if withMask:
+            # create a DdUi for the layer without the featureIdField it it has not yet been created
+            try:
+                self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
+            except KeyError:
+                self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  \
+                                                      showParents = doShowParents,  searchMask = False) # reinitialize inputMask only
 
         self.featureId = feature.id()
 
         # reduce the features in self.tableLayer to those related to feature
         subsetString = self.attribute.subsetString
         subsetString += str(self.featureId)
-        #QtGui.QMessageBox.information(None, "",  subsetString + "\n" + self.attribute.name)
         self.tableLayer.setSubsetString(subsetString)
         self.tableLayer.reload()
         self.forEdit = self.featureId > 0
@@ -2074,7 +2076,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:
-            self.initializeLayer(layer,  feature,  db,  self.attribute.showParents)
+            self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
             #self.inputWidget.clear()
 
             # read the values for any foreignKeys

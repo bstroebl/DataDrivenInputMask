@@ -40,7 +40,7 @@ class DdManager(object):
         self.ddLayers = dict()
 
     def __debug(self,  title,  str):
-        QtGui.QMessageBox.information(None,  title,  str)
+        QgsMessageLog.logMessage(title + "\n" + str)
 
     def __str__(self):
         return "<ddui.DdManager>"
@@ -56,21 +56,80 @@ class DdManager(object):
         inputUi [ddui.DdDialogWidget]: apply this inputUi
         searchUi [ddui.DdDialogWidget]: apply this as search ui'''
 
+        self.__debug("initLayer",  layer.name() + " showParents: " + str(showParents))
         if inputUi != None:
-            inputMask = False # do not make on but use the one provided
+            inputMask = False # do not make one but use the one provided
 
         if searchUi != None:
-            searchMask = False # do not make on but use the one provided
+            searchMask = False # do not make one but use the one provided
 
+        if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
+            DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
+                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
+            return False
+        else:
+            if not db:
+                db = self.__createDb(layer)
+
+            thisTable = self.makeDdTable(layer,  db)
+
+            if thisTable == None:
+                return False
+            else:
+                if inputMask or searchMask:
+                    # we want at least one automatically created mask
+                    ddui = DataDrivenUi(self.iface)
+                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  \
+                                                  searchFields, showParents,  True,  inputMask,  searchMask)
+
+                    if inputUi == None:
+                        # use the automatically created mask if none has been provided
+                        inputUi = autoInputUi
+
+                    if searchUi == None:
+                        searchUi = autoSearchUi
+
+                    if not inputMask or not searchMask:
+                        # at least one mask shall not be initialized
+                        try:
+                            layerValues = self.ddLayers[layer.id]
+                            # see if the layer has been initialized already
+                        except KeyError:
+                            layerValues = None
+
+                        if layerValues != None:
+                            # layer has been initialized before!
+                            if not inputMask and inputUi == None:
+                                # user did not provide a mask
+                                inputUi = layerValues[2] # keep current
+                            if not searchMask and searchUi == None:
+                                searchUi = layerValues[3] # keep current
+                    #else:
+                        #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
+
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents]
+                    self.__connectSignals(layer)
+
+                    if createAction:
+                        self.addAction(layer)
+
+                    return True
+                else:
+                    # no auto masks, both were provided
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents]
+                    return True
+
+    def makeDdTable(self,  layer,  db = None):
+        '''make a DdTable object from the passed in layer, returns None, if layer is not suitable'''
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
                                                            QtGui.QApplication.UnicodeUTF8) + layer.name())
-            return False
+            return None
         else:
             if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
                 DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
                                                                QtGui.QApplication.UnicodeUTF8) + layer.name())
-                return False
+                return None
             else:
                 if not db:
                     db = self.__createDb(layer)
@@ -89,46 +148,9 @@ class DdManager(object):
                 if not self.__isTable(thisTable,  db):
                     DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table: ", None,
                                                                        QtGui.QApplication.UnicodeUTF8) + layer.name())
-                    return False
-
-                if inputMask or searchMask:
-                    # we want at least one automatically created mask
-                    ddui = DataDrivenUi(self.iface)
-                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  \
-                                                  searchFields, showParents,  True,  inputMask,  searchMask)
-
-                    if inputUi == None:
-                        # use the automatically created mask if none has been provided
-                        inputUi = autoInputUi
-
-                    if searchUi == None:
-                        searchUi = autoSearchUi
-
-                if not inputMask or not searchMask:
-                    # at least one mask shall not be initialized
-                    try:
-                        layerValues = self.ddLayers[layer.id]
-                        # see if the layer has been initialized already
-                    except KeyError:
-                        layerValues = None
-
-                    if layerValues != None:
-                        # layer has been initialized before!
-                        if not inputMask and inputUi == None:
-                            # user did not provide a mask
-                            inputUi = layerValues[2] # keep current
-                        if not searchMask and searchUi == None:
-                            searchUi = layerValues[3] # keep current
-                #else:
-                    #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
-
-                self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents]
-                self.__connectSignals(layer)
-
-                if createAction:
-                    self.addAction(layer)
-
-                return True
+                    return None
+                else:
+                    return thisTable
 
     def addAction(self,  layer,  actionName = u'showDdForm'):
         '''api method to add an action to the layer with a self defined name'''
@@ -165,11 +187,14 @@ class DdManager(object):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
         returns 1 if user clicked OK, 0 if CANCEL'''
 
-        parentsInMask = self.__hasParentsInMask
-
-        if parentsInMask and not showParents:
-            self.initLayer(layer)
         layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
+
+        if layerValues != None:
+            parentsInMask = layerValues[4]
+
+            if parentsInMask and not showParents:
+                self.initLayer(layer,  showParents = False,  inputMask = True,  searchMask = False)
+                layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
         if layerValues != None:
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -324,6 +349,7 @@ class DdManager(object):
 
     def __getLayerValues(self,  layer,  inputMask = True,  searchMask = True):
         '''Get this layer's values from ddLayers or create them'''
+
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
@@ -344,10 +370,6 @@ class DdManager(object):
                     layerValues = None
 
         return layerValues
-
-    def __hasParentsInMask(self,  layer):
-        layerValues = self.__getLayerValues(layer)
-        return layerValues[4]
 
     def __getComment(self,  thisTable,  db):
         ''' query the DB to get a table's comment'''
