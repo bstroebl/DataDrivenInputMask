@@ -56,7 +56,6 @@ class DdManager(object):
         inputUi [ddui.DdDialogWidget]: apply this inputUi
         searchUi [ddui.DdDialogWidget]: apply this as search ui'''
 
-        self.__debug("initLayer",  layer.name() + " showParents: " + str(showParents))
         if inputUi != None:
             inputMask = False # do not make one but use the one provided
 
