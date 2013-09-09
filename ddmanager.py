@@ -45,16 +45,27 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  searchFields = [],  \
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  searchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
         inputUi = None,  searchUi = None):
-        '''api method initLayer: initialize the layer with a data-driven input mask
+        '''api method initLayer: initialize this layer with a data-driven input mask
         Returns a Boolean stating the success of the initialization
-        Paramters: see also ddui.DataDrivenUi.createUi()
-        createAction [Boolean]: add an action to the layer's list of actions
-        db [QtSql.QSqlDatabase]
-        inputUi [ddui.DdDialogWidget]: apply this inputUi
-        searchUi [ddui.DdDialogWidget]: apply this as search ui'''
+        Paramters:
+        - layer [QgsVectorLayer]
+        - skip [array [string]]: field names to not show
+        - labels [dict] with entries: "fieldname": "label"
+        - fieldOrder [array[string]]: containing the field names in the order they should be shown
+        - fieldGroups [dict] with entries: fieldIndex: [tabTitle, tabTooltip] for each group a tab is created
+        and the fields from fieldIndex onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
+        - minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
+        - searchFields [array[string]] with fields to be shown in the search form, if empty all fields are shown
+        - showParents [Boolean] show tabs for 1-to-1 relations (parents)
+        - createAction [Boolean]: add an action to the layer's list of actions
+        - db [QtSql.QSqlDatabase]
+        - inputMask [Boolean]: create a data-edit mask
+        - searchMask [Boolean]: create a data-search mask
+        - inputUi [ddui.DdDialogWidget]: apply this inputUi
+        - searchUi [ddui.DdDialogWidget]: apply this as search ui'''
 
         if inputUi != None:
             inputMask = False # do not make one but use the one provided
@@ -78,7 +89,7 @@ class DdManager(object):
                 if inputMask or searchMask:
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
-                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  \
+                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
                                                   searchFields, showParents,  True,  inputMask,  searchMask)
 
                     if inputUi == None:

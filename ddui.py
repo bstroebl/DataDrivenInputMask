@@ -104,7 +104,7 @@ class DataDrivenUi(object):
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  minMax, searchFields, showParents,  showChildren):
+    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax, searchFields, showParents,  showChildren):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
@@ -162,14 +162,43 @@ class DataDrivenUi(object):
             orderedAttributes.extend(unorderedAttributes)
         else:
             orderedAttributes = unorderedAttributes
-            #QtGui.QMessageBox.information(None, "attribute",  anAttribute.name)
 
-        ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
-        ddSearchFormWidget = DdFormWidget(thisTable,  needsToolBox)
+        if len(fieldGroups) == 0:
+            # we only need one form
+            ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
+            ddSearchFormWidget = DdFormWidget(thisTable,  needsToolBox)
+        else:
+            ddFormWidget = None
+            # check if fieldOrder and fieldGroups match
+            for key in fieldGroups.iterkeys():
+                try:
+                    orderedAttributes[key]
+                except indexError:
+                    DdError(QtGui.QApplication.translate("DdError",
+                        "Parameter fieldGroups has a higher index than parameter fieldOrder provides!",
+                        None,  QtGui.QApplication.UnicodeUTF8))
 
-        for anAttribute in orderedAttributes:
-            #QtGui.QMessageBox.information(None, "orderedAttribute",  anAttribute.name)
+        for i in range(len(orderedAttributes)):
+            anAttribute = orderedAttributes[i]
             addToSearch = True
+
+            for key in fieldGroups.iterkeys():
+                if key == i:
+                    # we need a new form
+                    if ddFormWidget != None:
+                        # there is one active, add to the lists
+                        ddForms.append(ddFormWidget)
+                        ddSearchForms.append(ddSearchFormWidget)
+
+                    tabTitle = fieldGroups[key][0]
+                    try:
+                        tabToolTip = fieldGroups[key][1]
+                    except:
+                        tabToolTip = ""
+
+                    aTable = DdTable(thisTable.oid, thisTable.schemaName,  thisTable.tableName,  tabToolTip,  tabTitle)
+                    ddFormWidget = DdFormWidget(aTable,  needsToolBox)
+                    ddSearchFormWidget = DdFormWidget(aTable,  needsToolBox)
 
             if anAttribute.type == "text":
                 ddInputWidget = DdTextEdit(anAttribute)
@@ -217,26 +246,20 @@ class DataDrivenUi(object):
             skip.append(thisTable.tableName)
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  minMax,  searchFields, showParents,  False)
+                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  searchFields, showParents,  False)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
         return [ddForms,  ddSearchForms]
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  minMax = {},  \
+    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  \
         searchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True):
         '''creates default uis for this table (DdTable instance)
-        skip [array [string]]: field names to not show
-        labels [dict] with entries: "fieldname": "label"
-        fieldOrder [array[string]]: containing the field names in the order they should be shown
-        minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
-        searchFields [array[string]] with fields to be shown in the search form, if empty all fields are shown
-        showParents [Boolean] show tabs for 1-to-1 relations (parents)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
-        inputMask [Boolean]: create a data-edit mask
-        searchMask [Boolean]: create a data-search mask'''
+        see ddmanager.initLayer for other parameters
+        '''
 
-        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  minMax,  searchFields,  showParents,  showChildren)
+        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  searchFields,  showParents,  showChildren)
 
         if  inputMask:
             ui = DdDialogWidget()
