@@ -1,7 +1,7 @@
 Introduction
 ============
  
-Automagically creates input masks for PostGIS layers. All table constraints (*notNull*, foreign keys etc.) are taken into account.
+Automagically creates input and search masks for PostGIS layers. All table constraints (*notNull*, foreign keys etc.) are taken into account.
 The user can edit any data contained in related tables.
 
 Source
