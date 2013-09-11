@@ -24,7 +24,7 @@ dddialog
  ***************************************************************************/
 """
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui,  QtCore
 from qgis.core import *
 
 # create the dialog
@@ -74,6 +74,29 @@ class DdDialog(QtGui.QDialog):
     def reject(self):
         self.ui.discard()
         self.done(0)
+
+    def helpRequested(self):
+        dlg = QtGui.QDialog(None)
+        layout = QtGui.QVBoxLayout(dlg)
+        layout.setObjectName("layout")
+        dlg.setObjectName("Help")
+        dlg.setWindowModality(QtCore.Qt.ApplicationModal)
+        textBrowser = QtGui.QTextBrowser(dlg)
+        textBrowser.setReadOnly(True)
+        textBrowser.setText(self.ui.helpText)
+        textBrowser.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        textBrowser.setOpenExternalLinks(True)
+        layout.addWidget(textBrowser)
+        buttonBox = QtGui.QDialogButtonBox(dlg)
+        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Close)
+        buttonBox.setObjectName("buttonBox")
+        layout.addWidget(buttonBox)
+        buttonBox.rejected.connect(dlg.reject)
+        dlg.setLayout(layout)
+        dlg.setWindowTitle(QtGui.QApplication.translate("DdInfo", "Help", None,
+                                                       QtGui.QApplication.UnicodeUTF8))
+        dlg.exec_()
 
 class DdSearchDialog(QtGui.QDialog):
     '''Each searchDialog is a child of QDialog'''

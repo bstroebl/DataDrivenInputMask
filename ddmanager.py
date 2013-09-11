@@ -47,7 +47,7 @@ class DdManager(object):
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  searchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
-        inputUi = None,  searchUi = None):
+        inputUi = None,  searchUi = None,  helpText = ""):
         '''api method initLayer: initialize this layer with a data-driven input mask
         Returns a Boolean stating the success of the initialization
         Paramters:
@@ -65,7 +65,8 @@ class DdManager(object):
         - inputMask [Boolean]: create a data-edit mask
         - searchMask [Boolean]: create a data-search mask
         - inputUi [ddui.DdDialogWidget]: apply this inputUi
-        - searchUi [ddui.DdDialogWidget]: apply this as search ui'''
+        - searchUi [ddui.DdDialogWidget]: apply this as search ui
+        -helpText [string] help text for this mask, may be html formatted'''
 
         if inputUi != None:
             inputMask = False # do not make one but use the one provided
@@ -90,7 +91,7 @@ class DdManager(object):
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
                     autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
-                                                  searchFields, showParents,  True,  inputMask,  searchMask)
+                                                  searchFields, showParents,  True,  inputMask,  searchMask,  helpText)
 
                     if inputUi == None:
                         # use the automatically created mask if none has been provided
@@ -342,14 +343,15 @@ class DdManager(object):
     def editingStarted(self):
         layer = self.iface.activeLayer()
 
-        layerValues = self.__getLayerValues(layer)
+        if layer:
+            layerValues = self.__getLayerValues(layer)
 
-        if layerValues != None:
-            db = layerValues[1]
+            if layerValues != None:
+                db = layerValues[1]
 
-            if not db:
-                db = self.__ceateDb(layer)
-                self.setDb(layer,  db)
+                if not db:
+                    db = self.__ceateDb(layer)
+                    self.setDb(layer,  db)
 
     def editingStopped(self):
         pass

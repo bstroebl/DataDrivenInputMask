@@ -253,7 +253,8 @@ class DataDrivenUi(object):
         return [ddForms,  ddSearchForms]
 
     def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  \
-        searchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True):
+        searchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True,  \
+        helpText = ""):
         '''creates default uis for this table (DdTable instance)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
         see ddmanager.initLayer for other parameters
@@ -263,6 +264,7 @@ class DataDrivenUi(object):
 
         if  inputMask:
             ui = DdDialogWidget()
+            ui.setHelpText(helpText)
 
             for ddFormWidget in forms:
                 ui.addFormWidget(ddFormWidget)
@@ -798,6 +800,7 @@ class DdDialogWidget(DdWidget):
     def __init__(self):
         DdWidget.__init__(self)
         self.forms = []
+        self.helpText = ""
 
     def __str__(self):
         return "<ddui.DdDialogWidget>"
@@ -836,16 +839,28 @@ class DdDialogWidget(DdWidget):
         self.layout.addWidget(self.mainTab)
         self.buttonBox = QtGui.QDialogButtonBox(ddDialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+
+        if self.helpText != "":
+            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Help)
+        else:
+            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+
         self.buttonBox.setObjectName("buttonBox")
         self.layout.addWidget(self.buttonBox)
 
         self.mainTab.setCurrentIndex(0)
         self.buttonBox.accepted.connect(ddDialog.accept)
         self.buttonBox.rejected.connect(ddDialog.reject)
+
+        if self.helpText != "":
+            self.buttonBox.helpRequested.connect(ddDialog.helpRequested)
+
         #QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), ddDialog.accept)
         #QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), ddDialog.reject)
         QtCore.QMetaObject.connectSlotsByName(ddDialog)
+
+    def setHelpText(self,  helpText):
+        self.helpText = helpText
 
     def addFormWidget(self,  ddFormWidget):
         '''add this DdFormWidget to the ui'''

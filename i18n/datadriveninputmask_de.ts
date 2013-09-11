@@ -12,12 +12,12 @@
 <context>
     <name>DdError</name>
     <message>
-        <location filename="ddmanager.py" line="500"/>
+        <location filename="ddmanager.py" line="501"/>
         <source>Could not connect to PostgreSQL database:</source>
         <translation>Konnte mich nicht mit folgender PostgreSQL-Datenbank verbinden:</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1876"/>
+        <location filename="ddui.py" line="1891"/>
         <source>Could not discard changes for layer:</source>
         <translation>Konnte Änderungen in folgendem Layer nicht verwerfen:</translation>
     </message>
@@ -37,7 +37,7 @@
         <translation>Dieser Layer ist keine PostgreSQL-Tabelle: </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1333"/>
+        <location filename="ddui.py" line="1348"/>
         <source>Field not found in layer: </source>
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
@@ -47,7 +47,7 @@
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1864"/>
+        <location filename="ddui.py" line="1879"/>
         <source>Could not save changes for layer:</source>
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
@@ -70,50 +70,55 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1278"/>
+        <location filename="ddui.py" line="1293"/>
         <source>Null</source>
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1838"/>
+        <location filename="ddui.py" line="1853"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
     <message>
-        <location filename="dddialog.py" line="101"/>
+        <location filename="dddialog.py" line="124"/>
         <source>Search</source>
         <translation>Suche</translation>
     </message>
     <message>
-        <location filename="dddialog.py" line="127"/>
+        <location filename="dddialog.py" line="150"/>
         <source>No matches found</source>
         <translation>Keine passenden Datensätze gefunden</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1281"/>
+        <location filename="ddui.py" line="1296"/>
         <source>Check if you want to save an empty (or null) value.</source>
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1303"/>
+        <location filename="ddui.py" line="1318"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1305"/>
+        <location filename="ddui.py" line="1320"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
+    </message>
+    <message>
+        <location filename="dddialog.py" line="97"/>
+        <source>Help</source>
+        <translation>Hilfe</translation>
     </message>
 </context>
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2186"/>
+        <location filename="ddui.py" line="2201"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2188"/>
+        <location filename="ddui.py" line="2203"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -144,47 +149,47 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="ddui.py" line="1510"/>
+        <location filename="ddui.py" line="1525"/>
         <source>Input in Field is not a double according to local settings! </source>
         <translation>Ihre Eingabe in das Feld ist gemäß den lokalen Einstellungen kein Double-Wert!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1536"/>
+        <location filename="ddui.py" line="1551"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1541"/>
+        <location filename="ddui.py" line="1556"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1736"/>
+        <location filename="ddui.py" line="1751"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="930"/>
+        <location filename="ddui.py" line="945"/>
         <source>Layer cannot be put in editing mode:</source>
         <translation>Für den folgenden Layer konnte der Bearbeitungsstatus nicht umgeschaltet werden: </translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="524"/>
+        <location filename="ddmanager.py" line="525"/>
         <source>Username missing</source>
         <translation>Kein Benutzername</translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="524"/>
+        <location filename="ddmanager.py" line="525"/>
         <source>Enter username for </source>
         <translation>Benutzername für </translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="533"/>
+        <location filename="ddmanager.py" line="534"/>
         <source>Password missing</source>
         <translation>Kein Passwort</translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="533"/>
+        <location filename="ddmanager.py" line="534"/>
         <source>Enter password for </source>
         <translation>Passwort für </translation>
     </message>
