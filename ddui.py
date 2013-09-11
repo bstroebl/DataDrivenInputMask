@@ -1921,8 +1921,16 @@ class DdN2mListWidget(DdN2mWidget):
                             idToDelete = aFeature.id()
                             self.tableLayer.deleteFeature(idToDelete)
                             break
+            self.hasChanges = True
+        else: # do not show any changes
+            self.inputWidget.itemChanged.disconnect(self.registerChange)
 
-        self.hasChanges = True
+            if thisItem.checkState() == 2:
+                 thisItem.setCheckState(0)
+            else:
+                thisItem.setCheckState(2)
+
+            self.inputWidget.itemChanged.connect(self.registerChange)
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QListWidget(parent) # defaultInputWidget
@@ -1941,6 +1949,7 @@ class DdN2mListWidget(DdN2mWidget):
             if query.isActive():
                 self.inputWidget.clear()
                 self.inputWidget.itemChanged.disconnect(self.registerChange)
+
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
                     parent = unicode(query.value(1))
@@ -1949,6 +1958,7 @@ class DdN2mListWidget(DdN2mWidget):
                     parentItem.id = parentId
                     parentItem.setCheckState(checked)
                     self.inputWidget.addItem(parentItem)
+
                 query.finish()
                 self.inputWidget.itemChanged.connect(self.registerChange)
             else:
@@ -2009,7 +2019,16 @@ class DdN2mTreeWidget(DdN2mWidget):
                                 self.tableLayer.deleteFeature(idToDelete)
                                 break
 
-            self.hasChanges = True
+                self.hasChanges = True
+            else: # do not show any changes
+                self.inputWidget.itemChanged.disconnect(self.registerChange)
+
+                if thisItem.checkState(0) == 2:
+                    thisItem.setCheckState(0,  0)
+                else:
+                    thisItem.setCheckState(0,  2)
+
+                self.inputWidget.itemChanged.connect(self.registerChange)
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QTreeWidget(parent)
@@ -2222,7 +2241,8 @@ class DdN2mTableWidget(DdN2mWidget):
     # SLOTS
     def selectionChanged(self):
         '''slot to be called when the QTableWidget's selection has changed'''
-        self.removeButton.setEnabled(len(self.inputWidget.selectedItems()) > 0)
+        if self.forEdit:
+            self.removeButton.setEnabled(len(self.inputWidget.selectedItems()) > 0)
 
     def doubleClick(self,  thisRow,  thisColumn):
         '''slot to be called when the user double clicks on the QTableWidget'''
