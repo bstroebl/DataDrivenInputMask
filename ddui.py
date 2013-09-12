@@ -225,7 +225,10 @@ class DataDrivenUi(object):
                         elif anAttribute.type == "date":
                             ddInputWidget = DdDateEdit(anAttribute)
                         else:
-                            ddInputWidget = DdLineEdit(anAttribute)
+                            if anAttribute.type == "varchar" and anAttribute.length > 256:
+                                ddInputWidget = DdTextEdit(anAttribute)
+                            else:
+                                ddInputWidget = DdLineEdit(anAttribute)
 
             ddFormWidget.addInputWidget(ddInputWidget)
 
