@@ -163,30 +163,26 @@ class DataDrivenUi(object):
         else:
             orderedAttributes = unorderedAttributes
 
-        if len(fieldGroups) == 0:
+        defaultFormWidget = DdFormWidget(thisTable,  needsToolBox)
+        defaultSearchFormWidget = DdFormWidget(thisTable,  needsToolBox)
+
+        useFieldGroups = (len(fieldGroups) > 0 and len(fieldOrder) > 0)
+
+        if not useFieldGroups:
             # we only need one form
-            ddFormWidget = DdFormWidget(thisTable,  needsToolBox)
-            ddSearchFormWidget = DdFormWidget(thisTable,  needsToolBox)
+            ddFormWidget = defaultFormWidget
+            ddSearchFormWidget = defaultSearchFormWidget
         else:
             ddFormWidget = None
-            # check if fieldOrder and fieldGroups match
-            for key in fieldGroups.iterkeys():
-                try:
-                    orderedAttributes[key]
-                except indexError:
-                    DdError(QtGui.QApplication.translate("DdError",
-                        "Parameter fieldGroups has a higher index than parameter fieldOrder provides!",
-                        None,  QtGui.QApplication.UnicodeUTF8))
 
-        for i in range(len(orderedAttributes)):
-            anAttribute = orderedAttributes[i]
+        for anAttribute in orderedAttributes:
             addToSearch = True
 
             for key in fieldGroups.iterkeys():
-                if key == i:
+                if key == anAttribute.name:
                     # we need a new form
                     if ddFormWidget != None:
-                        # there is one active, add to the lists
+                        # there is one active, add them to the lists
                         ddForms.append(ddFormWidget)
                         ddSearchForms.append(ddSearchFormWidget)
 
@@ -199,6 +195,7 @@ class DataDrivenUi(object):
                     aTable = DdTable(thisTable.oid, thisTable.schemaName,  thisTable.tableName,  tabToolTip,  tabTitle)
                     ddFormWidget = DdFormWidget(aTable,  needsToolBox)
                     ddSearchFormWidget = DdFormWidget(aTable,  needsToolBox)
+                    break
 
             if anAttribute.type == "text":
                 ddInputWidget = DdTextEdit(anAttribute)
@@ -211,7 +208,7 @@ class DataDrivenUi(object):
             elif anAttribute.type == "table":
                 ddInputWidget = DdN2mTableWidget(anAttribute)
                 addToSearch = False
-            else: # on line attributes
+            else: # one line attributes
                 if anAttribute.isFK:
                     ddInputWidget = DdComboBox(anAttribute)
                 else:
@@ -230,7 +227,13 @@ class DataDrivenUi(object):
                             else:
                                 ddInputWidget = DdLineEdit(anAttribute)
 
+            if ddFormWidget == None:
+                # fallback in case fieldOrder and fieldGroups do not match
+                ddFormWidget = defaultFormWidget
+                ddSearchFormWidget = defaultSearchFormWidget
+
             ddFormWidget.addInputWidget(ddInputWidget)
+            #self.__debug("__createForms",  "add widget for "  + anAttribute.name + " " + anAttribute.type)
 
             if addToSearch:
                 if len(searchFields) > 0:
@@ -249,7 +252,7 @@ class DataDrivenUi(object):
             skip.append(thisTable.tableName)
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  {},  minMax,  searchFields, showParents,  False)
+                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  searchFields, showParents,  False)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
@@ -796,7 +799,7 @@ class DdWidget(object):
         raise NotImplementedError("Should have implemented search")
 
     def debug(self,  msg):
-        QtGui.QMessageBox.information(None, "debug",  unicode(msg))
+        QgsMessageLog.logMessage(msg)
 
 class DdDialogWidget(DdWidget):
     '''This is the mask ui'''
@@ -1268,7 +1271,7 @@ class DdLineEdit(DdInputWidget):
 
     def setupUi(self,  parent,  db):
         '''setup the label and add the inputWidget to parents formLayout'''
-        #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
+        #self.debug("DdLineEdit setupUi " + self.attribute.name)
         self.label = self.createLabel(parent)
         hLayout = QtGui.QHBoxLayout(parent)
         self.searchCbx = QtGui.QComboBox(parent)
@@ -1311,6 +1314,7 @@ class DdLineEdit(DdInputWidget):
         self.hasChanges = True
 
     def initialize(self,  layer,  feature,  db):
+        #self.debug("DdLineEdit initialize " + self.attribute.name)
         if feature == None:
             self.searchCbx.setVisible(False)
             self.manageChk(None)

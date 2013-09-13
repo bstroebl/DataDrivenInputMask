@@ -55,8 +55,8 @@ class DdManager(object):
         - skip [array [string]]: field names to not show
         - labels [dict] with entries: "fieldname": "label"
         - fieldOrder [array[string]]: containing the field names in the order they should be shown
-        - fieldGroups [dict] with entries: fieldIndex: [tabTitle, tabTooltip] for each group a tab is created
-        and the fields from fieldIndex onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
+        - fieldGroups [dict] with entries: fieldName: [tabTitle, tabTooltip] for each group a tab is created
+        and the fields from fieldName onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
         - minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
         - searchFields [array[string]] with fields to be shown in the search form, if empty all fields are shown
         - showParents [Boolean] show tabs for 1-to-1 relations (parents)
