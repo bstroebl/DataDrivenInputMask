@@ -887,10 +887,38 @@ class DdDialogWidget(DdWidget):
 
     def save(self,  layer,  feature,  db):
         hasChanges = False
-        for aForm in self.forms:
-            if aForm.save(layer,  feature,  db):
-                hasChanges = True
+        layerDict = {} # layerId:[layerObject, doSave]
 
+        for aForm in self.forms:
+            doSave = aForm.save(layer,  feature,  db) # check if there is anything to save
+
+            try:
+                oldSave = layerDict[aForm.layer.id()][1] # already in, get current save status
+            except KeyError:
+                oldSave = None
+
+            if oldSave == None: #add to dict
+                layerDict[aForm.layer.id()] = [aForm.layer,  doSave]
+            elif oldSave == False: # replace with the new value
+                layerDict[aForm.layer.id()][1] = doSave
+
+        hasChanges = False
+
+        for aLayerId in layerDict.iterkeys():
+            aLayer = layerDict[aLayerId][0]
+            doSave = layerDict[aLayerId][1]
+
+            if doSave:
+                hasChanges = True
+                if not aLayer.commitChanges():
+                    DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
+                                                       QtGui.QApplication.UnicodeUTF8) + " " + aLayer.name())
+            else:
+                if not aLayer.rollBack():
+                    DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
+                                               QtGui.QApplication.UnicodeUTF8) + " " + aLayer.name())
+
+        layer.startEditing()
         return hasChanges
 
     def discard(self):
@@ -1121,17 +1149,6 @@ class DdFormWidget(DdWidget):
             for anInputWidget in self.inputWidgets:
                 if anInputWidget.save(self.layer,  self.feature,  db):
                     hasChanges = True
-
-        if hasChanges:
-            if not self.layer.commitChanges():
-                DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + " " + self.layer.name())
-        else:
-            if not self.layer.rollBack():
-                DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + " " + self.layer.name())
-        if self.wasEditable:
-            self.layer.startEditing()
 
         self.close()
         return hasChanges
