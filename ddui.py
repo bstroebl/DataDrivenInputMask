@@ -2272,7 +2272,7 @@ class DdN2mTableWidget(DdN2mWidget):
         '''slot to be called when the user double clicks on the QTableWidget'''
         featureItem = self.inputWidget.item(thisRow,  0)
         thisFeature = featureItem.feature
-        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = False)
+        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents)
 
         if result == 1: # user clicked OK
             # make sure user did not change parentFeatureId
