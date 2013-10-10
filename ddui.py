@@ -1353,7 +1353,7 @@ class DdLineEdit(DdInputWidget):
     def checkInput(self):
         thisValue = self.getValue()
         #QtGui.QMessageBox.information(None, "checkInput",  self.attribute.name + " " + str(thisValue))
-        if self.attribute.notNull and not thisValue:
+        if self.attribute.notNull and thisValue == None:
             QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
                                                            QtGui.QApplication.UnicodeUTF8) )
             return False
@@ -1638,7 +1638,7 @@ class DdComboBox(DdLineEdit):
     def setValue(self,  thisValue):
         self.manageChk(thisValue)
 
-        if not thisValue:
+        if thisValue == None:
             self.inputWidget.setCurrentIndex(0)
         else:
             for i in range(self.inputWidget.count()):
