@@ -27,6 +27,7 @@ Class that steers the DataDrivenUI
 # Import the PyQt and QGIS libraries
 from PyQt4 import QtCore,  QtGui,  QtSql
 from qgis.core import *
+from qgis.gui import *
 from dderror import DdError,  DbError
 from ddui import DataDrivenUi
 from ddattribute import *
@@ -298,9 +299,28 @@ class DdManager(object):
 
         return retValue
 
+    def isAccessible(self,  db,  ddTable):
+        '''check if user has right to access this table'''
+        query = QtSql.QSqlQuery(db)
+        sQuery = "SELECT * FROM \"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\" LIMIT 1;"
+        query.prepare(sQuery)
+        query.exec_()
+
+        if query.isActive():
+            query.finish()
+            return True
+        else:
+            query.finish()
+            self.showQueryError(query)
+            return False
+
     def loadPostGISLayer(self,  db, ddTable, displayName = None,
         geomColumn = None, whereClause = None, keyColumn = None,
         intoDdGroup = True):
+
+        if not self.isAccessible(db,  ddTable):
+            DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
+                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True)
 
         if not displayName:
             displayName = ddTable.schemaName + "." + ddTable.tableName
@@ -314,7 +334,6 @@ class DdManager(object):
         # set host name, port, database name, username and password
         uri.setConnection(db.hostName(), str(thisPort), db.databaseName(), db.userName(), db.password())
         # set database schema, table name, geometry column and optionaly subset (WHERE clause)
-
         uri.setDataSource(ddTable.schemaName, ddTable.tableName, geomColumn)
 
         if whereClause:
@@ -322,8 +341,10 @@ class DdManager(object):
 
         if keyColumn:
             uri.setKeyColumn(keyColumn)
+
         vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres")
         tLayer = QgsMapLayerRegistry.instance().addMapLayers([vlayer])
+
         if intoDdGroup:
             groupIdx = self.getGroupIndex("DataDrivenInputMask")
             legendIface= self.iface.legendInterface()
@@ -332,6 +353,7 @@ class DdManager(object):
                 groupIdx = legendIface.addGroup("DataDrivenInputMask",  False)
 
             legendIface.moveLayer(vlayer,  groupIdx)
+
         return vlayer
 
     def quit(self):
@@ -553,3 +575,9 @@ class DdManager(object):
         if db:
             db.close()
             db = None
+
+    def showQueryError(self, query,  withSql = False):
+        self.iface.messageBar().pushMessage("Database Error",  "%(error)s" % {"error": query.lastError().text()}, level=QgsMessageBar.CRITICAL)
+
+        if withSql:
+            self.iface.messageBar().pushMessage("Query",  "%(query)s" % {"query": query.lastQuery()}, level=QgsMessageBar.CRITICAL)

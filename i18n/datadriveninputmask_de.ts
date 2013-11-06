@@ -4,7 +4,7 @@
 <context>
     <name>DBError</name>
     <message>
-        <location filename="dderror.py" line="41"/>
+        <location filename="dderror.py" line="46"/>
         <source>Database Error:</source>
         <translation>Datenbankfehler:</translation>
     </message>
@@ -12,32 +12,32 @@
 <context>
     <name>DdError</name>
     <message>
-        <location filename="ddmanager.py" line="501"/>
+        <location filename="ddmanager.py" line="524"/>
         <source>Could not connect to PostgreSQL database:</source>
         <translation>Konnte mich nicht mit folgender PostgreSQL-Datenbank verbinden:</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1891"/>
+        <location filename="ddui.py" line="1915"/>
         <source>Could not discard changes for layer:</source>
         <translation>Konnte Änderungen in folgendem Layer nicht verwerfen:</translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="135"/>
+        <location filename="ddmanager.py" line="137"/>
         <source>Layer is not a vector layer: </source>
         <translation>Dieser Layer ist kein Vektorlayer: </translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="140"/>
+        <location filename="ddmanager.py" line="142"/>
         <source>Layer is not a PostgreSQL layer: </source>
         <translation>Dieser Layer ist kein PostgreSQL-Layer: </translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="159"/>
+        <location filename="ddmanager.py" line="161"/>
         <source>Layer is not a PostgreSQL table: </source>
         <translation>Dieser Layer ist keine PostgreSQL-Tabelle: </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1348"/>
+        <location filename="ddui.py" line="1372"/>
         <source>Field not found in layer: </source>
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
@@ -47,14 +47,14 @@
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1879"/>
+        <location filename="ddui.py" line="1903"/>
         <source>Could not save changes for layer:</source>
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="177"/>
-        <source>Parameter fieldGroups has a higher index than parameter fieldOrder provides!</source>
-        <translation>Der Parameter fieldGroups enthält einen höheren Index, als fieldOrder bereitstellt!</translation>
+        <location filename="ddmanager.py" line="322"/>
+        <source>Cannot not load table: </source>
+        <translation>Kann folgende Tablle nicht laden: </translation>
     </message>
 </context>
 <context>
@@ -70,12 +70,12 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1293"/>
+        <location filename="ddui.py" line="1316"/>
         <source>Null</source>
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1853"/>
+        <location filename="ddui.py" line="1877"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
@@ -90,17 +90,17 @@
         <translation>Keine passenden Datensätze gefunden</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1296"/>
+        <location filename="ddui.py" line="1319"/>
         <source>Check if you want to save an empty (or null) value.</source>
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1318"/>
+        <location filename="ddui.py" line="1342"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1320"/>
+        <location filename="ddui.py" line="1344"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
     </message>
@@ -113,12 +113,12 @@
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2201"/>
+        <location filename="ddui.py" line="2244"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2203"/>
+        <location filename="ddui.py" line="2246"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -149,47 +149,47 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="ddui.py" line="1525"/>
+        <location filename="ddui.py" line="1549"/>
         <source>Input in Field is not a double according to local settings! </source>
         <translation>Ihre Eingabe in das Feld ist gemäß den lokalen Einstellungen kein Double-Wert!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1551"/>
+        <location filename="ddui.py" line="1575"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1556"/>
+        <location filename="ddui.py" line="1580"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1751"/>
+        <location filename="ddui.py" line="1775"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="945"/>
+        <location filename="ddui.py" line="979"/>
         <source>Layer cannot be put in editing mode:</source>
         <translation>Für den folgenden Layer konnte der Bearbeitungsstatus nicht umgeschaltet werden: </translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="525"/>
+        <location filename="ddmanager.py" line="548"/>
         <source>Username missing</source>
         <translation>Kein Benutzername</translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="525"/>
+        <location filename="ddmanager.py" line="548"/>
         <source>Enter username for </source>
         <translation>Benutzername für </translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="534"/>
+        <location filename="ddmanager.py" line="557"/>
         <source>Password missing</source>
         <translation>Kein Passwort</translation>
     </message>
     <message>
-        <location filename="ddmanager.py" line="534"/>
+        <location filename="ddmanager.py" line="557"/>
         <source>Enter password for </source>
         <translation>Passwort für </translation>
     </message>

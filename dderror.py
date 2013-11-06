@@ -28,20 +28,26 @@ from PyQt4 import QtGui
 
 class DdError(object):
     '''General error'''
-    def __init__(self,  value):
+    def __init__(self,  value,  fatal = False):
         self.value = value
-        QtGui.QMessageBox.warning(None, "DdError",  value)
+
+        if fatal:
+            raise FatalError(value)
+        else:
+            QtGui.QMessageBox.warning(None, "DdError",  value)
+
     def __str__(self):
         return repr(self.value)
 
 class DbError(object):
     '''error querying the DB'''
-    def __init__(self,  query):
+    def __init__(self,  query,  fatal = True):
         self.query = query
         QtGui.QMessageBox.warning(None, "DBError",  QtGui.QApplication.translate("DBError", "Database Error:", None,
                                                                QtGui.QApplication.UnicodeUTF8) + \
                                                                "%(error)s \n %(query)s" % {"error": query.lastError().text(),  "query": query.lastQuery()})
-        raise FatalError("DBError exiting")
+        if fatal:
+            raise FatalError("DBError exiting")
     def __str__(self):
         return repr(self.query.lastError())
 
