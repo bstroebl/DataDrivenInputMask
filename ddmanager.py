@@ -343,6 +343,11 @@ class DdManager(object):
             uri.setKeyColumn(keyColumn)
 
         vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres")
+        # double check if layer is valid
+        if not vlayer.dataProvider().isValid():
+            DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
+                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True)
+
         tLayer = QgsMapLayerRegistry.instance().addMapLayers([vlayer])
 
         if intoDdGroup:
