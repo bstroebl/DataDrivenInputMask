@@ -976,8 +976,8 @@ class DdFormWidget(DdWidget):
             ok = self.layer.startEditing()
 
             if not ok:
-                QtGui.QMessageBox.warning(None, "",  QtGui.QApplication.translate("DdWarning", "Layer cannot be put in editing mode:", None,
-                                                           QtGui.QApplication.UnicodeUTF8)) + " %s"% str(self.layer.name())
+                DdError(QtGui.QApplication.translate("DdWarning", "Layer cannot be put in editing mode:", None,
+                                                           QtGui.QApplication.UnicodeUTF8) + self.layer.name())
 
         return ok
 
@@ -1874,7 +1874,7 @@ class DdN2mWidget(DdInputWidget):
                     self.forEdit = self.tableLayer.startEditing()
 
                     if not self.forEdit:
-                        QtGui.QMessageBox.Warning(None,  "", QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
+                        DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
                                                                    QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name())
 
     def createFeature(self, fid = None):
