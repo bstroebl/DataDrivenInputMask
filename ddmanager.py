@@ -67,7 +67,9 @@ class DdManager(object):
         - searchMask [Boolean]: create a data-search mask
         - inputUi [ddui.DdDialogWidget]: apply this inputUi
         - searchUi [ddui.DdDialogWidget]: apply this as search ui
-        -helpText [string] help text for this mask, may be html formatted'''
+        - helpText [string] help text for this mask, may be html formatted'''
+
+        thisSize = None # stores the size of the DdDialog
 
         if inputUi != None:
             inputMask = False # do not make one but use the one provided
@@ -119,7 +121,7 @@ class DdManager(object):
                     #else:
                         #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
 
-                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents]
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize]
                     self.__connectSignals(layer)
 
                     if createAction:
@@ -128,7 +130,7 @@ class DdManager(object):
                     return True
                 else:
                     # no auto masks, both were provided
-                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents]
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize]
                     return True
 
     def makeDdTable(self,  layer,  db = None):
@@ -212,9 +214,17 @@ class DdManager(object):
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
             db = layerValues[1]
             ui = layerValues[2]
+            thisSize = layerValues[5]
             dlg = DdDialog(self,  ui,  layer,  feature,  db)
             dlg.show()
+
+            if thisSize != None:
+                dlg.resize(thisSize)
+
             result = dlg.exec_()
+
+            thisSize = dlg.size()
+            self.ddLayers[layer.id()][5] = thisSize
 
             if result == 1:
                 layer.emit(QtCore.SIGNAL('layerModified()'))
@@ -235,7 +245,13 @@ class DdManager(object):
             searchUi = layerValues[3]
             dlg = DdSearchDialog(self,  searchUi,  layer,  db)
             dlg.show()
+
+            if thisSize != None:
+                dlg.resize(thisSize)
+
             result = dlg.exec_()
+            thisSize = dlg.size()
+            self.ddLayers[layer.id()][5] = thisSize
 
             return result
 
