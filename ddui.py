@@ -1862,20 +1862,24 @@ class DdN2mWidget(DdInputWidget):
         subsetString += str(self.featureId)
         self.tableLayer.setSubsetString(subsetString)
         self.tableLayer.reload()
-        self.forEdit = self.featureId > 0
 
-        if self.forEdit:
-            self.forEdit = layer.isEditable()
+        if self.featureId == -3333: #search ui
+            self.forEdit = True
+        else:
+            self.forEdit = self.featureId > 0
 
             if self.forEdit:
-                self.forEdit = self.tableLayer.isEditable()
+                self.forEdit = layer.isEditable()
 
-                if not self.forEdit:
-                    self.forEdit = self.tableLayer.startEditing()
+                if self.forEdit:
+                    self.forEdit = self.tableLayer.isEditable()
 
                     if not self.forEdit:
-                        DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
-                                                                   QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name())
+                        self.forEdit = self.tableLayer.startEditing()
+
+                        if not self.forEdit:
+                            DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
+                                                                       QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name())
 
     def createFeature(self, fid = None):
         '''create a new QgsFeature for the relation table with this fid'''
