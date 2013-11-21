@@ -243,6 +243,7 @@ class DdManager(object):
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
             db = layerValues[1]
             searchUi = layerValues[3]
+            thisSize = layerValues[5]
             dlg = DdSearchDialog(self,  searchUi,  layer,  db)
             dlg.show()
 
