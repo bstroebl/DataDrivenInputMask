@@ -994,21 +994,7 @@ class DdFormWidget(DdWidget):
                 self.parentDialog = pParent
                 break
 
-        sorted = False
-        labels = []
-
         for ddInputWidget in self.inputWidgets:
-            labels.append(ddInputWidget.getLabel())
-
-        if sorted:
-            labels.sort()
-
-        for label in labels:
-            for anWidget in self.inputWidgets:
-                if anWidget.getLabel() == label:
-                    ddInputWidget = anWidget
-                    break
-
             ddInputWidget.setupUi(parent,  db)
 
         if self.layer == None: # has not been passed to __init__
