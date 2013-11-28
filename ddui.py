@@ -1326,7 +1326,6 @@ class DdLineEdit(DdInputWidget):
                                                            QtGui.QApplication.UnicodeUTF8))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
-        hLayout.addStretch() # push the chk to the right of the dialog
         hLayout.addWidget(self.chk)
         parent.layout().addRow(self.label,  hLayout)
 
