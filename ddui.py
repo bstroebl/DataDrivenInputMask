@@ -793,6 +793,10 @@ class DdWidget(object):
         '''discards the input'''
         pass
 
+    def reset(self):
+        '''reset anything changed by the DdWidget'''
+        pass
+
     def search(self,  layer):
         '''creates search string
         must be implemented in child classes'''
@@ -1140,7 +1144,7 @@ class DdFormWidget(DdWidget):
             if parentSql != "":
                 searchSql = parentSql + searchSql + ")"
 
-        self.close()
+        self.reset()
         return searchSql
 
     def save(self,  layer,  feature,  db):
@@ -1150,7 +1154,7 @@ class DdFormWidget(DdWidget):
                 if anInputWidget.save(self.layer,  self.feature,  db):
                     hasChanges = True
 
-        self.close()
+        self.reset()
         return hasChanges
 
     def discard(self):
@@ -1164,9 +1168,11 @@ class DdFormWidget(DdWidget):
                 if self.wasEditable:
                     self.layer.startEditing()
 
-        self.close()
+        self.reset()
 
-    def close(self):
+    def reset(self):
+        for anInputWidget in self.inputWidgets:
+            anInputWidget.reset()
         # reset previous subset string
         self.layer.setSubsetString(self.oldSubsetString)
         self.layer.reload()
@@ -1821,6 +1827,7 @@ class DdN2mWidget(DdInputWidget):
     def __init__(self,  attribute):
         DdInputWidget.__init__(self,  attribute)
         self.tableLayer = None
+        self.oldSubsetString = ""
         self.featureId = None
         self.forEdit = False
 
@@ -1838,6 +1845,10 @@ class DdN2mWidget(DdInputWidget):
             if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
                 self.parentDialog = pParent
                 break
+
+    def reset(self):
+        if self.tableLayer.setSubsetString(self.oldSubsetString):
+            self.tableLayer.reload()
 
     def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False):
         # find the layer in the project
@@ -1860,6 +1871,7 @@ class DdN2mWidget(DdInputWidget):
         # reduce the features in self.tableLayer to those related to feature
         subsetString = self.attribute.subsetString
         subsetString += str(self.featureId)
+        self.oldSubsetString = self.tableLayer.subsetString()
         self.tableLayer.setSubsetString(subsetString)
         self.tableLayer.reload()
 
@@ -1911,6 +1923,7 @@ class DdN2mWidget(DdInputWidget):
                         self.discard()
             else:
                 self.discard()
+        self.resetLayer()
         return False
 
     def discard(self):
