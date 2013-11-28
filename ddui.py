@@ -816,23 +816,25 @@ class DdDialogWidget(DdWidget):
         return "<ddui.DdDialogWidget>"
 
     def setupUi(self,  ddDialog,  db): # ddDialog is a child of QDialog
-        self.layout = QtGui.QVBoxLayout(ddDialog)
-        self.layout.setObjectName("layout")
-        self.mainTab = QtGui.QTabWidget(ddDialog)
-        self.mainTab.setObjectName("mainTab")
         ddDialog.setObjectName("DataDrivenInputMask")
         ddDialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.horizontalLayout = QtGui.QVBoxLayout(ddDialog)
+        self.scrollArea = QtGui.QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName("DataDrivenInputMask_scrollArea")
+        self.horizontalLayout.addWidget(self.scrollArea)
+        self.scrollAreaWidgetContents = QtGui.QWidget(ddDialog)
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.scrollAreaLayout = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
+        self.scrollAreaLayout.setObjectName("scrollAreaLayout")
+        self.mainTab = QtGui.QTabWidget(self.scrollAreaWidgetContents)
+        self.mainTab.setObjectName("mainTab")
 
         for i in range(len(self.forms)):
             aTab = QtGui.QWidget(self.mainTab)
             aTab.setObjectName("tab" + str(i))
             aForm = self.forms[i]
-
-            if aForm.hasToolBox:
-                tabLayout = QtGui.QVBoxLayout(aTab)
-            else:
-                tabLayout = QtGui.QFormLayout(aTab)
-
+            tabLayout = QtGui.QFormLayout(aTab)
             tabLayout.setObjectName("tabLayout" + str(i))
             aForm.setupUi(aTab,  db)
 
@@ -846,27 +848,22 @@ class DdDialogWidget(DdWidget):
             if aForm.ddTable.comment != "":
                 aTab.setToolTip(aForm.ddTable.comment)
 
-        self.layout.addWidget(self.mainTab)
+        self.mainTab.setCurrentIndex(0)
+        self.scrollAreaLayout.addWidget(self.mainTab)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.buttonBox = QtGui.QDialogButtonBox(ddDialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-
-        if self.helpText != "":
-            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Help)
-        else:
-            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
-
         self.buttonBox.setObjectName("buttonBox")
-        self.layout.addWidget(self.buttonBox)
-
-        self.mainTab.setCurrentIndex(0)
         self.buttonBox.accepted.connect(ddDialog.accept)
         self.buttonBox.rejected.connect(ddDialog.reject)
 
         if self.helpText != "":
+            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Help)
             self.buttonBox.helpRequested.connect(ddDialog.helpRequested)
+        else:
+            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
 
-        #QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), ddDialog.accept)
-        #QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), ddDialog.reject)
+        self.horizontalLayout.addWidget(self.buttonBox)
         QtCore.QMetaObject.connectSlotsByName(ddDialog)
 
     def setHelpText(self,  helpText):
@@ -990,7 +987,7 @@ class DdFormWidget(DdWidget):
         pParent = self.parent
 
         while (True):
-            # get the DdDialog instance to ahve access to ddManager
+            # get the DdDialog instance in order to have access to ddManager
             pParent = pParent.parentWidget()
 
             if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
@@ -999,37 +996,20 @@ class DdFormWidget(DdWidget):
 
         sorted = False
         labels = []
+
         for ddInputWidget in self.inputWidgets:
             labels.append(ddInputWidget.getLabel())
 
         if sorted:
             labels.sort()
 
-        if self.hasToolBox:
-            scrollArea = QtGui.QScrollArea(parent)
-            scrollArea.setWidgetResizable(True)
-            scrollArea.setObjectName(parent.objectName() + "_scrollArea")
-            scrollAreaWidgetContents = QtGui.QWidget(parent)
-            scrollAreaWidgetContents.setObjectName(parent.objectName() + "_scrollAreaWidgetContents")
-            formLayout = QtGui.QFormLayout(scrollAreaWidgetContents)
+        for label in labels:
+            for anWidget in self.inputWidgets:
+                if anWidget.getLabel() == label:
+                    ddInputWidget = anWidget
+                    break
 
-            for label in labels:
-                for anWidget in self.inputWidgets:
-                    if anWidget.getLabel() == label:
-                        ddInputWidget = anWidget
-                        break
-                #QtGui.QMessageBox.information(None, "",  str(ddInputWidget))
-                ddInputWidget.setupUi(scrollAreaWidgetContents,  db)
-
-            scrollArea.setWidget(scrollAreaWidgetContents)
-            parent.layout().addWidget(scrollArea)
-        else:
-            for label in labels:
-                for anWidget in self.inputWidgets:
-                    if anWidget.getLabel() == label:
-                        ddInputWidget = anWidget
-                        break
-                ddInputWidget.setupUi(parent,  db)
+            ddInputWidget.setupUi(parent,  db)
 
         if self.layer == None: # has not been passed to __init__
             self.layer = self.__getLayer(db)
