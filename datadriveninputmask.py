@@ -73,6 +73,8 @@ class DataDrivenInputMask:
         # Create action that will start plugin configuration
         self.action = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Initialize Layer",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        # set a name for the action
+        self.action.setObjectName("DdInitializeLayer")
         # connect the action to the run method
         self.action.triggered.connect(self.initializeLayer)
 
@@ -84,6 +86,8 @@ class DataDrivenInputMask:
         # Create action that will start plugin configuration
         self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        # set a name for the action
+        self.actionSel.setObjectName("DdShowInputForm")
         # connect the action to the run method
         self.actionSel.triggered.connect(self.showInputForm)
 
@@ -93,6 +97,8 @@ class DataDrivenInputMask:
         # Create action that will start plugin configuration
         self.actionSearch = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Search Form",
                                                                  None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        # set a name for the action
+        self.actionSearch.setObjectName("DdShowSearchForm")
         # connect the action to the run method
         self.actionSearch.triggered.connect(self.showSearchForm)
 
