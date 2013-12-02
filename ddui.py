@@ -1896,7 +1896,7 @@ class DdN2mWidget(DdInputWidget):
                         self.discard()
             else:
                 self.discard()
-        self.resetLayer()
+        self.reset()
         return False
 
     def discard(self):
