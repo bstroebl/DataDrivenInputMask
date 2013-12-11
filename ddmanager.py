@@ -39,12 +39,44 @@ class DdManager(object):
     def __init__(self,  iface):
         self.iface = iface
         self.ddLayers = dict()
+        settings = QtCore.QSettings()
+        settings.beginGroup("Qgis/digitizing")
+        a = settings.value("line_color_alpha",200,type=int)
+        b = settings.value("line_color_blue",0,type=int)
+        g = settings.value("line_color_green",0,type=int)
+        r = settings.value("line_color_red",255,type=int)
+        lw = settings.value("line_width",1,type=int)
+        settings.endGroup()
+        self.rubberBandColor = QtGui.QColor(r, g, b, a)
+        self.rubberBandWidth = lw
 
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
 
     def __str__(self):
         return "<ddui.DdManager>"
+
+    def highlightFeature(self,  layer,  feature):
+        '''highlight the feature if it has a geometry'''
+        geomType = layer.geometryType()
+
+        if geomType <= 2:
+            if geomType == 0:
+                marker = QgsVertexMarker(self.iface.mapCanvas())
+                marker.setIconType(3) # ICON_BOX
+                marker.setColor(self.rubberBandColor)
+                marker.setIconSize(12)
+                marker.setPenWidth (3)
+                marker.setCenter(feature.geometry().asPoint())
+                return marker
+            else:
+                rubberBand = QgsRubberBand(self.iface.mapCanvas())
+                rubberBand.setColor(self.rubberBandColor)
+                rubberBand.setWidth(self.rubberBandWidth)
+                rubberBand.setToGeometry(feature.geometry(),  layer)
+                return rubberBand
+        else:
+            return None
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  searchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
@@ -211,10 +243,11 @@ class DdManager(object):
                 layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
         if layerValues != None:
-            #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
+            highlightGeom = self.highlightFeature(layer,  feature)
             db = layerValues[1]
             ui = layerValues[2]
             thisSize = layerValues[5]
+
             dlg = DdDialog(self,  ui,  layer,  feature,  db)
             dlg.show()
 
@@ -223,11 +256,15 @@ class DdManager(object):
 
             result = dlg.exec_()
 
-            thisSize = dlg.size()
-            self.ddLayers[layer.id()][5] = thisSize
-
             if result == 1:
                 layer.emit(QtCore.SIGNAL('layerModified()'))
+            # store size
+            thisSize = dlg.size()
+            self.ddLayers[layer.id()][5] = thisSize
+            #handle highlightGeom
+            if highlightGeom != None:
+                self.iface.mapCanvas().scene().removeItem(highlightGeom)
+                highlightGeom = None
 
         else:
             result = 0
@@ -258,11 +295,17 @@ class DdManager(object):
 
     def showDdForm(self,  fid):
         aLayer = self.iface.activeLayer()
-        feat = QgsFeature()
-        featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(fid).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
 
-        if featureFound:
-            self.showFeatureForm(aLayer,  feat)
+        if aLayer != None:
+            feat = QgsFeature()
+
+            if aLayer.geometryType() <= 2: # has geometry
+                featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(fid)).nextFeature(feat)
+            else:
+                featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(fid).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
+
+            if featureFound:
+                self.showFeatureForm(aLayer,  feat)
 
     def setUi(self,  layer,  ui):
         '''api method to exchange the default ui with a custom ui'''
