@@ -542,9 +542,11 @@ class DataDrivenUi(object):
                     attributes = self.getAttributes(ddRelationTable,  db,  {},  {})
                     ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
                 else:
+                    relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
+
                     ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
                                        subType,  relationComment,  attLabel,  \
-                                       relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList)
+                                       relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList,  relatedForeignKeys)
 
                 n2mAttributes.append(ddAtt)
             pkQuery.finish()
@@ -601,7 +603,7 @@ class DataDrivenUi(object):
                         normalAtt = True
                     else:
                         try: # is this attribute a FK
-                            fk = foreignKeys[attNum]
+                            fk = foreignKeys[attName]
 
                             try:
                                 attLabel = labels[str(attName)]
@@ -668,7 +670,7 @@ class DataDrivenUi(object):
         attnum: [str: Type of the lookup field, str: sql to query lookup values, str: Name of the value field in the lookup table, str: Comment on lookup table]'''
         query = QtSql.QSqlQuery(db)
         sQuery = "SELECT \
-                att.attnum, \
+                att.attname, \
                 t.typname as typ, \
                 CAST(valatt.attnotnull as integer) as notnull, \
                 valatt.attname, \
@@ -702,7 +704,7 @@ class DataDrivenUi(object):
 
         if query.isActive():
             while query.next():
-                attNum = query.value(0)
+                attName = query.value(0)
                 fieldType = query.value(1)
                 notNull = query.value(2)
                 valAttName = query.value(3)
@@ -716,16 +718,16 @@ class DataDrivenUi(object):
 
                # QtGui.QMessageBox.information(None, "",  str(attNum) + ": " + fieldType + " " + valAttName + " " + keySql)
                 try:
-                    fk = foreignKeys[attNum]
+                    fk = foreignKeys[attName]
                     if fk[0] != "varchar": # we do not already have a varchar field as value field
                     # find a field with a suitable type
                         if notNull and (fieldType == "varchar" or fieldType == "char"):
-                            foreignKeys[attNum] = [fieldType,  keySql,  valAttName,  comment]
+                            foreignKeys[attName] = [fieldType,  keySql,  valAttName,  comment]
                 except KeyError:
                     if notNull and (fieldType == "varchar" or fieldType == "char"):
-                        foreignKeys[attNum] = [fieldType,  keySql,  valAttName]
+                        foreignKeys[attName] = [fieldType,  keySql,  valAttName]
                     else: # put the first in
-                        foreignKeys[attNum] = [fieldType,  defaultSql,  valAttName,  comment]
+                        foreignKeys[attName] = [fieldType,  defaultSql,  valAttName,  comment]
 
             query.finish()
         else:

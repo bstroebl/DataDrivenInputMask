@@ -174,7 +174,7 @@ class DdN2mAttribute(DdAttribute):
     '''a DdAttribute for a n2m relation, subtype can be list, tree or table
     relationTable and relatedTable are DdTable objects'''
     def __init__(self,  relationTable,  relatedTable,  subType,  comment ,  label,   \
-                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = []):
+                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = []):
         DdAttribute.__init__(self,  relationTable,  "n2m",  False,  relationTable.tableName,  comment,  label)
 
         self.subType = subType
@@ -184,6 +184,7 @@ class DdN2mAttribute(DdAttribute):
         self.relatedIdField = relatedIdField
         self.relatedDisplayField = relatedDisplayField
         self.fieldList = fieldList # an array with fields names
+        self.relatedForeignKeys = relatedForeignKeys
         # init statements
         self.setDisplayStatement()
         self.setInsertStatement()
@@ -220,12 +221,30 @@ class DdN2mAttribute(DdAttribute):
             for aField in fieldList:
                 displayStatement += ", \'" + aField + ": \' || COALESCE(disp.\"" + aField + "\", \'NULL\')"
 
+        if len(self.relatedForeignKeys) > 0:
+            for anItem in self.relatedForeignKeys.iteritems():
+                aKey = anItem[0]
+                aValue = anItem[1]
+                displayFieldName = aValue[2]
+                self.fieldList.append("fk_" + aKey + ".value")
+                displayStatement += ", \'" + displayFieldName + ": \' || fk_" + aKey + ".value"
+
         displayStatement += " FROM \"" + relatedSchema + "\".\"" + relatedTable + "\" disp"
         displayStatement += " LEFT JOIN (SELECT * FROM \"" + relationSchema + "\".\"" + relationTable + "\""
         displayStatement += " WHERE \"" + relationFeatureIdField + "\" = :featureId) lnk"
         displayStatement += " ON disp.\"" + relatedIdField + "\" = lnk.\"" + relationRelatedIdField + "\""
-        displayStatement +=  " ORDER BY checked DESC, disp.\"" + relatedDisplayField + "\""
 
+        if len(self.relatedForeignKeys) > 0:
+            for anItem in self.relatedForeignKeys.iteritems():
+                aKey = anItem[0]
+                aValue = anItem[1]
+                fkSelectStatement = aValue[1]
+                #example: SELECT my_string as value, id as key FROM my_schema.my_lookup_table;
+                fkSelectStatement = fkSelectStatement[: len(fkSelectStatement) -1] # get rid of ;
+                displayStatement += " LEFT JOIN (" + fkSelectStatement + ") fk_" + aKey + " ON disp.\""  + aKey + "\" = fk_" + aKey + ".key"
+
+        displayStatement +=  " ORDER BY checked DESC, disp.\"" + relatedDisplayField + "\" NULLS LAST"
+        #QtGui.QMessageBox.information(None, "displayStatement", displayStatement)
         return displayStatement
 
     def buildInsertStatement(self,  relationSchema,  relationTable,  relationFeatureIdField,  relationRelatedIdField,  fieldList):
