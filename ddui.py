@@ -1009,6 +1009,7 @@ class DdFormWidget(DdWidget):
 
     def initialize(self,  layer,  feature,  db):
         self.oldSubsetString = ""
+        enableAll = False
 
         if feature.id() == -3333: # search feature
             for anInputWidget in self.inputWidgets:
@@ -1051,28 +1052,20 @@ class DdFormWidget(DdWidget):
                                 self.feature = None
                             else:
                                 self.feature = self.layer.selectedFeatures()[0]
-                                if layer.isEditable():
-                                    self.parent.setEnabled(self.__setLayerEditable())
-                                else:
-                                    self.parent.setEnabled(False)
-                                self.layer.removeSelection()
-                                #QgsFeature()
 
-                                #if self.layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(self.feature):
-                                #    if layer.isEditable():
-                                #        self.parent.setEnabled(self.__setLayerEditable())
-                                #    else:
-                                #        self.parent.setEnabled(False)
-                                #else:
-                                #    self.feature = None
+                                if layer.isEditable():
+                                    enableAll = self.__setLayerEditable()
+
+                                self.layer.removeSelection()
 
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer,  self.feature,  db)
 
+                if not enableAll:
+                    anInputWidget.setEnabled(isinstance(anInputWidget,  DdN2mWidget))
+
             if not self.feature:
                 self.parent.setEnabled(False)
-
-        #QtGui.QMessageBox.information(None,  "initializing Form",  "passed layer: "+ layer.name() + "\n self.layer: " + self.layer.name() + "\n self.ddTable: " + self.ddTable.tableName + "\n self.feature: " + str(self.feature) + "\n self.parent.isEnabled: " + str(self.parent.isEnabled()))
 
     def checkInput(self):
         inputOk = True
@@ -1155,9 +1148,16 @@ class DdInputWidget(DdWidget):
         DdWidget.__init__(self)
         self.attribute = ddAttribute
         self.hasChanges = False
+        self.inputWidget = None
 
     def __str__(self):
         return "<ddui.DdInputWidget %s>" % str(self.attribute.name)
+
+    def setEnabled(self,  enable):
+        '''enable the inputWidget'''
+        if self.inputWidget != None:
+            self.inputWidget.setEnabled(enable)
+
 
     def registerChange(self , thisValue):
         '''slot to be called when user changes the input'''
@@ -1205,6 +1205,7 @@ class DdLineEdit(DdInputWidget):
 
     def __init__(self,  attribute):
         DdInputWidget.__init__(self,  attribute)
+        self.chk = None
 
     def __str__(self):
         return "<ddui.DdOneLineInputWidget %s>" % str(self.attribute.name)
@@ -1296,6 +1297,11 @@ class DdLineEdit(DdInputWidget):
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
         parent.layout().addRow(self.label,  hLayout)
+
+    def setEnabled(self,  enable):
+        if self.inputWidget != None:
+            self.inputWidget.setEnabled(enable)
+            self.chk.setEnabled(enable)
 
     def chkStateChanged(self,  newState):
         '''slot: disables the input widget if the null checkbox is checked and vice versa'''
