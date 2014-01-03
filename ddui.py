@@ -1018,6 +1018,7 @@ class DdFormWidget(DdWidget):
             if layer.id() == self.layer.id():
                 self.feature = feature
                 self.wasEditable = layer.isEditable()
+                enableAll = layer.isEditable()
             else:
                 layerPkList = layer.pendingPkAttributesList()
 
@@ -1061,7 +1062,9 @@ class DdFormWidget(DdWidget):
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer,  self.feature,  db)
 
-                if not enableAll:
+                if enableAll:
+                    anInputWidget.setEnabled(True)
+                else: # enable only n2m widgets to make them scrollable
                     anInputWidget.setEnabled(isinstance(anInputWidget,  DdN2mWidget))
 
             if not self.feature:
