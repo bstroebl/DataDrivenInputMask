@@ -49,6 +49,7 @@ class DdManager(object):
         settings.endGroup()
         self.rubberBandColor = QtGui.QColor(r, g, b, a)
         self.rubberBandWidth = lw
+        self.showConfigInfo = True
 
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
@@ -78,10 +79,95 @@ class DdManager(object):
         else:
             return None
 
-    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  searchFields = [],  \
+    def __configureLayer(self,  layer,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
+        db,  helpText):
+        '''read configuration from db'''
+
+        #initialize
+        createAction = True
+        # check for config tables
+        ddConfigTable = DdTable(schemaName = "public",  tableName = "dd_table")
+
+        if not self.isAccessible(db,  ddConfigTable,  showError = False):
+            if self.showConfigInfo:
+                self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
+                    "Config tables either not found or not accessible, loading default mask", None,
+                    QtGui.QApplication.UnicodeUTF8))
+                self.showConfigInfo = False
+        else:
+            # read values for this table from config tables
+            ddTable = self.makeDdTable(layer)
+            query = QtSql.QSqlQuery(db)
+            sQuery = "SELECT COALESCE(\"table_help\", \'\'), \
+                \"table_action\", \
+                COALESCE(\"tab_alias\", \'\'), \
+                COALESCE(\"tab_tooltip\", \'\'), \
+                \"field_name\", \
+                COALESCE(\"field_alias\", \'\'), \
+                \"field_skip\", \
+                \"field_search\", \
+                \"field_min\", \
+                \"field_max\" \
+            FROM \"public\".\"dd_table\" t \
+                LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
+                LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
+            WHERE \"table_schema\" = :schema AND \"table_name\" = :table\
+            ORDER BY \"tab_order\", \"field_order\""
+            query.prepare(sQuery)
+            query.bindValue(":schema",  ddTable.schemaName)
+            query.bindValue(":table",  ddTable.tableName)
+            query.exec_()
+
+            if query.isActive():
+                lastTab = None
+                firstDataSet = True
+
+                while query.next():
+                    if firstDataSet:
+                        helpText += query.value(0)
+                        firstDataSet = False
+                        createAction = query.value(1)
+
+                    tabAlias = query.value(2)
+                    tabTooltip = query.value(3)
+                    fieldName = query.value(4)
+                    fieldAlias = query.value(5)
+                    fieldSkip = query.value(6)
+                    fieldSearch =  query.value(7)
+                    fieldMin = query.value(8)
+                    fieldMax = query.value(9)
+
+                    if tabAlias != lastTab:
+                        if tabAlias != "":
+                            lastTab = tabAlias
+                            fieldGroups[fieldName] = [tabAlias,  tabTooltip]
+
+                    fieldOrder.append(fieldName)
+                    self.__debug(tabAlias,  fieldName)
+
+                    if fieldAlias != "":
+                        labels[fieldName] = fieldAlias
+
+                    if fieldSkip:
+                        skip.append(fieldName)
+
+                    if not fieldSearch:
+                        noSearchFields.append(fieldName)
+
+                    if fieldMin != None and fieldMax != None:
+                        minMax[fieldName] = [fieldMin,  fieldMax]
+            else:
+                self.showQueryError(query)
+
+            query.finish()
+        return [skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText]
+
+    def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
         inputUi = None,  searchUi = None,  helpText = ""):
         '''api method initLayer: initialize this layer with a data-driven input mask
+        in case there is configuration for this layer in the database read this
+        configuration and apply what is provided there
         Returns a Boolean stating the success of the initialization
         Paramters:
         - layer [QgsVectorLayer]
@@ -91,7 +177,8 @@ class DdManager(object):
         - fieldGroups [dict] with entries: fieldName: [tabTitle, tabTooltip] for each group a tab is created
         and the fields from fieldName onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
         - minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
-        - searchFields [array[string]] with fields to be shown in the search form, if empty all fields are shown
+        - noSearchFields [array[string]] with fields not to be shown in the search form, if empty all fields are shown
+          skipped fields are neve shown in the search form, no matter if they are included here
         - showParents [Boolean] show tabs for 1-to-1 relations (parents)
         - createAction [Boolean]: add an action to the layer's list of actions
         - db [QtSql.QSqlDatabase]
@@ -122,11 +209,15 @@ class DdManager(object):
             if thisTable == None:
                 return False
             else:
+                # read from config tables
+                skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
+                    self.__configureLayer(layer,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  helpText)
+
                 if inputMask or searchMask:
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
                     autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
-                                                  searchFields, showParents,  True,  inputMask,  searchMask,  helpText)
+                                                  noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText)
 
                     if inputUi == None:
                         # use the automatically created mask if none has been provided
@@ -319,6 +410,13 @@ class DdManager(object):
             searchUi = layerValues[3]
             self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
 
+
+    def getDbForLayer(self,  layer):
+        return self.__createDb(layer)
+
+    def existsInDb(self,  ddTable,  db):
+        return self.__getOid(ddTable,  db) != None
+
     def setDb(self,  layer,  db):
         '''api method to set the db for a layer'''
         layerValues = self.__getLayerValues(layer)
@@ -359,7 +457,7 @@ class DdManager(object):
 
         return retValue
 
-    def isAccessible(self,  db,  ddTable):
+    def isAccessible(self,  db,  ddTable,  showError = True):
         '''check if user has right to access this table'''
         query = QtSql.QSqlQuery(db)
         sQuery = "SELECT * FROM \"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\" LIMIT 1;"
@@ -371,7 +469,9 @@ class DdManager(object):
             return True
         else:
             query.finish()
-            self.showQueryError(query)
+
+            if showError:
+                self.showQueryError(query,  True)
             return False
 
     def loadPostGISLayer(self,  db, ddTable, displayName = None,
@@ -452,7 +552,7 @@ class DdManager(object):
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
-            if self.initLayer(layer,  skip = []):
+            if self.initLayer(layer):
                 layerValues = self.ddLayers[layer.id()]
             else:
                 layerValues = None
@@ -640,6 +740,90 @@ class DdManager(object):
         if db:
             db.close()
             db = None
+
+    def createConfigTables(self,  db):
+        sQuery = "CREATE TABLE  \"public\".\"dd_table\" (\
+            \"id\" SERIAL NOT NULL,\
+            \"table_schema\" VARCHAR(256) NOT NULL,\
+            \"table_name\" VARCHAR(256) NOT NULL,\
+            \"table_help\" TEXT NULL,\
+            \"table_action\" BOOLEAN NOT NULL DEFAULT \'t\',\
+            PRIMARY KEY (\"id\"));\
+        GRANT SELECT ON TABLE \"public\".\"dd_table\" TO public;\
+        COMMENT ON TABLE \"public\".\"dd_table\" IS \'DataDrivenInputMask: contains tables with a configuration for the mask, no need to input tables for which the default data-driven mask is to be shown\';\
+        COMMENT ON COLUMN \"public\".\"dd_table\".\"table_schema\" IS \'name of the schema\';\
+        COMMENT ON COLUMN \"public\".\"dd_table\".\"table_name\" IS \'name of the table\';\
+        COMMENT ON COLUMN \"public\".\"dd_table\".\"table_help\" IS \'Help string to be shown if user clicks the help button, this string can be HTML formatted.\';\
+        COMMENT ON COLUMN \"public\".\"dd_table\".\"table_action\" IS \'Create a layer action to show the mask\';\
+        INSERT INTO \"public\".\"dd_table\" (\"table_schema\", \"table_name\") VALUES(\'public\', \'dd_table\');\
+        INSERT INTO \"public\".\"dd_table\" (\"table_schema\", \"table_name\") VALUES(\'public\', \'dd_tab\');\
+        INSERT INTO \"public\".\"dd_table\" (\"table_schema\", \"table_name\") VALUES(\'public\', \'dd_field\');\
+        CREATE TABLE  \"public\".\"dd_tab\" (\
+            \"id\" SERIAL NOT NULL,\
+            \"dd_table_id\" INTEGER NOT NULL,\
+            \"tab_alias\" VARCHAR(256) NULL,\
+            \"tab_order\" INTEGER NOT NULL DEFAULT 0,\
+            \"tab_tooltip\" VARCHAR(256) NULL,\
+            PRIMARY KEY (\"id\"),\
+            CONSTRAINT \"fk_dd_tab_dd_table\"\
+                FOREIGN KEY (\"dd_table_id\")\
+                REFERENCES \"public\".\"dd_table\" (\"id\")\
+                ON DELETE CASCADE\
+                ON UPDATE CASCADE);\
+        GRANT SELECT ON TABLE \"public\".\"dd_tab\" TO public;\
+        CREATE INDEX \"idx_fk_dd_tab_dd_table_idx\" ON \"public\".\"dd_tab\" (\"dd_table_id\");\
+        COMMENT ON TABLE \"public\".\"dd_tab\" IS \'DataDrivenInputMask: contains tabs for tables\';\
+        COMMENT ON COLUMN \"public\".\"dd_tab\".\"dd_table_id\" IS \'Table for which this tab is used\';\
+        COMMENT ON COLUMN \"public\".\"dd_tab\".\"tab_alias\" IS \'Label the tab with this string, leave empty if you want the data-driven tabs\';\
+        COMMENT ON COLUMN \"public\".\"dd_tab\".\"tab_order\" IS \'Order of the tabs in the mask (if a mask contains more than one tabs)\';\
+        COMMENT ON COLUMN \"public\".\"dd_tab\".\"tab_tooltip\" IS \'tooltip to be shown for this tab\';\
+        INSERT INTO \"public\".\"dd_tab\" (\"dd_table_id\") VALUES(1);\
+        INSERT INTO \"public\".\"dd_tab\" (\"dd_table_id\") VALUES(2);\
+        INSERT INTO \"public\".\"dd_tab\" (\"dd_table_id\") VALUES(3);\
+        CREATE TABLE  \"public\".\"dd_field\" (\
+            \"id\" SERIAL NOT NULL,\
+            \"dd_tab_id\" INTEGER NOT NULL,\
+            \"field_name\" VARCHAR(256) NOT NULL,\
+            \"field_alias\" VARCHAR(256) NULL,\
+            \"field_skip\" BOOLEAN NOT NULL DEFAULT \'f\',\
+            \"field_search\" BOOLEAN NOT NULL DEFAULT \'t\',\
+            \"field_order\" INTEGER NOT NULL DEFAULT 0,\
+            \"field_min\" FLOAT NULL,\
+            \"field_max\" FLOAT NULL,\
+            PRIMARY KEY (\"id\"),\
+            CONSTRAINT \"fk_dd_field_dd_tab\"\
+                FOREIGN KEY (\"dd_tab_id\")\
+                REFERENCES \"public\".\"dd_tab\" (\"id\")\
+                ON DELETE CASCADE\
+                ON UPDATE CASCADE);\
+        GRANT SELECT ON TABLE \"public\".\"dd_field\" TO public;\
+        CREATE INDEX \"idx_fk_dd_field_dd_tab_idx\" ON \"public\".\"dd_field\" (\"dd_tab_id\");\
+        COMMENT ON TABLE  \"public\".\"dd_field\" IS \'DataDrivenInputMask: the data-driven mask for fields can be configured here.\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"dd_tab_id\" IS \'All fields not included here will be put in the tab with the highest tab_order. One and the same field should be included in _one_ tab only.\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_name\" IS \'Name of the field in the database\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_alias\" IS \'Alias of the field to be used in the mask\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_skip\" IS \'skip this field in the input and search mask, i.e. hide it from the user\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_search\" IS \'include this field in the search mask, if skip is true the field is not shown in the search mask, no matter if search is true\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_order\" IS \'order of the fields in the mask\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric fields)\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric fields)\';\
+        INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
+        INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
+        INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"
+        query = QtSql.QSqlQuery(db)
+        #query.prepare(sQuery)
+        query.exec_(sQuery)
+
+        if query.isActive():
+            query.finish()
+            self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
+                    "Config tables created! SELECT has been granted to \"public\".", None,
+                    QtGui.QApplication.UnicodeUTF8))
+            return True
+        else:
+            query.finish()
+            self.showQueryError(query,  True)
+            return False
 
     def showQueryError(self, query,  withSql = False):
         self.iface.messageBar().pushMessage("Database Error",  "%(error)s" % {"error": query.lastError().text()}, level=QgsMessageBar.CRITICAL)

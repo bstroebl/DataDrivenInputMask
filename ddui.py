@@ -76,7 +76,7 @@ def ddFormInit(dialog, layerId, featureId):
                 try:
                     layerValues = ddManager.ddLayers[aLayer.id()]
                 except KeyError:
-                    ddManager.initLayer(aLayer,  skip = [])
+                    ddManager.initLayer(aLayer)
                     layerValues = ddManager.ddLayers[aLayer.id()]
 
                 #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -104,7 +104,7 @@ class DataDrivenUi(object):
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax, searchFields, showParents,  showChildren):
+    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax, noSearchFields, showParents,  showChildren):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
@@ -233,11 +233,10 @@ class DataDrivenUi(object):
                 ddSearchFormWidget = defaultSearchFormWidget
 
             ddFormWidget.addInputWidget(ddInputWidget)
-            #self.__debug("__createForms",  "add widget for "  + anAttribute.name + " " + anAttribute.type)
 
             if addToSearch:
-                if len(searchFields) > 0:
-                   addToSearch = (searchFields.count(anAttribute.name) > 0)
+                if len(noSearchFields) > 0:
+                   addToSearch = (noSearchFields.count(anAttribute.name) == 0)
 
                 if addToSearch:
                     ddSearchFormWidget.addInputWidget(ddInputWidget)
@@ -252,21 +251,21 @@ class DataDrivenUi(object):
             skip.append(thisTable.tableName)
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  searchFields, showParents,  False)
+                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields, showParents,  False)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
         return [ddForms,  ddSearchForms]
 
     def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  \
-        searchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True,  \
+        noSearchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True,  \
         helpText = ""):
         '''creates default uis for this table (DdTable instance)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
         see ddmanager.initLayer for other parameters
         '''
 
-        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  searchFields,  showParents,  showChildren)
+        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  showParents,  showChildren)
 
         if  inputMask:
             ui = DdDialogWidget()
