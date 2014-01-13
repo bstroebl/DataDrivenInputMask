@@ -111,7 +111,7 @@ class DdManager(object):
 
         if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                           QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
             return False
         else:
             if not db:
@@ -169,12 +169,12 @@ class DdManager(object):
         '''make a DdTable object from the passed in layer, returns None, if layer is not suitable'''
         if 0 != layer.type():   # not a vector layer
             DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                           QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
             return None
         else:
             if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
                 DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
                 return None
             else:
                 if not db:
@@ -193,7 +193,7 @@ class DdManager(object):
 
                 if not self.__isTable(thisTable,  db):
                     DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table: ", None,
-                                                                       QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                                       QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
                     return None
                 else:
                     return thisTable
@@ -380,7 +380,7 @@ class DdManager(object):
 
         if not self.isAccessible(db,  ddTable):
             DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
-                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True)
+                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
         if not displayName:
             displayName = ddTable.schemaName + "." + ddTable.tableName
@@ -406,7 +406,7 @@ class DdManager(object):
         # double check if layer is valid
         if not vlayer.dataProvider().isValid():
             DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
-                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True)
+                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
         tLayer = QgsMapLayerRegistry.instance().addMapLayers([vlayer])
 
@@ -572,7 +572,7 @@ class DdManager(object):
 
         if not ok:
             DdError(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None,
-                                                 QtGui.QApplication.UnicodeUTF8) + database)
+                                                 QtGui.QApplication.UnicodeUTF8) + database,  iface = self.iface)
             return None
         else:
             return db
@@ -587,7 +587,7 @@ class DdManager(object):
 
         if not ok:
             DdError(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None,
-                                                 QtGui.QApplication.UnicodeUTF8) + database)
+                                                 QtGui.QApplication.UnicodeUTF8) + database,  iface = self.iface)
             return None
         else:
             return db

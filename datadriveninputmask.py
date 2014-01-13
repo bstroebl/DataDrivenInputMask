@@ -129,11 +129,11 @@ class DataDrivenInputMask:
 
         if None == layer:
             DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
-                                                               QtGui.QApplication.UnicodeUTF8))
+                                                               QtGui.QApplication.UnicodeUTF8),  iface = self.iface)
         else:
             if 0 != layer.type():   # not a vector layer
                 DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
             else:
                 self.app.ddManager.initLayer(layer,  skip = [])
 
@@ -143,11 +143,11 @@ class DataDrivenInputMask:
 
         if None == layer:
             DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
-                                                               QtGui.QApplication.UnicodeUTF8))
+                                                               QtGui.QApplication.UnicodeUTF8),  iface = self.iface)
         else:
             if 0 != layer.type():   # not a vector layer
                 DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
             else:
                 sel = layer.selectedFeatures()
 
@@ -156,7 +156,7 @@ class DataDrivenInputMask:
                     self.app.ddManager.showFeatureForm(layer,  feature)
                 else:
                     DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
-                                                                   QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                                   QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
 
     def showSearchForm(self):
         """Show the search form for the active layer"""
@@ -164,10 +164,10 @@ class DataDrivenInputMask:
 
         if None == layer:
             DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
-                                                               QtGui.QApplication.UnicodeUTF8))
+                                                               QtGui.QApplication.UnicodeUTF8),  iface = self.iface)
         else:
             if 0 != layer.type():   # not a vector layer
                 DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
             else:
                 self.app.ddManager.showSearchForm(layer)
