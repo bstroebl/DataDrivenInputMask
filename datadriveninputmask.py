@@ -81,7 +81,6 @@ class DataDrivenInputMask:
         # Add toolbar button and menu item
         self.menuLabel = QtGui.QApplication.translate("DdLabel", "&Data-driven Input Mask",
                                                                  None, QtGui.QApplication.UnicodeUTF8)
-        self.iface.addPluginToMenu(self.menuLabel, self.action)
 
         # Create action that will start plugin configuration
         self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
@@ -91,8 +90,6 @@ class DataDrivenInputMask:
         # connect the action to the run method
         self.actionSel.triggered.connect(self.showInputForm)
 
-        # Add toolbar button and menu item
-        self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
 
         # Create action that will start plugin configuration
         self.actionSearch = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Search Form",
@@ -102,47 +99,75 @@ class DataDrivenInputMask:
         # connect the action to the run method
         self.actionSearch.triggered.connect(self.showSearchForm)
 
-        # Add menu item
-        self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
+        # Add actions to menu
+
+        if hasattr(self.iface,  "addPluginToVectorMenu"):
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.action)
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSel)
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSearch)
+        else:
+            self.iface.addPluginToMenu(self.menuLabel, self.action)
+            self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
+            self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
 
     def unload(self):
         """Remove the plugin menu item and icon"""
         self.app.ddManager.quit()
-        #QtGui.QMessageBox.information(None, "", "unload")
-        self.iface.removePluginMenu(self.menuLabel, self.action)
-        self.iface.removePluginMenu(self.menuLabel, self.actionSel)
-        self.iface.removePluginMenu(self.menuLabel, self.actionSearch)
+
+        if hasattr(self.iface, "removePluginVectorMenu"):
+            self.iface.removePluginVectorMenu(self.menuLabel, self.action)
+            self.iface.removePluginVectorMenu(self.menuLabel, self.actionSel)
+            self.iface.removePluginVectorMenu(self.menuLabel, self.actionSearch)
+        else:
+            self.iface.removePluginMenu(self.menuLabel, self.action)
+            self.iface.removePluginMenu(self.menuLabel, self.actionSel)
+            self.iface.removePluginMenu(self.menuLabel, self.actionSearch)
 
     def initializeLayer(self):
         """Create the mask for the active layer"""
         layer = self.iface.activeLayer()
-        if 0 != layer.type():   # not a vector layer
-            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
+
+        if None == layer:
+            DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
+                                                               QtGui.QApplication.UnicodeUTF8))
         else:
-            self.app.ddManager.initLayer(layer,  skip = [])
+            if 0 != layer.type():   # not a vector layer
+                DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())
+            else:
+                self.app.ddManager.initLayer(layer,  skip = [])
 
     def showInputForm(self):
         """Show the mask for the first selected feature in the active layer"""
         layer = self.iface.activeLayer()
-        if 0 != layer.type():   # not a vector layer
-            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
-        else:
-            sel = layer.selectedFeatures()
 
-            if len(sel) > 0:
-                feature = sel[0]
-                self.app.ddManager.showFeatureForm(layer,  feature)
-            else:
-                DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
+        if None == layer:
+            DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
+                                                               QtGui.QApplication.UnicodeUTF8))
+        else:
+            if 0 != layer.type():   # not a vector layer
+                DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
                                                                QtGui.QApplication.UnicodeUTF8) + layer.name())
+            else:
+                sel = layer.selectedFeatures()
+
+                if len(sel) > 0:
+                    feature = sel[0]
+                    self.app.ddManager.showFeatureForm(layer,  feature)
+                else:
+                    DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
+                                                                   QtGui.QApplication.UnicodeUTF8) + layer.name())
 
     def showSearchForm(self):
         """Show the search form for the active layer"""
         layer = self.iface.activeLayer()
-        if 0 != layer.type():   # not a vector layer
-            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name())
+
+        if None == layer:
+            DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
+                                                               QtGui.QApplication.UnicodeUTF8))
         else:
-            self.app.ddManager.showSearchForm(layer)
+            if 0 != layer.type():   # not a vector layer
+                DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
+                                                               QtGui.QApplication.UnicodeUTF8) + layer.name())
+            else:
+                self.app.ddManager.showSearchForm(layer)
