@@ -1302,7 +1302,11 @@ class DdLineEdit(DdInputWidget):
 
     def setEnabled(self,  enable):
         if self.inputWidget != None:
-            self.inputWidget.setEnabled(enable)
+            if enable:
+                self.inputWidget.setEnabled(self.chk.checkState() == QtCore.Qt.Unchecked)
+            else:
+                self.inputWidget.setEnabled(enable)
+
             self.chk.setEnabled(enable)
 
     def chkStateChanged(self,  newState):
