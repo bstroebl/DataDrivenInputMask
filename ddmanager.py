@@ -165,20 +165,19 @@ class DdManager(object):
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
         inputUi = None,  searchUi = None,  helpText = ""):
-        '''api method initLayer: initialize this layer with a data-driven input mask
-        in case there is configuration for this layer in the database read this
-        configuration and apply what is provided there
+        '''api method initLayer: initialize this layer with a data-driven input mask.
+        In case there is configuration for this layer in the database read this
+        configuration and apply what is provided there.
         Returns a Boolean stating the success of the initialization
-        Paramters:
+        Parameters:
+
         - layer [QgsVectorLayer]
         - skip [array [string]]: field names to not show
         - labels [dict] with entries: "fieldname": "label"
         - fieldOrder [array[string]]: containing the field names in the order they should be shown
-        - fieldGroups [dict] with entries: fieldName: [tabTitle, tabTooltip] for each group a tab is created
-        and the fields from fieldName onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
+        - fieldGroups [dict] with entries: fieldName: [tabTitle, tabTooltip] for each group a tab is created and the fields from fieldName onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
         - minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
-        - noSearchFields [array[string]] with fields not to be shown in the search form, if empty all fields are shown
-          skipped fields are neve shown in the search form, no matter if they are included here
+        - noSearchFields [array[string]] with fields not to be shown in the search form, if empty all fields are shown. Skipped fields are never shown in the search form, no matter if they are included here
         - showParents [Boolean] show tabs for 1-to-1 relations (parents)
         - createAction [Boolean]: add an action to the layer's list of actions
         - db [QtSql.QSqlDatabase]

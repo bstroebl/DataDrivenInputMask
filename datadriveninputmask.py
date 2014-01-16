@@ -70,6 +70,7 @@ class DataDrivenInputMask:
                 QtCore.QCoreApplication.installTranslator(self.translator)
 
     def debug(self,  str):
+        '''show str in QgsMessageLog'''
         QgsMessageLog.logMessage(str)
 
     def initGui(self):
@@ -148,6 +149,7 @@ class DataDrivenInputMask:
         return newFeature
 
     def isSuitableLayer(self,  layer):
+        '''check if layer is suitable to apply a DataDrivenInputMaskl'''
         if None == layer:
             DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
                                                                QtGui.QApplication.UnicodeUTF8),  iface = self.iface)
@@ -161,6 +163,7 @@ class DataDrivenInputMask:
         return False
 
     def getConfigFeature(self,  configLayer,  ddTable):
+        '''returns the QgsFeature for this ddTable in configLayer (public.dd_table)'''
         configLayer.selectAll()
         forFeature = None
 
@@ -175,14 +178,14 @@ class DataDrivenInputMask:
 
     #Slots
     def initializeLayer(self):
-        """Create the mask for the active layer"""
+        """SLOT: Create the mask for the active layer"""
         layer = self.iface.activeLayer()
 
         if self.isSuitableLayer(layer):
             self.app.ddManager.initLayer(layer)
 
     def showInputForm(self):
-        """Show the mask for the first selected feature in the active layer"""
+        """SLOT: Show the mask for the first selected feature in the active layer"""
         layer = self.iface.activeLayer()
 
         if self.isSuitableLayer(layer):
@@ -196,14 +199,14 @@ class DataDrivenInputMask:
                                                                QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
 
     def showSearchForm(self):
-        """Show the search form for the active layer"""
+        """SLOT: Show the search form for the active layer"""
         layer = self.iface.activeLayer()
 
         if self.isSuitableLayer(layer):
             self.app.ddManager.showSearchForm(layer)
 
     def configureMask(self):
-        '''configure the mask for the active layer using the config tables in the db'''
+        '''SLOT: configure the mask for the active layer using the config tables in the db'''
 
         layer = self.iface.activeLayer()
 
