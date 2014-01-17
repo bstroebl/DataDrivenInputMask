@@ -80,11 +80,9 @@ class DdManager(object):
             return None
 
     def __configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
-        db,  helpText):
+        db,  createAction,  helpText):
         '''read configuration from db'''
 
-        #initialize
-        createAction = True
         # check for config tables
         ddConfigTable = DdTable(schemaName = "public",  tableName = "dd_table")
 
@@ -211,12 +209,13 @@ class DdManager(object):
             else:
                 if inputMask or searchMask:
                     # read from config tables
-                    skip,  labels,  fieldOrder,  xxfieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
-                        self.__configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  helpText)
+
+                    skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
+                        self.__configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  createAction,  helpText)
 
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
-                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  xxfieldGroups,  minMax,  \
+                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
                                                   noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText)
 
                     if inputUi == None:
