@@ -76,7 +76,9 @@ def ddFormInit(dialog, layerId, featureId):
                 try:
                     layerValues = ddManager.ddLayers[aLayer.id()]
                 except KeyError:
-                    ddManager.initLayer(aLayer)
+                    ddManager.initLayer(aLayer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
+                        showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
+                        inputUi = None,  searchUi = None,  helpText = "")
                     layerValues = ddManager.ddLayers[aLayer.id()]
 
                 #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
@@ -1851,7 +1853,10 @@ class DdN2mWidget(DdInputWidget):
                 self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
             except KeyError:
                 self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  \
-                                                      showParents = doShowParents,  searchMask = False) # reinitialize inputMask only
+                                                showParents = doShowParents,  searchMask = False,  \
+                                                labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
+                                                createAction = True,  db = None,  inputMask = True,   \
+                                                inputUi = None,  searchUi = None,  helpText = "") # reinitialize inputMask only
 
         self.featureId = feature.id()
 

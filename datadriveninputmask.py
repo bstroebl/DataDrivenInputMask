@@ -182,7 +182,9 @@ class DataDrivenInputMask:
         layer = self.iface.activeLayer()
 
         if self.isSuitableLayer(layer):
-            self.app.ddManager.initLayer(layer)
+            self.app.ddManager.initLayer(layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
+        showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
+        inputUi = None,  searchUi = None,  helpText = "") # set the defaults here because somehow some of the values persist
 
     def showInputForm(self):
         """SLOT: Show the mask for the first selected feature in the active layer"""
@@ -258,7 +260,6 @@ class DataDrivenInputMask:
                     configLayer.startEditing()
                     forFeature = self.getConfigFeature(configLayer,  ddLayerTable)
 
-                self.debug(layer.name())
                 self.app.ddManager.showFeatureForm(configLayer,  forFeature)
 
 

@@ -79,7 +79,7 @@ class DdManager(object):
         else:
             return None
 
-    def __configureLayer(self,  layer,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
+    def __configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
         db,  helpText):
         '''read configuration from db'''
 
@@ -96,7 +96,6 @@ class DdManager(object):
                 self.showConfigInfo = False
         else:
             # read values for this table from config tables
-            ddTable = self.makeDdTable(layer)
             query = QtSql.QSqlQuery(db)
             sQuery = "SELECT COALESCE(\"table_help\", \'\'), \
                 \"table_action\", \
@@ -143,7 +142,6 @@ class DdManager(object):
                             fieldGroups[fieldName] = [tabAlias,  tabTooltip]
 
                     fieldOrder.append(fieldName)
-                    self.__debug(tabAlias,  fieldName)
 
                     if fieldAlias != "":
                         labels[fieldName] = fieldAlias
@@ -170,6 +168,9 @@ class DdManager(object):
         configuration and apply what is provided there.
         Returns a Boolean stating the success of the initialization
         Parameters:
+        WARNING: if config tables are used, the parameters' objects survive
+        and are thus applied to the next layer, too. Be sure to also pass ALL optional
+        paramerters when calling initLayer()
 
         - layer [QgsVectorLayer]
         - skip [array [string]]: field names to not show
@@ -208,14 +209,14 @@ class DdManager(object):
             if thisTable == None:
                 return False
             else:
-                # read from config tables
-                skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
-                    self.__configureLayer(layer,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  helpText)
-
                 if inputMask or searchMask:
+                    # read from config tables
+                    skip,  labels,  fieldOrder,  xxfieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
+                        self.__configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  helpText)
+
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
-                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
+                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  xxfieldGroups,  minMax,  \
                                                   noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText)
 
                     if inputUi == None:
@@ -329,7 +330,10 @@ class DdManager(object):
             parentsInMask = layerValues[4]
 
             if parentsInMask and not showParents:
-                self.initLayer(layer,  showParents = False,  inputMask = True,  searchMask = False)
+                self.initLayer(layer,  showParents = False,  inputMask = True,  searchMask = False,  \
+                            skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
+                            createAction = True,  db = None,   inputUi = None,  searchUi = None,  helpText = ""
+                               )
                 layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
         if layerValues != None:
@@ -551,7 +555,9 @@ class DdManager(object):
         try:
             layerValues = self.ddLayers[layer.id()]
         except KeyError:
-            if self.initLayer(layer):
+            if self.initLayer(layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
+                showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
+                inputUi = None,  searchUi = None,  helpText = ""):
                 layerValues = self.ddLayers[layer.id()]
             else:
                 layerValues = None
