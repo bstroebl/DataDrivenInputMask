@@ -641,11 +641,18 @@ class DataDrivenUi(object):
                             thisMinMax = None
 
                         if thisMinMax == None:
-                            ddAtt = DdLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK,
-                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel)
+                            thisMin = None
+                            thisMax = None
+                        else:
+                            thisMin =  thisMinMax[0]
+                            thisMax = thisMinMax[1]
+
+                        if attTyp == "date":
+                            ddAtt = DdDateLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK,
+                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel, thisMin,  thisMax)
                         else:
                             ddAtt = DdLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK,
-                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel,  thisMinMax[0],  thisMinMax[1])
+                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel, thisMin,  thisMax)
 
                     ddAttributes.append(ddAtt)
 
@@ -1214,6 +1221,13 @@ class DdLineEdit(DdInputWidget):
     def __str__(self):
         return "<ddui.DdOneLineInputWidget %s>" % str(self.attribute.name)
 
+    def getDefault(self):
+        '''function to strip quotation marks and data type from default string'''
+        thisValue = self.attribute.default
+        thisValue = thisValue.split("::")[0]
+        thisValue = thisValue.replace("\'",  "")
+        return thisValue
+
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a str representing the value in this field for this feature;
         if the value is null, None is returned,
@@ -1224,7 +1238,7 @@ class DdLineEdit(DdInputWidget):
 
         if feature.id() < 0 and thisValue == None: # new feature
             if self.attribute.hasDefault:
-                thisValue = self.attribute.default
+                thisValue = self.getDefault()
 
         return thisValue
 
@@ -1246,7 +1260,6 @@ class DdLineEdit(DdInputWidget):
     # public methods
     def setValue(self,  thisValue):
         '''sets thisValue into the input widget'''
-        self.manageChk(thisValue)
 
         if thisValue == None:
             thisValue = ""
@@ -1267,7 +1280,6 @@ class DdLineEdit(DdInputWidget):
 
     def setupUi(self,  parent,  db):
         '''setup the label and add the inputWidget to parents formLayout'''
-        #self.debug("DdLineEdit setupUi " + self.attribute.name)
         self.label = self.createLabel(parent)
         hLayout = QtGui.QHBoxLayout(parent)
         self.searchCbx = QtGui.QComboBox(parent)
@@ -1311,14 +1323,27 @@ class DdLineEdit(DdInputWidget):
 
             self.chk.setEnabled(enable)
 
+    def setNull(self,  setnull):
+        '''Set this inputWidget to NULL'''
+        if setnull:
+            thisValue = QtGui.QApplication.translate("DdInfo", "Null", None,
+                                                           QtGui.QApplication.UnicodeUTF8)
+        else:
+            if self.attribute.hasDefault:
+                thisValue = self.getDefault()
+            else:
+                thisValue = ""
+
+        self.setValue(thisValue)
+
     def chkStateChanged(self,  newState):
         '''slot: disables the input widget if the null checkbox is checked and vice versa'''
         self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
         self.searchCbx.setEnabled(newState == QtCore.Qt.Unchecked)
+        self.setNull(newState == QtCore.Qt.Checked)
         self.hasChanges = True
 
     def initialize(self,  layer,  feature,  db):
-        #self.debug("DdLineEdit initialize " + self.attribute.name)
         if feature == None:
             self.searchCbx.setVisible(False)
             self.manageChk(None)
@@ -1335,6 +1360,7 @@ class DdLineEdit(DdInputWidget):
                 self.searchCbx.setVisible(False)
                 thisValue = self.getFeatureValue(layer,  feature,  db)
                 self.setValue(thisValue)
+                self.manageChk(thisValue)
                 self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
     def checkInput(self):
@@ -1450,7 +1476,7 @@ class DdLineEditInt(DdLineEdit):
 
     def initialize(self,  layer,  feature,  db):
         DdLineEdit.initialize(self,  layer,  feature,  db)
-        thisValue = self.getValue()
+        thisValue = self.getFeatureValue(layer,  feature,  db)
 
         if thisValue == None:
             self.setValidator()
@@ -1464,6 +1490,7 @@ class DdLineEditInt(DdLineEdit):
                     self.inputWidget.setValidator(None) # remove the validator
 
             self.setValue(thisValue)
+            self.manageChk(thisValue)
 
             if isInt:
                 self.setValidator()
@@ -1479,7 +1506,6 @@ class DdLineEditDouble(DdLineEdit):
         return "<ddui.DdLineEditDouble %s>" % str(self.attribute.name)
 
     def setValue(self,  thisValue):
-        self.manageChk(thisValue)
 
         if thisValue == None:
             thisValue = ""
@@ -1575,6 +1601,7 @@ class DdComboBox(DdLineEdit):
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
+        self.values = {}
 
     def __str__(self):
         return "<ddui.DdComboBox %s>" % str(self.attribute.name)
@@ -1600,14 +1627,14 @@ class DdComboBox(DdLineEdit):
         inputWidget.currentIndexChanged.connect(self.registerChange)
         return inputWidget
 
-    def fill(self,  db):
-        '''fill the QComboBox with values according to the attribute from the db'''
+    def readValues(self,  db):
+        '''read the values to be shown in the QComboBox from the db'''
+        self.values == {}
         query = QtSql.QSqlQuery(db)
         query.prepare(self.attribute.queryForCbx)
         query.exec_()
 
         if query.isActive():
-            self.inputWidget.clear()
 
             while query.next(): # returns false when all records are done
                 sValue = query.value(0)
@@ -1616,14 +1643,40 @@ class DdComboBox(DdLineEdit):
                     sValue = str(sValue)
 
                 keyValue = query.value(1)
-                self.inputWidget.addItem(sValue, keyValue)
-
+                self.values[keyValue] = sValue
             query.finish()
+            return True
         else:
             DbError(query)
+            return False
+
+    def fill(self):
+        '''fill the QComboBox with the values'''
+
+        if self.values != {}:
+            self.inputWidget.clear()
+
+            for keyValue,  sValue in self.values.iteritems():
+                self.inputWidget.addItem(sValue, keyValue)
+
+    def setNull(self,  setnull):
+
+        thisValue = None
+
+        if setnull:
+            self.inputWidget.clear()
+        else:
+            self.fill()
+
+            if self.attribute.hasDefault:
+                if self.attribute.isTypeInt():
+                    thisValue = int(self.attribute.default)
+                elif self.attribute.isTypeChar():
+                    thisValue = self.attribute.default
+
+        self.setValue(thisValue)
 
     def setValue(self,  thisValue):
-        self.manageChk(thisValue)
 
         if thisValue == None:
             self.inputWidget.setCurrentIndex(0)
@@ -1644,7 +1697,8 @@ class DdComboBox(DdLineEdit):
     def setupUi(self,  parent,  db):
         #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
         DdLineEdit.setupUi(self,  parent,  db)
-        self.fill(db)
+        if self.readValues(db):
+            self.fill()
 
 class DdDateEdit(DdLineEdit):
     '''input widget (QDateEdit) for a date field'''
@@ -1673,14 +1727,32 @@ class DdDateEdit(DdLineEdit):
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QDateEdit(parent)
         inputWidget.setCalendarPopup(True)
-        inputWidget.setDisplayFormat("dd.MM.yyyy")
+        loc = QtCore.QLocale.system()
+        inputWidget.setDisplayFormat(loc.dateFormat())
         inputWidget.setObjectName("dat" + parent.objectName() + self.attribute.name)
         inputWidget.setToolTip(self.attribute.comment)
+
+        if self.attribute.min != None:
+            inputWidget.setMinimumDate(self.attribute.min)
+        if self.attribute.max != None:
+            inputWidget.setMaximumDate(self.attribute.max)
+
         inputWidget.dateChanged.connect(self.registerChange)
         return inputWidget
 
+    def setNull(self,  setnull):
+        if setnull:
+            thisValue = self.inputWidget.maximumDate()
+        else:
+            if self.attribute.hasDefault:
+                thisValue = self.getDefault()
+                thisValue = QtCore.QDate.fromString(thisValue,  self.attribute.dateFormat)
+            else:
+                thisValue = None
+
+        self.setValue(thisValue)
+
     def setValue(self,  thisValue):
-        self.manageChk(thisValue)
 
         if not thisValue: # i.e. None
             self.inputWidget.setDate(QtCore.QDate.currentDate())
@@ -1728,18 +1800,31 @@ class DdCheckBox(DdLineEdit):
         inputWidget.stateChanged.connect(self.registerChange)
         return inputWidget
 
+    def setNull(self,  setnull):
+        '''Set this inputWidget to NULL'''
+        self.inputWidget.setTristate(setnull)
+        thisValue = None
+
+        if not setnull:
+            if self.attribute.hasDefault:
+                thisValue = self.attribute.default
+
+                if thisValue == "true":
+                    thisValue = True
+                else:
+                    thisValue = False
+
+        self.setValue(thisValue)
+
     def setValue(self,  thisValue):
-        self.manageChk(thisValue)
 
         if None == thisValue: #handle Null values
-            self.inputWidget.setCheckState(0) # false
+            if self.inputWidget.isTristate():
+                self.inputWidget.setCheckState(QtCore.Qt.PartiallyChecked)
+            else:
+                self.inputWidget.setCheckState(0) # false
         else:
             self.inputWidget.setChecked(thisValue)
-
-    def stateChanged(self,  newState):
-        '''slot if this QCheckBox' state has changed'''
-        if self.inputWidget.isTristate() and newState != 1:
-            self.inputWidget.setTristate(False)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -1785,7 +1870,6 @@ class DdTextEdit(DdLineEdit):
         return inputWidget
 
     def setValue(self,  thisValue):
-        self.manageChk(thisValue)
 
         if thisValue == None:
             thisValue = ""

@@ -150,7 +150,7 @@ class DdManager(object):
                     if not fieldSearch:
                         noSearchFields.append(fieldName)
 
-                    if fieldMin != None and fieldMax != None:
+                    if fieldMin != None or fieldMax != None:
                         minMax[fieldName] = [fieldMin,  fieldMax]
             else:
                 self.showQueryError(query)
@@ -175,7 +175,7 @@ class DdManager(object):
         - labels [dict] with entries: "fieldname": "label"
         - fieldOrder [array[string]]: containing the field names in the order they should be shown
         - fieldGroups [dict] with entries: fieldName: [tabTitle, tabTooltip] for each group a tab is created and the fields from fieldName onwards (refers to fieldOrder) are grouped in this tab; tabTooltip is optional
-        - minMax [dict] with entries: "fieldname": [min, max] (use for numerical fields only!
+        - minMax [dict] with entries: "fieldname": [min, max] - strings; use for numerical or date fields only!
         - noSearchFields [array[string]] with fields not to be shown in the search form, if empty all fields are shown. Skipped fields are never shown in the search form, no matter if they are included here
         - showParents [Boolean] show tabs for 1-to-1 relations (parents)
         - createAction [Boolean]: add an action to the layer's list of actions
@@ -792,8 +792,8 @@ class DdManager(object):
             \"field_skip\" BOOLEAN NOT NULL DEFAULT \'f\',\
             \"field_search\" BOOLEAN NOT NULL DEFAULT \'t\',\
             \"field_order\" INTEGER NOT NULL DEFAULT 0,\
-            \"field_min\" FLOAT NULL,\
-            \"field_max\" FLOAT NULL,\
+            \"field_min\" VARCHAR(32) NULL,\
+            \"field_max\" VARCHAR(32) NULL,\
             PRIMARY KEY (\"id\"),\
             CONSTRAINT \"fk_dd_field_dd_tab\"\
                 FOREIGN KEY (\"dd_tab_id\")\
@@ -809,8 +809,8 @@ class DdManager(object):
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_skip\" IS \'skip this field in the input and search mask, i.e. hide it from the user\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_search\" IS \'include this field in the search mask, if skip is true the field is not shown in the search mask, no matter if search is true\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_order\" IS \'order of the fields in the mask\';\
-        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric fields)\';\
-        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric fields)\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the min date on the current date.\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date.\';\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"

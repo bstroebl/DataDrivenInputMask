@@ -37,7 +37,7 @@ General rules:
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4 import QtGui
+from PyQt4 import QtGui,  QtCore
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
@@ -89,7 +89,10 @@ class DdAttribute(object):
 
         if self.isTypeInt:
             if min != None:
-                self.min = int(round(min))
+                try:
+                    self.min = int(round(float(min)))
+                except:
+                    self.min = None
             else:
                 if self.type == "int2":
                     self.min = -32768
@@ -97,7 +100,10 @@ class DdAttribute(object):
                     self.min = -2147483648
 
             if max != None:
-                self.max = int(round(max))
+                try:
+                    self.max = int(round(float(max)))
+                except:
+                    self.max = None
             else:
                 if self.type == "int2":
                     self.max = 32767
@@ -105,10 +111,16 @@ class DdAttribute(object):
                     self.max = 2147483647
         elif self.isTypeFloat:
             if min != None:
-                self.min = float(min)
+                try:
+                    self.min = float(min)
+                except:
+                    self.min = None
 
             if max != None:
-                self.max = float(max)
+                try:
+                    self.max = float(max)
+                except:
+                    self.max = None
 
     def debug(self,  msg):
         QtGui.QMessageBox.information(None, "Debug",  msg)
@@ -126,6 +138,37 @@ class DdLayerAttribute(DdAttribute):
 
     def __str__(self):
         return "<ddattribute.DdLayerAttribute %s>" % self.name
+
+class DdDateLayerAttribute(DdLayerAttribute):
+    '''a DdAttribute for a date field in a QGIS layer
+    if you want to specify today as min or max, simply pass "today"'''
+    def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label = None,  min = None,  max = None,  dateFormat = "yyyy-MM-dd"):
+        self.dateFormat = dateFormat # set here because DdAttribute calls setMinMax on __init__
+        DdLayerAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label,  min,  max)
+
+    def __str__(self):
+        return "<ddattribute.DdDateLayerAttribute %s>" % self.name
+
+    def setMinMax(self,  min,  max):
+        '''reimplemented from DdAttribute'''
+        self.min = self.formatDate(min)
+        self.max = self.formatDate(max)
+
+    def formatDate(self,  thisDate):
+        '''thisDate may be either a QDate or a string'''
+        if thisDate != None:
+            if not isinstance(thisDate,  QtCore.QDate):
+                # we assume a string
+                if thisDate == "today":
+                    thisDate = QtCore.QDate.currentDate()
+                else:
+                    thisDate = QtCore.QDate.fromString(thisDate,  self.dateFormat)
+                    # returns a null date if string is not formatted as needed by dateFormat
+
+            if thisDate.isNull():
+                thisDate = None
+
+        return thisDate
 
 class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
