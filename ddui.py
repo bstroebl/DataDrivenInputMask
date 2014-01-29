@@ -2088,7 +2088,7 @@ class DdN2mListWidget(DdN2mWidget):
             layerPkList = layer.pendingPkAttributesList()
             ids = ""
 
-            for i in range(self.inputWidget.count() -1):
+            for i in range(self.inputWidget.count()):
                 anItem = self.inputWidget.item(i)
                 if anItem.checkState() == 2:
                     if ids != "":
