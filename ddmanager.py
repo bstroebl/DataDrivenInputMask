@@ -664,6 +664,20 @@ class DdManager(object):
 
         return result
 
+    def __executeConfigQuery(self,  sQuery):
+        '''execute a query for manipulating the config tables
+        returns the query or None on error '''
+        query = QtSql.QSqlQuery(db)
+        query.exec_(sQuery)
+
+        if query.isActive():
+            return query
+        else:
+            query.finish()
+            self.showQueryError(query,  True)
+            return None
+
+
     def __connectDb(self,  qSqlDatabaseName,  host,  database,  port,  username,  passwd):
         '''connect to the PostgreSQL DB'''
         db = QtSql.QSqlDatabase.addDatabase ("QPSQL",  qSqlDatabaseName)
@@ -745,6 +759,61 @@ class DdManager(object):
             db.close()
             db = None
 
+    def changeConfigTables(self,  db):
+        '''function to update the config tables if anything changes'''
+        changeToVersion060 = False
+        sQuery = "SELECT t.typname as typ \
+        FROM pg_attribute att \
+        JOIN pg_type t ON att.atttypid = t.oid \
+        JOIN pg_class c ON attrelid = c.oid \
+        JOIN pg_namespace n ON c.relnamespace = n.oid \
+        WHERE n.nspname = \'public\' AND c.relname = \'dd_field\' \
+        AND attname= \'field_min\'"
+        query = self.__executeConfigQuery(sQuery)
+
+        if query != None:
+            while query.next():
+                changeToVersion060 = query.value(0) == "float8"
+            query.finish()
+        else:
+            return False
+
+        if changeToVersion060:
+            #recreate table and transfer data
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" RENAME \"field_min\" TO \"field_min_old\"; \
+            ALTER TABLE \"public\".\"dd_field\" RENAME \"field_max\" TO \"field_max_old\"; \
+            ALTER TABLE \"public\".\"dd_field\" ADD COLUMN \"field_min\" VARCHAR(32) NULL; \
+            ALTER TABLE \"public\".\"dd_field\" ADD COLUMN \"field_max\" VARCHAR(32) NULL; \
+            COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the min date on the current date.\';\
+            COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date.\'; "
+            query = self.__executeConfigQuery(sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "UPDATE \"public\".\"dd_field\" SET \"field_min\" = CAST (\"field_min_old\" as varchar) WHERE \"field_min_old\" IS NOT NULL; \
+            UPDATE \"public\".\"dd_field\" SET \"field_max\" = CAST (\"field_max_old\" as varchar) WHERE \"field_max_old\" IS NOT NULL;"
+
+            query = self.__executeConfigQuery(sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" DROP COLUMN \"field_min_old\"; \
+            ALTER TABLE \"public\".\"dd_field\" DROP COLUMN \"field_max_old\";"
+            query = self.__executeConfigQuery(sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+        return True
+
     def createConfigTables(self,  db):
         sQuery = "CREATE TABLE  \"public\".\"dd_table\" (\
             \"id\" SERIAL NOT NULL,\
@@ -814,19 +883,16 @@ class DdManager(object):
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"
-        query = QtSql.QSqlQuery(db)
-        #query.prepare(sQuery)
-        query.exec_(sQuery)
 
-        if query.isActive():
+        query = self.__executeConfigQuery(sQuery)
+
+        if query != None:
             query.finish()
             self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
                     "Config tables created! SELECT has been granted to \"public\".", None,
                     QtGui.QApplication.UnicodeUTF8))
             return True
         else:
-            query.finish()
-            self.showQueryError(query,  True)
             return False
 
     def showQueryError(self, query,  withSql = False):

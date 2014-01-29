@@ -227,7 +227,10 @@ class DataDrivenInputMask:
 
                 if configLayer == None:
                     #check if config tables exist in the db
-                    if not self.app.ddManager.existsInDb(ddConfigTable,  db):
+                    if self.app.ddManager.existsInDb(ddConfigTable,  db):
+                        #update the tables if necessary
+                        self.app.ddManager.changeConfigTables(db)
+                    else:
                         # create config tables
                         if not self.app.ddManager.createConfigTables(db):
                             return None
