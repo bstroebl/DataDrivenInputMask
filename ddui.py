@@ -1237,8 +1237,9 @@ class DdLineEdit(DdInputWidget):
         thisValue = feature[fieldIndex]
 
         if feature.id() < 0 and thisValue == None: # new feature
-            if self.attribute.hasDefault:
-                thisValue = self.getDefault()
+            if feature.id() != -3333: # no return value for search feature
+                if self.attribute.hasDefault:
+                    thisValue = self.getDefault()
 
         return thisValue
 
@@ -1326,8 +1327,7 @@ class DdLineEdit(DdInputWidget):
     def setNull(self,  setnull):
         '''Set this inputWidget to NULL'''
         if setnull:
-            thisValue = QtGui.QApplication.translate("DdInfo", "Null", None,
-                                                           QtGui.QApplication.UnicodeUTF8)
+            thisValue = None
         else:
             if self.attribute.hasDefault:
                 thisValue = self.getDefault()
@@ -1455,12 +1455,13 @@ class DdLineEditInt(DdLineEdit):
         thisValue = feature[fieldIndex]
 
         if feature.id() < 0 and thisValue == None: # new feature and no value set
-            if self.attribute.hasDefault:
-                thisValue = self.attribute.default
-            else:
-                if self.attribute.isPK :
-                    thisValue = self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1
-                    thisValue = str(thisValue)
+            if feature.id() != -3333: # no return value for search feature
+                if self.attribute.hasDefault:
+                    thisValue = self.attribute.default
+                else:
+                    if self.attribute.isPK :
+                        thisValue = self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1
+                        thisValue = str(thisValue)
 
         return thisValue
 
@@ -1613,11 +1614,12 @@ class DdComboBox(DdLineEdit):
         thisValue = feature[fieldIndex] #returns None if empty
 
         if  feature.id() < 0 and thisValue == None: # new feature and no value set
-            if self.attribute.hasDefault:
-                if self.attribute.isTypeInt():
-                    thisValue = int(self.attribute.default)
-                elif self.attribute.isTypeChar():
-                    thisValue = self.attribute.default
+            if feature.id() != -3333: # no return value for search feature
+                if self.attribute.hasDefault:
+                    if self.attribute.isTypeInt():
+                        thisValue = int(self.attribute.default)
+                    elif self.attribute.isTypeChar():
+                        thisValue = self.attribute.default
 
         return thisValue
 
@@ -1716,11 +1718,12 @@ class DdDateEdit(DdLineEdit):
         thisValue = feature[fieldIndex]
 
         if thisValue == None:
-            if feature.id() < 0 and self.attribute.hasDefault:
-                thisValue = self.attribute.default.toDate()
-            else:
-                if self.attribute.notNull:
-                    thisValue = QtCore.QDate.currentDate()
+            if feature.id() != -3333: # no return value for search feature
+                if feature.id() < 0 and self.attribute.hasDefault:
+                    thisValue = self.attribute.default.toDate()
+                else:
+                    if self.attribute.notNull:
+                        thisValue = QtCore.QDate.currentDate()
 
         return thisValue
 
@@ -1789,8 +1792,9 @@ class DdCheckBox(DdLineEdit):
                 thisValue = True
 
         if feature.id() < 0 and thisValue == None: # new feature and no value set
-            if self.attribute.hasDefault:
-                thisValue = bool(self.attribute.default)
+            if feature.id() != -3333: # no return value for search feature
+                if self.attribute.hasDefault:
+                    thisValue = bool(self.attribute.default)
 
         return thisValue
 
