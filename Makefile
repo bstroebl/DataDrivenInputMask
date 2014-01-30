@@ -33,7 +33,7 @@ PLUGINNAME = DataDrivenInputMask
 
 PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py ddmanager.py
 
-EXTRAS = metadata.txt
+EXTRAS = metadata.txt license.txt
 
 UI_FILES = 
 
