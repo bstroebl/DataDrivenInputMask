@@ -1233,6 +1233,9 @@ class DdLineEdit(DdInputWidget):
         if the value is null, None is returned,
         if it is a new feature the default value is returned if available.'''
 
+        if feature == None:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
@@ -1451,6 +1454,9 @@ class DdLineEditInt(DdLineEdit):
         return "<ddui.DdLineEditInt %s>" % str(self.attribute.name)
 
     def getFeatureValue(self,  layer,  feature,  db):
+        if feature == None:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
@@ -1610,6 +1616,9 @@ class DdComboBox(DdLineEdit):
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a value representing the value in this field for this feature'''
 
+        if feature == None:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex] #returns None if empty
 
@@ -1713,6 +1722,8 @@ class DdDateEdit(DdLineEdit):
 
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a QDate representing the value in this field for this feature'''
+        if feature == None:
+            return None
 
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
@@ -1781,6 +1792,9 @@ class DdCheckBox(DdLineEdit):
 
     def getFeatureValue(self,  layer,  feature,  db):
         '''returns a boolean representing the value in this field for this feature'''
+
+        if feature == None:
+            return None
 
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
