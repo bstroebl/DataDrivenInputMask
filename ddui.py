@@ -682,8 +682,10 @@ class DataDrivenUi(object):
                 t.typname as typ, \
                 CAST(valatt.attnotnull as integer) as notnull, \
                 valatt.attname, \
-                ((((((('SELECT ' || quote_ident(valatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ';' AS sql_key, \
-                ((((((('SELECT ' || quote_ident(refatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ';' AS default_sql, \
+                ((((((('SELECT ' || quote_ident(valatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') \
+                    || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ' ;' AS sql_key, \
+                ((((((('SELECT ' || quote_ident(refatt.attname)) || ' as value, ')  || quote_ident(refatt.attname)) || ' as key FROM ') \
+                    || quote_ident(ns.nspname)) || '.') || quote_ident(c.relname)) || ' ;' AS default_sql, \
                 COALESCE(d.description, '') as comment, \
                 COALESCE(valcon.contype, 'x') as valcontype \
             FROM pg_attribute att \
@@ -733,7 +735,7 @@ class DataDrivenUi(object):
                             foreignKeys[attName] = [fieldType,  keySql,  valAttName,  comment]
                 except KeyError:
                     if notNull and (fieldType == "varchar" or fieldType == "char"):
-                        foreignKeys[attName] = [fieldType,  keySql,  valAttName]
+                        foreignKeys[attName] = [fieldType,  keySql,  valAttName,  comment]
                     else: # put the first in
                         foreignKeys[attName] = [fieldType,  defaultSql,  valAttName,  comment]
 
@@ -1669,6 +1671,13 @@ class DdComboBox(DdLineEdit):
 
             for keyValue,  sValue in self.values.iteritems():
                 self.inputWidget.addItem(sValue, keyValue)
+
+            #sort the comboBox
+            model = self.inputWidget.model()
+            proxy = QtGui.QSortFilterProxyModel(self.inputWidget)
+            proxy.setSourceModel(model)
+            model.setParent(proxy)
+            model.sort(0)
 
     def setNull(self,  setnull):
 
