@@ -1923,17 +1923,17 @@ class DdN2mWidget(DdInputWidget):
         self.featureId = None
         self.forEdit = False
 
-    def setSizeMax(self):
+    def setSizeMax(self,  widget):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(1)
-        sizePolicy.setHeightForWidth(self.inputWidget.sizePolicy().hasHeightForWidth())
-        self.inputWidget.setSizePolicy(sizePolicy)
+        sizePolicy.setHeightForWidth(widget.sizePolicy().hasHeightForWidth())
+        widget.setSizePolicy(sizePolicy)
 
     def setupUi(self,  parent,  db):
         label = self.createLabel(parent)
         self.inputWidget = self.createInputWidget(parent)
-        self.setSizeMax()
+        self.setSizeMax(self.inputWidget)
         self.inputWidget.setToolTip(self.attribute.comment)
         parent.layout().addRow(label)
         parent.layout().addRow(self.inputWidget)
@@ -2353,7 +2353,7 @@ class DdN2mTableWidget(DdN2mWidget):
         frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
         label = self.createLabel(frame)
         self.inputWidget = self.createInputWidget(frame)
-        self.setSizeMax()
+        self.setSizeMax(frame)
         self.inputWidget.setToolTip(self.attribute.comment)
         verticalLayout = QtGui.QVBoxLayout(frame)
         verticalLayout.setObjectName("vlayout" + parent.objectName() + self.attribute.name)
