@@ -400,7 +400,7 @@ class DdManager(object):
             if featureFound:
                 self.showFeatureForm(aLayer,  feat)
 
-    def setUi(self,  layer,  ui):
+    def setUi(self,  layer,  ui,  searchUi = None):
         '''api method to exchange the default ui with a custom ui'''
 
         layerValues = self.__getLayerValues(layer)
@@ -409,7 +409,10 @@ class DdManager(object):
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
             thisTable = layerValues[0]
             db = layerValues[1]
-            searchUi = layerValues[3]
+
+            if searchUi == None:
+                searchUi = layerValues[3]
+
             self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
 
 
