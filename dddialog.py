@@ -43,6 +43,7 @@ class DdDialog(QtGui.QDialog):
         self.ui.setupUi(self,  self.db)
         okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
         okBtn.setEnabled(self.forEdit)
+        okBtn.setVisible(self.forEdit)
         self.setTitle()
         self.initialize()
 
