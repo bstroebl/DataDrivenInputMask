@@ -2456,7 +2456,6 @@ class DdPushButton(DdInputWidget):
         pass
 
     def save(self,  layer,  feature,  db):
-        '''must be implemented in child class'''
-        pass
+        return False
 
 
