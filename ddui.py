@@ -2446,7 +2446,11 @@ class DdPushButton(DdInputWidget):
         self.inputWidget = QtGui.QPushButton(self.label,  parent)
         self.inputWidget.setToolTip(self.attribute.comment)
         self.inputWidget.clicked.connect(self.clicked)
-        parent.layout().addWidget(self.inputWidget)
+        hLayout = QtGui.QHBoxLayout()
+        hLayout.addStretch()
+        hLayout.addWidget(self.inputWidget)
+        hLayout.addStretch()
+        parent.layout().addRow(hLayout)
 
     def clicked(self):
         QtGui.QMessageBox.information(None,  "",  self.label + " has been clicked")
