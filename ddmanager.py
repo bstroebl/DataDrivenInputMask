@@ -400,7 +400,7 @@ class DdManager(object):
             if featureFound:
                 self.showFeatureForm(aLayer,  feat)
 
-    def setUi(self,  layer,  ui,  searchUi = None):
+    def setUi(self,  layer,  ui,  searchUi = None,  showParents = None,  thisSize = None):
         '''api method to exchange the default ui with a custom ui'''
 
         layerValues = self.__getLayerValues(layer)
@@ -413,7 +413,10 @@ class DdManager(object):
             if searchUi == None:
                 searchUi = layerValues[3]
 
-            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
+            if showParents == None:
+                showParents = layerValues[4]
+
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize]
 
 
     def getDbForLayer(self,  layer):
@@ -432,7 +435,9 @@ class DdManager(object):
             self.__disconnectDb(oldDb)
             ui = layerValues[2]
             searchUi = layerValues[3]
-            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi]
+            showParents = layerValues[4]
+            thisSize = layerValues[5]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize]
 
     def findPostgresLayer(self, db,  ddTable):
         layerList = self.iface.legendInterface().layers()
