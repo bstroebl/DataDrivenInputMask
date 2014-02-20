@@ -1637,6 +1637,7 @@ class DdComboBox(DdLineEdit):
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QComboBox(parent) # defaultInputWidget
         inputWidget.setObjectName("cbx" + parent.objectName() + self.attribute.name)
+        inputWidget.setEditable(True)
         inputWidget.currentIndexChanged.connect(self.registerChange)
         return inputWidget
 
@@ -1665,7 +1666,6 @@ class DdComboBox(DdLineEdit):
 
     def fill(self):
         '''fill the QComboBox with the values'''
-
         if self.values != {}:
             self.inputWidget.clear()
 
@@ -1679,8 +1679,14 @@ class DdComboBox(DdLineEdit):
             model.setParent(proxy)
             model.sort(0)
 
-    def setNull(self,  setnull):
+    def prepareCompleter(self):
+        '''user can type in comboBox, appropriate values are displayed'''
+        self.completer = QtGui.QCompleter(self.values.values())
+        #values method of dict class
+        self.completer.setCaseSensitivity(0)
+        self.inputWidget.setCompleter(self.completer)
 
+    def setNull(self,  setnull):
         thisValue = None
 
         if setnull:
@@ -1719,6 +1725,7 @@ class DdComboBox(DdLineEdit):
         DdLineEdit.setupUi(self,  parent,  db)
         if self.readValues(db):
             self.fill()
+            self.prepareCompleter()
 
 class DdDateEdit(DdLineEdit):
     '''input widget (QDateEdit) for a date field'''
