@@ -179,13 +179,32 @@ class DdFkLayerAttribute(DdLayerAttribute):
     def __str__(self):
         return "<ddattribute.DdFkLayerAttribute %s>" % self.name
 
-class DdTableAttribute(DdAttribute):
+
+class DdManyToManyAttribute(DdAttribute):
+    '''abstract class for any many2many attribute'''
+    def __init__(self,  relationTable,  type,  relationFeatureIdField,  comment,  label):
+        DdAttribute.__init__(self,  relationTable,  type,  False,  relationTable.tableName,  comment,  label)
+
+        self.relationFeatureIdField = relationFeatureIdField
+        self.setSubsetString()
+
+    def buildSubsetString(self,  relationFeatureIdField):
+        '''builld the subset string to be applied as filter on the layer'''
+        subsetString = "\"" + relationFeatureIdField + "\" = "
+        return subsetString
+
+    def setSubsetString(self,  subsetString = None):
+        if not subsetString:
+            subsetString = self.buildSubsetString(self.relationFeatureIdField)
+
+        self.subsetString = subsetString
+
+class DdTableAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a relationTable'''
     def __init__(self,  relationTable, comment ,  label,   \
                  relationFeatureIdField,  attributes,  maxRows,  showParents):
-        DdAttribute.__init__(self,  relationTable,  "table",  False,  relationTable.tableName,  comment,  label)
+        DdManyToManyAttribute.__init__(self,  relationTable,  "table",  relationFeatureIdField,  comment,  label)
 
-        self.relationFeatureIdField = relationFeatureIdField
         self.attributes = attributes # an array with DdAttributes
 
         for anAtt in self.attributes:
@@ -198,31 +217,16 @@ class DdTableAttribute(DdAttribute):
 
         self.maxRows = maxRows
         self.showParents = showParents
-        # init statements
-        self.setSubsetString()
 
-    def buildSubsetString(self,  relationFeatureIdField):
-        ''''''
-        subsetString = "\"" + relationFeatureIdField + "\" = "
-        return subsetString
-
-    def setSubsetString(self,  subsetString = None):
-        if not subsetString:
-            subsetString = self.buildSubsetString(self.relationFeatureIdField)
-
-        self.subsetString = subsetString
-
-
-class DdN2mAttribute(DdAttribute):
-    '''a DdAttribute for a n2m relation, subtype can be list, tree or table
+class DdN2mAttribute(DdManyToManyAttribute):
+    '''a DdAttribute for a n2m relation, subtype can be list or tree
     relationTable and relatedTable are DdTable objects'''
     def __init__(self,  relationTable,  relatedTable,  subType,  comment ,  label,   \
                  relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = []):
-        DdAttribute.__init__(self,  relationTable,  "n2m",  False,  relationTable.tableName,  comment,  label)
+        DdManyToManyAttribute.__init__(self,  relationTable,  "n2m",  relationFeatureIdField,  comment,  label)
 
         self.subType = subType
         self.relatedTable = relatedTable
-        self.relationFeatureIdField = relationFeatureIdField
         self.relationRelatedIdField = relationRelatedIdField
         self.relatedIdField = relatedIdField
         self.relatedDisplayField = relatedDisplayField
@@ -232,21 +236,9 @@ class DdN2mAttribute(DdAttribute):
         self.setDisplayStatement()
         self.setInsertStatement()
         self.setDeleteStatement()
-        self.setSubsetString()
 
     def __str__(self):
         return "<ddattribute.DdN2mAttribute %s>" % str(self.name)
-
-    def buildSubsetString(self,  relationFeatureIdField):
-        ''''''
-        subsetString = "\"" + relationFeatureIdField + "\" = "
-        return subsetString
-
-    def setSubsetString(self,  subsetString = None):
-        if not subsetString:
-            subsetString = self.buildSubsetString(self.relationFeatureIdField)
-
-        self.subsetString = subsetString
 
     def buildDisplayStatement(self,  relationSchema,  relationTable, relatedSchema,  relatedTable,  relationFeatureIdField, \
                               relatedIdField,  relatedDisplayField,  relationRelatedIdField,  fieldList):
@@ -327,10 +319,11 @@ class DdN2mAttribute(DdAttribute):
 
 class DdPushButtonAttribute(DdAttribute):
     '''a DdAttribute that draws a pushButton in the mask.
-    the button must be implemented as subclass of ddui.DdPushButton'''
+    the button must be implemented as subclass of dduserclass.DdPushButton'''
     def __init__(self,  comment ,  label):
         DdAttribute.__init__(self,  None,  "pushButton",  False,  "",  comment,  label)
         pass
 
     def __str__(self):
         return "<ddattribute.DdPushButtonAttribute %s>" % self.name
+
