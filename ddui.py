@@ -11,7 +11,7 @@ Classes that make up or steer the DataDrivenUI
  Applies a data-driven input mask to any PostGIS-Layer
                               -------------------
         begin                : 2012-06-21
-        copyright            : (C) 2012 by Bernhard Strรถbl / Kommunale Immobilien Jena
+        copyright            : (C) 2012 by Bernhard Ströbl / Kommunale Immobilien Jena
         email                : bernhard.stroebl@jena.de
  ***************************************************************************/
 
@@ -2438,35 +2438,3 @@ class DdN2mTableWidget(DdN2mWidget):
 
         if self.attribute.maxRows:
             self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
-
-class DdPushButton(DdInputWidget):
-    '''abstract class, needs subclassing'''
-
-    def __init__(self,  attribute):
-        DdInputWidget.__init__(self,  attribute)
-
-    def __str__(self):
-        return "<ddui.DdPushButton %s>" % str(self.attribute.label)
-
-    def setupUi(self,  parent,  db):
-        self.label = self.getLabel()
-        self.inputWidget = QtGui.QPushButton(self.label,  parent)
-        self.inputWidget.setToolTip(self.attribute.comment)
-        self.inputWidget.clicked.connect(self.clicked)
-        hLayout = QtGui.QHBoxLayout()
-        hLayout.addStretch()
-        hLayout.addWidget(self.inputWidget)
-        hLayout.addStretch()
-        parent.layout().addRow(hLayout)
-
-    def clicked(self):
-        QtGui.QMessageBox.information(None,  "",  self.label + " has been clicked")
-
-    def initialize(self,  layer,  feature,  db):
-        '''must be implemented in child class'''
-        pass
-
-    def save(self,  layer,  feature,  db):
-        return False
-
-
