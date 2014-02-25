@@ -1957,7 +1957,7 @@ class DdN2mWidget(DdInputWidget):
         if self.tableLayer.setSubsetString(self.oldSubsetString):
             self.tableLayer.reload()
 
-    def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False):
+    def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False,  skip = []):
         # find the layer in the project
         self.tableLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.table)
 
@@ -1970,7 +1970,8 @@ class DdN2mWidget(DdInputWidget):
             try:
                 self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
             except KeyError:
-                self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = [self.attribute.relationFeatureIdField],  \
+                skip.append(self.attribute.relationFeatureIdField)
+                self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = skip,  \
                                                 showParents = doShowParents,  searchMask = False,  \
                                                 labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
                                                 createAction = True,  db = None,  inputMask = True,   \
