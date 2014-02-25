@@ -30,7 +30,7 @@ from qgis.core import *
 # create the dialog
 class DdDialog(QtGui.QDialog):
     '''Each mask is a DdDialog instance, thus a child of QDialog'''
-    def __init__(self,  ddManager,  ui,  layer,  feature,  db,  parent = None):
+    def __init__(self,  ddManager,  ui,  layer,  feature,  db,  parent = None,  title = None):
         QtGui.QDialog.__init__(self,  parent)
         # Set up the user interface from Designer.
         self.ddManager = ddManager
@@ -44,19 +44,20 @@ class DdDialog(QtGui.QDialog):
         okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
         okBtn.setEnabled(self.forEdit)
         okBtn.setVisible(self.forEdit)
-        self.setTitle()
+        self.setTitle(title)
         self.initialize()
 
-    def setTitle(self):
-        title = self.layer.name()
-        title += " - "
+    def setTitle(self,  title = None):
+        if title == None:
+            title = self.layer.name()
+            title += " - "
 
-        if self.feature.id() < 0:
-            title += QtGui.QApplication.translate("DdInfo", "New Feature",
-                     None, QtGui.QApplication.UnicodeUTF8)
-        else:
-            title += QtGui.QApplication.translate("DdInfo", "Feature",
-                    None, QtGui.QApplication.UnicodeUTF8) + " " + str(self.feature.id())
+            if self.feature.id() < 0:
+                title += QtGui.QApplication.translate("DdInfo", "New Feature",
+                         None, QtGui.QApplication.UnicodeUTF8)
+            else:
+                title += QtGui.QApplication.translate("DdInfo", "Feature",
+                        None, QtGui.QApplication.UnicodeUTF8) + " " + str(self.feature.id())
 
         self.setWindowTitle(title)
 
