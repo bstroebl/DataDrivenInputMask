@@ -319,7 +319,7 @@ class DdManager(object):
         for act in wereActions:
             layer.actions().addAction(act.type(),  act.name(), act.action())
 
-    def showFeatureForm(self,  layer,  feature,  showParents = True):
+    def showFeatureForm(self,  layer,  feature,  showParents = True, title = None):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
         returns 1 if user clicked OK, 0 if CANCEL'''
 
@@ -341,7 +341,7 @@ class DdManager(object):
             ui = layerValues[2]
             thisSize = layerValues[5]
 
-            dlg = DdDialog(self,  ui,  layer,  feature,  db)
+            dlg = DdDialog(self,  ui,  layer,  feature,  db,  title = title)
             dlg.show()
 
             if thisSize != None:
