@@ -2283,6 +2283,18 @@ class DdN2mTableWidget(DdN2mWidget):
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
         return inputWidget
 
+    def fill(self):
+        self.inputWidget.setRowCount(0)
+        # display the features in the QTableWidget
+        for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+            self.appendRow(aFeat)
+
+        if self.forEdit:
+            if self.attribute.maxRows:
+                self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+        else:
+            self.addButton.setEnabled(False)
+
     def initialize(self,  layer,  feature,  db):
         if feature != None:
             self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
@@ -2311,20 +2323,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
                     self.fkValues[anAtt.name] = values
 
-            # display the features in the QTableWidget
-            self.tableLayer.removeSelection()
-            self.tableLayer.invertSelection()
-
-            for aFeat in self.tableLayer.selectedFeatures():
-                self.appendRow(aFeat)
-
-            self.tableLayer.removeSelection()
-
-            if self.forEdit:
-                if self.attribute.maxRows:
-                    self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
-            else:
-                self.addButton.setEnabled(False)
+            self.fill()
 
     def fillRow(self, thisRow, thisFeature):
         '''fill thisRow with values from thisFeature'''
@@ -2422,11 +2421,10 @@ class DdN2mTableWidget(DdN2mWidget):
             result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
 
             if result == 1: # user clicked OK
-                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
-                self.appendRow(thisFeature)
-                self.hasChanges = True
+                self.fill()
             else:
                 self.tableLayer.deleteFeature(thisFeature.id())
+                self.fill()
 
     def remove(self):
         '''slot to be called when the user clicks on the remove button'''
