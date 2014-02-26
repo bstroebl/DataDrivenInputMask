@@ -327,3 +327,21 @@ class DdPushButtonAttribute(DdAttribute):
     def __str__(self):
         return "<ddattribute.DdPushButtonAttribute %s>" % self.name
 
+class DdCheckableTableAttribute(DdN2mAttribute,  DdTableAttribute):
+    def __init__(self,  relationTable,  relatedTable,  comment ,  label,   \
+                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  attributes,
+                 fieldList = [],  relatedForeignKeys = []):
+        DdN2mAttribute.__init__(self,  relationTable,  relatedTable,  "default",  comment ,  label,   \
+                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = [])
+        DdTableAttribute.__init__(self,  relationTable, comment ,  label,   \
+                 relationFeatureIdField,  attributes,  maxRows = None,  showParents = False)
+
+        self.type = "checkableTable"
+
+    def __str__(self):
+        return "<ddattribute.DdCheckableTableAttribute %s>" % str(self.name)
+
+
+
+
+

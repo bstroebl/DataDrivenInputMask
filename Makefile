@@ -31,7 +31,7 @@ TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
 PLUGINNAME = DataDrivenInputMask
 
-PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py ddmanager.py
+PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py ddattribute.py ddmanager.py dduserclass.py
 
 EXTRAS = metadata.txt license.txt
 

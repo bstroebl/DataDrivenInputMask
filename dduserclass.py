@@ -29,6 +29,7 @@ to be used in subclasses of DataDrivenUi
 
 from ddui import DdInputWidget,  DdN2mWidget
 from dderror import DdError,  DbError
+from qgis.core import *
 from PyQt4 import QtCore,  QtGui,  QtSql
 
 class DdPushButton(DdInputWidget):
@@ -85,7 +86,10 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         inputWidget.setHorizontalHeaderLabels(horizontalHeaders)
         inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         inputWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        inputWidget.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
+        #inputWidget.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
+        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget.cellDoubleClicked.connect(self.doubleClick)
+        inputWidget.cellClicked.connect(self.click)
         inputWidget.setSortingEnabled(True)
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
         return inputWidget
@@ -111,14 +115,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
             self.fill()
 
-    def fill(self):
-        self.relatedLayer.removeSelection()
-        self.relatedLayer.invertSelection()
-        self.tableLayer.removeSelection()
-        self.tableLayer.invertSelection()
-        relatedValues = []
-        checkedRelatedValues = []
-        valueDict = {}
+    def getDefaultValues(self):
         defaultValues = []
 
         for anAttr in self.attribute.attributes:
@@ -127,52 +124,65 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             else:
                 defaultValues.append("NULL")
 
-        for relatedFeature in self.relatedLayer.selectedFeatures():
+        return defaultValues
+
+    def getFeatureValues(self,  thisFeature):
+        values = []
+        for anAttr in self.attribute.attributes:
+            values.append(thisFeature[self.tableLayer.fieldNameIndex(anAttr.name)])
+
+        return values
+
+    def fill(self):
+        relatedValues = []
+        checkedRelatedValues = []
+        valueDict = {}
+        defaultValues = self.getDefaultValues()
+
+        for relatedFeature in self.relatedLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             relatedId = relatedFeature.id()
             relatedValue = relatedFeature[self.relatedLayer.fieldNameIndex(self.attribute.relatedDisplayField)]
-
             isChecked = False
-            for thisFeature in self.tableLayer.selectedFeatures():
+
+            for thisFeature in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
                 if relatedId == thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)]:
                     isChecked = True
-                    values = []
-
-                    for anAttr in self.attribute.attributes:
-                        values.append(thisFeature[self.tableLayer.fieldNameIndex(anAttr.name)])
-
+                    values = self.getFeatureValues(thisFeature)
                     break
 
             if isChecked:
                 checkedRelatedValues.append(relatedValue)
-                valueDict[relatedValue] = values
+                valueDict[relatedValue] = [relatedId,  values,  thisFeature]
             else:
                 relatedValues.append(relatedValue)
-                valueDict[relatedValue] = defaultValues
-
-        self.relatedLayer.removeSelection()
-        self.tableLayer.removeSelection()
+                #defaultValues[] = relatedId
+                valueDict[relatedValue] = [relatedId, defaultValues]
 
         checkedRelatedValues.sort()
         relatedValues.sort()
 
         for val in checkedRelatedValues:
-            self.appendRow(valueDict[val], val,  True)
+            self.appendRow(valueDict[val], val)
 
         for val in relatedValues:
-            self.appendRow(valueDict[val], val, False)
+            self.appendRow(valueDict[val], val)
 
-    def fillRow(self, thisRow, values, thisValue, checked):
-        '''fill thisRow with values from thisFeature'''
+    def fillRow(self, thisRow, passedValues, thisValue):
+        '''fill thisRow with values
+        values is an array with the realted feature id, all values for self.attribute.attributes
+        and (optional) the feature of self.table layer to be represented in this row'''
 
+        relatedId = values = passedValues[0]
+        values = passedValues[1]
         chkItem = QtGui.QTableWidgetItem("")
 
-        if not self.forEdit:
-            chkItem.setFlags(QtCore.Qt.NoItemFlags)
-
-        if checked:
+        if len(passedValues) == 3:
             chkItem.setCheckState(QtCore.Qt.Checked)
+            thisFeature = passedValues[2]
+            chkItem.feature = thisFeature
         else:
             chkItem.setCheckState(QtCore.Qt.Unchecked)
+            chkItem.feature = None
 
         self.inputWidget.setItem(thisRow, 0, chkItem)
 
@@ -181,16 +191,73 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
             if i == self.relationRelatedIdIndex:
                 item = QtGui.QTableWidgetItem(thisValue)
-                item.id = aValue
-                item.setFlags(QtCore.Qt.NoItemFlags)
+                item.id = relatedId
             else:
                 item = QtGui.QTableWidgetItem(unicode(aValue))
 
             self.inputWidget.setItem(thisRow, i+1, item)
 
-    def appendRow(self, values, thisValue, checked):
+    def appendRow(self, passedValues, thisValue):
         '''add a new row to the QTableWidget'''
         thisRow = self.inputWidget.rowCount() # identical with index of row to be appended as row indices are 0 based
         self.inputWidget.setRowCount(thisRow + 1) # append a row
-        self.fillRow(thisRow, values, thisValue, checked)
+        self.fillRow(thisRow, passedValues, thisValue)
 
+    # Slots
+    def doubleClick(self,  thisRow,  thisColumn):
+        chkItem = self.inputWidget.item(thisRow,  0)
+        thisFeature = chkItem.feature
+        relatedItem = self.inputWidget.item(thisRow,  self.relationRelatedIdIndex + 1)
+        relatedId = relatedItem.id
+        thisValue = relatedItem.text()
+        doAddFeature = False
+
+        if thisFeature == None:
+            doAddFeature = True
+            thisFeature = self.createFeature()
+            thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] = self.featureId
+            thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] = relatedId
+
+            if not self.tableLayer.addFeature(thisFeature,  False):
+                return None
+
+        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents,  title = thisValue)
+
+        if result == 1: # user clicked OK
+            if doAddFeature:
+                chkItem.setCheckState(QtCore.Qt.Checked)
+                # find the feature again
+                for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+                    if aFeat[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] == self.featureId and \
+                        aFeat[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] == relatedId:
+                        thisFeature = aFeat
+                        break
+            # make sure user did not change parentFeatureId
+            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
+            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField),  relatedId)
+            # refresh thisFeature with the new values
+            self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
+            values = self.getFeatureValues(thisFeature)
+            self.fillRow(thisRow,  [relatedId,  values,  thisFeature],  thisValue)
+            self.hasChanges = True
+        else:
+            if doAddFeature:
+                self.tableLayer.deleteFeature(thisFeature.id())
+
+    def click(self,  thisRow,  thisColumn):
+        if thisColumn == 0:
+            chkItem = self.inputWidget.item(thisRow,  0)
+            thisFeature = chkItem.feature
+
+            if thisFeature != None: #chkItem.checkState == QtCore.Qt.Checked:
+                chkItem.setCheckState(QtCore.Qt.Unchecked)
+                thisFeature = chkItem.feature
+                self.tableLayer.deleteFeature(thisFeature.id())
+                self.hasChanges = True
+                relatedItem = self.inputWidget.item(thisRow,  self.relationRelatedIdIndex + 1)
+                relatedId = relatedItem.id
+                thisValue = relatedItem.text()
+                values = self.getDefaultValues()
+                self.fillRow(thisRow, [relatedId,  values], thisValue)
+            else:
+                self.doubleClick(thisRow,  thisColumn)
