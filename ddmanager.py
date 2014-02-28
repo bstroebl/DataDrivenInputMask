@@ -336,29 +336,57 @@ class DdManager(object):
                 layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
         if layerValues != None:
-            highlightGeom = self.highlightFeature(layer,  feature)
-            db = layerValues[1]
-            ui = layerValues[2]
-            thisSize = layerValues[5]
+            result = 1
 
-            dlg = DdDialog(self,  ui,  layer,  feature,  db,  title = title)
-            dlg.show()
+            if layer.isEditable():
+                if layer.isModified():
+                    #ask user to save or discard changes
+                    reply = QtGui.QMessageBox.question(None, QtGui.QApplication.translate("DdInfo", "Unsaved changes", None,
+                        QtGui.QApplication.UnicodeUTF8),
+                        QtGui.QApplication.translate("DdInfo", "Do you want to save the changes to layer ", None,
+                        QtGui.QApplication.UnicodeUTF8) + layer.name() + "?",
+                        QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Save)
 
-            if thisSize != None:
-                dlg.resize(thisSize)
+                    if reply == QtGui.QMessageBox.Cancel:
+                        result = 0
+                    else:
+                        if reply == QtGui.QMessageBox.Discard:
+                            if not layer.rollBack():
+                                DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
+                                   QtGui.QApplication.UnicodeUTF8) + " "+ layer.name(),  iface = self.iface)
+                                result = 0
+                        elif reply == QtGui.QMessageBox.Save:
+                            if not layer.commitChanges():
+                                DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
+                                    QtGui.QApplication.UnicodeUTF8)  + " " + layer.name(),  iface = self.iface)
+                                result = 0
 
-            result = dlg.exec_()
+                        if result == 1:
+                            layer.startEditing()
 
             if result == 1:
-                layer.emit(QtCore.SIGNAL('layerModified()'))
-            # store size
-            thisSize = dlg.size()
-            self.ddLayers[layer.id()][5] = thisSize
-            #handle highlightGeom
-            if highlightGeom != None:
-                self.iface.mapCanvas().scene().removeItem(highlightGeom)
-                highlightGeom = None
+                highlightGeom = self.highlightFeature(layer,  feature)
+                db = layerValues[1]
+                ui = layerValues[2]
+                thisSize = layerValues[5]
 
+                dlg = DdDialog(self,  ui,  layer,  feature,  db,  title = title)
+                dlg.show()
+
+                if thisSize != None:
+                    dlg.resize(thisSize)
+
+                result = dlg.exec_()
+
+                if result == 1:
+                    layer.emit(QtCore.SIGNAL('layerModified()'))
+                # store size
+                thisSize = dlg.size()
+                self.ddLayers[layer.id()][5] = thisSize
+                #handle highlightGeom
+                if highlightGeom != None:
+                    self.iface.mapCanvas().scene().removeItem(highlightGeom)
+                    highlightGeom = None
         else:
             result = 0
 

@@ -1122,7 +1122,11 @@ class DdFormWidget(DdWidget):
         return searchSql
 
     def save(self,  layer,  feature,  db):
+        if self.feature.id() == -777: # newly created feature from n2mTable
+            self.layer.addFeature(self.feature)
+
         hasChanges = False
+
         if self.parent.isEnabled():
             for anInputWidget in self.inputWidgets:
                 if anInputWidget.save(self.layer,  self.feature,  db):
@@ -2413,18 +2417,16 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def add(self):
         '''slot to be called when the user clicks on the add button'''
-        thisFeature = self.createFeature()
+        thisFeature = self.createFeature(-777)
         # set the parentFeature's id
         thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] =  self.featureId
+        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
 
-        if self.tableLayer.addFeature(thisFeature,  False):
-            result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature)
-
-            if result == 1: # user clicked OK
-                self.fill()
-            else:
-                self.tableLayer.deleteFeature(thisFeature.id())
-                self.fill()
+        if result == 1: # user clicked OK
+            self.fill()
+        #else:
+         #   self.tableLayer.deleteFeature(thisFeature.id())
+         #   self.fill()
 
     def remove(self):
         '''slot to be called when the user clicks on the remove button'''
