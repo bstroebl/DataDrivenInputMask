@@ -321,6 +321,7 @@ class DdManager(object):
 
     def showFeatureForm(self,  layer,  feature,  showParents = True, title = None):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
+        if data provider allows editing the layer is turned into editing mode
         returns 1 if user clicked OK, 0 if CANCEL'''
 
         layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
@@ -337,8 +338,9 @@ class DdManager(object):
 
         if layerValues != None:
             result = 1
+            wasEditable = layer.isEditable()
 
-            if layer.isEditable():
+            if wasEditable:
                 if layer.isModified():
                     #ask user to save or discard changes
                     reply = QtGui.QMessageBox.question(None, QtGui.QApplication.translate("DdInfo", "Unsaved changes", None,
@@ -363,6 +365,9 @@ class DdManager(object):
 
                         if result == 1:
                             layer.startEditing()
+            else:
+                if self.isEditable(layer):
+                    layer.startEditing()
 
             if result == 1:
                 highlightGeom = self.highlightFeature(layer,  feature)
@@ -387,6 +392,9 @@ class DdManager(object):
                 if highlightGeom != None:
                     self.iface.mapCanvas().scene().removeItem(highlightGeom)
                     highlightGeom = None
+
+                if not wasEditable:
+                    layer.rollBack()
         else:
             result = 0
 
@@ -494,6 +502,13 @@ class DdManager(object):
                 break
 
         return retValue
+
+    def isEditable(self,  layer):
+        '''check if data provider allows editing of table'''
+        dp = layer.dataProvider()
+        caps = dp.capabilities()
+        return (caps & QgsVectorDataProvider.AddFeatures and caps & QgsVectorDataProvider.DeleteFeatures and \
+            caps & QgsVectorDataProvider.ChangeAttributeValues)
 
     def isAccessible(self,  db,  ddTable,  showError = True):
         '''check if user has right to access this table'''
