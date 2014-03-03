@@ -79,7 +79,7 @@ class DdManager(object):
         else:
             return None
 
-    def __configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
+    def configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
         db,  createAction,  helpText):
         '''read configuration from db'''
 
@@ -211,7 +211,7 @@ class DdManager(object):
                     # read from config tables
 
                     skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
-                        self.__configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  createAction,  helpText)
+                        self.configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  createAction,  helpText)
 
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
