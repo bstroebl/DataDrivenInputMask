@@ -169,10 +169,10 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
     def fillRow(self, thisRow, passedValues, thisValue):
         '''fill thisRow with values
-        values is an array with the realted feature id, all values for self.attribute.attributes
+        passedValues is an array with the related feature id, all values for self.attribute.attributes
         and (optional) the feature of self.table layer to be represented in this row'''
 
-        relatedId = values = passedValues[0]
+        relatedId = passedValues[0]
         values = passedValues[1]
         chkItem = QtGui.QTableWidgetItem("")
 
@@ -214,12 +214,9 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         if thisFeature == None:
             doAddFeature = True
-            thisFeature = self.createFeature()
+            thisFeature = self.createFeature(-777)
             thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] = self.featureId
             thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] = relatedId
-
-            if not self.tableLayer.addFeature(thisFeature,  False):
-                return None
 
         result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents,  title = thisValue)
 
@@ -239,10 +236,6 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
             values = self.getFeatureValues(thisFeature)
             self.fillRow(thisRow,  [relatedId,  values,  thisFeature],  thisValue)
-            self.hasChanges = True
-        else:
-            if doAddFeature:
-                self.tableLayer.deleteFeature(thisFeature.id())
 
     def click(self,  thisRow,  thisColumn):
         if thisColumn == 0:
@@ -253,7 +246,11 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                 chkItem.setCheckState(QtCore.Qt.Unchecked)
                 thisFeature = chkItem.feature
                 self.tableLayer.deleteFeature(thisFeature.id())
-                self.hasChanges = True
+
+                if not self.tableLayer.commitChanges():
+                    DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
+                                                       QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
+
                 relatedItem = self.inputWidget.item(thisRow,  self.relationRelatedIdIndex + 1)
                 relatedId = relatedItem.id
                 thisValue = relatedItem.text()
