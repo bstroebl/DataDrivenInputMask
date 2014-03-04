@@ -159,8 +159,19 @@ class DdDateLayerAttribute(DdLayerAttribute):
         if thisDate != None:
             if not isinstance(thisDate,  QtCore.QDate):
                 # we assume a string
-                if thisDate == "today":
-                    thisDate = QtCore.QDate.currentDate()
+                if thisDate.find("today") != -1:
+                    if thisDate.find("-") != -1:
+                        factor = -1
+                        daysToAdd = thisDate.split("-")[1].strip()
+                    else:
+                        factor = 1
+
+                        if thisDate.find("+") != -1:
+                            daysToAdd = thisDate.split("+")[1].strip()
+                        else:
+                            daysToAdd = "0"
+
+                        thisDate = QtCore.QDate.currentDate().addDays(int(daysToAdd) * factor)
                 else:
                     thisDate = QtCore.QDate.fromString(thisDate,  self.dateFormat)
                     # returns a null date if string is not formatted as needed by dateFormat
