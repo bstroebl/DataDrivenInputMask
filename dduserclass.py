@@ -168,7 +168,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         model.sort(0)
 
         # add the empty item
-        self.catalogCbx.insertItem(0, QtGui.QApplication.translate("DdInfo", "Show all", None,
+        self.catalogCbx.insertItem(0, QtGui.QApplication.translate("DdLabel", "Show all", None,
                                                        QtGui.QApplication.UnicodeUTF8) ,  None)
         self.catalogCbx.setCurrentIndex(0)
 
