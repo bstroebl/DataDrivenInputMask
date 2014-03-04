@@ -929,8 +929,8 @@ class DdManager(object):
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_skip\" IS \'skip this field in the input and search mask, i.e. hide it from the user\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_search\" IS \'include this field in the search mask, if skip is true the field is not shown in the search mask, no matter if search is true\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_order\" IS \'order of the fields in the mask\';\
-        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the min date on the current date.\';\
-        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date.\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the min date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"
