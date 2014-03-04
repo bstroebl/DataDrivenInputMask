@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="de_DE">
+<!DOCTYPE TS><TS version="2.0" language="de_DE" sourcelanguage="">
 <context>
     <name>DBError</name>
     <message>
@@ -42,7 +41,7 @@
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
     <message>
-        <location filename="datadriveninputmask.py" line="200"/>
+        <location filename="datadriveninputmask.py" line="201"/>
         <source>No selection in layer: </source>
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
@@ -57,14 +56,9 @@
         <translation>Kann folgende Tablle nicht laden: </translation>
     </message>
     <message>
-        <location filename="datadriveninputmask.py" line="154"/>
+        <location filename="datadriveninputmask.py" line="155"/>
         <source>Please activate a layer!</source>
         <translation>Bitte aktivieren Sie einen Layer!</translation>
-    </message>
-    <message>
-        <location filename="datadriveninputmask.py" line="250"/>
-        <source>Please set layer editable (located in group &quot;DataDrivenInputMask&quot;): </source>
-        <translation>Bitte schalten Sie den Bearbeitungsstatus des folgenden Layers um (Gruppe &quot;DataDrivenInputMask&quot;):</translation>
     </message>
 </context>
 <context>
@@ -143,12 +137,12 @@
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2376"/>
+        <location filename="ddui.py" line="2377"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2378"/>
+        <location filename="ddui.py" line="2379"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
