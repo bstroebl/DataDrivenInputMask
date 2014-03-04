@@ -2345,7 +2345,13 @@ class DdN2mTableWidget(DdN2mWidget):
                 except KeyError:
                     aValue = 'NULL'
 
-            item = QtGui.QTableWidgetItem(unicode(aValue))
+            if isinstance(anAtt,  DdDateLayerAttribute):
+                loc = QtCore.QLocale.system()
+                aValue = loc.toString(aValue)
+            else:
+                aValue = unicode(aValue)
+
+            item = QtGui.QTableWidgetItem(aValue)
 
             if i == 0:
                 item.feature = thisFeature
