@@ -265,7 +265,8 @@ class DdN2mAttribute(DdManyToManyAttribute):
 
         if self.subType ==  "tree":
             for aField in fieldList:
-                displayStatement += ", \'" + aField + ": \' || COALESCE(disp.\"" + aField + "\", \'NULL\')"
+                if aField != relatedDisplayField: # no doubles
+                    displayStatement += ", \'" + aField + ": \' || COALESCE(disp.\"" + aField + "\", \'NULL\')"
 
         if len(self.relatedForeignKeys) > 0:
             for anItem in self.relatedForeignKeys.iteritems():
