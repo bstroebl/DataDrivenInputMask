@@ -28,9 +28,10 @@ to be used in subclasses of DataDrivenUi
 
 
 from ddui import DdInputWidget,  DdN2mWidget
-from dderror import DdError,  DbError
+from dderror import DdError
 from qgis.core import *
-from PyQt4 import QtCore,  QtGui,  QtSql
+from PyQt4 import QtCore,  QtGui
+from dddialog import DdDialog,  DdSearchDialog
 
 class DdPushButton(DdInputWidget):
     '''abstract class needs subclassing'''
@@ -67,13 +68,21 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
     pk fields in the relation table but with checkboxes to assign a value
     to the feature, values to fields in the relation table are assigned
     in the table wiget with doubleClick
-    attribute is a DdCheckableTableAttribute'''
+    attribute is a DdCheckableTableAttribute
+    if the attribute has catalog properties a ComboBox allows to choose
+    only from related features being in this catalog'''
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
+        self.catalogCbx = None
+        self.catalogLayer = None
 
     def __str__(self):
         return "<ddui.DdN2mCheckableTableWidget %s>" % str(self.attribute.label)
+
+    def __hasCatalog(self):
+        return (self.attribute.catalogTable != None and self.attribute.relatedCatalogIdField != None and
+            self.attribute.catalogIdField != None and self.attribute.catalogDisplayField != None)
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QTableWidget(parent)
@@ -81,7 +90,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         horizontalHeaders =  [""]
 
         for anAtt in self.attribute.attributes:
-            horizontalHeaders.append(anAtt.name)
+            horizontalHeaders.append(anAtt.getLabel())
 
         inputWidget.setHorizontalHeaderLabels(horizontalHeaders)
         inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
@@ -92,19 +101,22 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         inputWidget.cellClicked.connect(self.click)
         inputWidget.setSortingEnabled(True)
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
+
         return inputWidget
 
-    def loadRelatedLayer(self , db):
-        self.relatedLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.relatedTable)
+    def loadAdditionalLayer(self , db,  ddTable):
+        layer = self.parentDialog.ddManager.findPostgresLayer(db, ddTable)
 
-        if not self.relatedLayer:
+        if not layer:
             # load the layer into the project
-            self.relatedLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.relatedTable)
+            layer = self.parentDialog.ddManager.loadPostGISLayer(db,  ddTable)
+
+        return layer
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:
             self.initializeLayer(layer,  feature,  db,  doShowParents = False,  withMask = True,  skip = [self.attribute.relationRelatedIdField])
-            self.loadRelatedLayer(db)
+            self.relatedLayer = self.loadAdditionalLayer(db,  self.attribute.relatedTable)
 
             for i in range(len(self.attribute.attributes)):
                 anAttr = self.attribute.attributes[i]
@@ -113,7 +125,11 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                     self.relationRelatedIdIndex = i
                     break
 
-            self.fill()
+            if self.__hasCatalog():
+                self.catalogLayer = self.loadAdditionalLayer(db,  self.attribute.catalogTable)
+                self.fillCatalog()
+            else:
+                self.fill()
 
     def getDefaultValues(self):
         defaultValues = []
@@ -133,11 +149,44 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         return values
 
-    def fill(self):
+    def fillCatalog(self):
+        '''fill the QComboBox with the catalog values'''
+        self.catalogCbx.clear()
+        idField = self.catalogLayer.fieldNameIndex(self.attribute.catalogIdField)
+        displayField = self.catalogLayer.fieldNameIndex(self.attribute.catalogDisplayField)
+
+        for catalogFeature in self.catalogLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+            sValue = catalogFeature[displayField]
+            keyValue = catalogFeature[idField]
+            self.catalogCbx.addItem(sValue, keyValue)
+
+        #sort the comboBox
+        model = self.catalogCbx.model()
+        proxy = QtGui.QSortFilterProxyModel(self.catalogCbx)
+        proxy.setSourceModel(model)
+        model.setParent(proxy)
+        model.sort(0)
+
+        # add the empty item
+        self.catalogCbx.insertItem(0, QtGui.QApplication.translate("DdInfo", "Show all", None,
+                                                       QtGui.QApplication.UnicodeUTF8) ,  None)
+        self.catalogCbx.setCurrentIndex(0)
+
+    def fill(self,  catalogId = None):
+        self.inputWidget.setRowCount(0)
         relatedValues = []
         checkedRelatedValues = []
         valueDict = {}
         defaultValues = self.getDefaultValues()
+
+        if self.__hasCatalog():
+            if catalogId != None:
+                subsetString = "\"" + self.attribute.relatedCatalogIdField + "\" = "+ str(catalogId)
+            else:
+                subsetString = ""
+
+            if self.relatedLayer.setSubsetString(subsetString):
+                self.relatedLayer.reload()
 
         for relatedFeature in self.relatedLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             relatedId = relatedFeature.id()
@@ -203,7 +252,50 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         self.inputWidget.setRowCount(thisRow + 1) # append a row
         self.fillRow(thisRow, passedValues, thisValue)
 
+    def setupUi(self,  parent,  db):
+        if self.__hasCatalog():
+            frame = QtGui.QFrame(parent)
+            frame.setFrameShape(QtGui.QFrame.StyledPanel)
+            frame.setFrameShadow(QtGui.QFrame.Raised)
+            frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
+            label = self.createLabel(frame)
+            self.inputWidget = self.createInputWidget(frame)
+            self.setSizeMax(frame)
+            self.inputWidget.setToolTip(self.attribute.comment)
+            verticalLayout = QtGui.QVBoxLayout(frame)
+            verticalLayout.setObjectName("vlayout" + parent.objectName() + self.attribute.name)
+            verticalLayout.addWidget(label)
+            formLayout = QtGui.QFormLayout( )
+            formLayout.setObjectName("formlayout" + parent.objectName() + self.attribute.name)
+            #spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+            self.catalogCbx = QtGui.QComboBox(frame)
+            self.catalogCbx.setObjectName("cbx" + parent.objectName() + self.attribute.catalogTable.tableName)
+            self.catalogCbx.setToolTip(self.attribute.catalogTable.comment)
+            #self.catalogCbx.setEditable(True)
+            self.catalogCbx.currentIndexChanged.connect(self.catalogChanged)
+            cbxLabel = QtGui.QLabel(self.attribute.catalogLabel,  frame)
+            cbxLabel.setObjectName("lbl" + parent.objectName() + self.attribute.catalogTable.tableName)
+            formLayout.addRow(cbxLabel,  self.catalogCbx)
+            verticalLayout.addLayout(formLayout)
+            verticalLayout.addWidget(self.inputWidget)
+            parent.layout().addRow(frame)
+            pParent = parent
+
+            while (True):
+                pParent = pParent.parentWidget()
+
+                if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
+                    self.parentDialog = pParent
+                    break
+        else:
+            DdN2mWidget.setupUi(self,  parent,  db)
+
     # Slots
+    @QtCore.pyqtSlot(int)
+    def catalogChanged(self,  thisIndex):
+        catalogId = self.catalogCbx.itemData(thisIndex)
+        self.fill(catalogId)
+
     def doubleClick(self,  thisRow,  thisColumn):
         chkItem = self.inputWidget.item(thisRow,  0)
         thisFeature = chkItem.feature

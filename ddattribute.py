@@ -330,18 +330,24 @@ class DdPushButtonAttribute(DdAttribute):
 class DdCheckableTableAttribute(DdN2mAttribute,  DdTableAttribute):
     def __init__(self,  relationTable,  relatedTable,  comment ,  label,   \
                  relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  attributes,
-                 fieldList = [],  relatedForeignKeys = []):
+                 catalogTable = None,  relatedCatalogIdField = None,  catalogIdField = None,
+                 catalogDisplayField = None,  catalogLabel = None):
         DdN2mAttribute.__init__(self,  relationTable,  relatedTable,  "default",  comment ,  label,   \
                  relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = [])
         DdTableAttribute.__init__(self,  relationTable, comment ,  label,   \
                  relationFeatureIdField,  attributes,  maxRows = None,  showParents = False)
 
         self.type = "checkableTable"
+        self.catalogTable = catalogTable
+        self.relatedCatalogIdField = relatedCatalogIdField
+        self.catalogIdField = catalogIdField
+        self.catalogDisplayField = catalogDisplayField
+        self.catalogLabel = catalogLabel
+
+        if self.catalogLabel == None:
+            self.catalogLabel = self.catalogDisplayField
+
 
     def __str__(self):
         return "<ddattribute.DdCheckableTableAttribute %s>" % str(self.name)
-
-
-
-
 
