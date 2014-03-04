@@ -138,7 +138,8 @@ class DataDrivenInputMask:
 
     def createFeature(self, layer):
         '''create a new QgsFeature for the layer'''
-        newFeature = QgsFeature() # gid wird automatisch vergeben
+        newFeature = QgsFeature()
+
         provider = layer.dataProvider()
         fields = layer.pendingFields()
         newFeature.initAttributes(fields.count())
@@ -247,9 +248,7 @@ class DataDrivenInputMask:
                 if forFeature == None:
                     # create the feature for this table
                     if not configLayer.isEditable():
-                        DdError(QtGui.QApplication.translate("DdError", "Please set layer editable (located in group \"DataDrivenInputMask\"): ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + configLayer.name(),  iface = self.iface)
-                        return None
+                        configLayer.startEditing()
 
                     forFeature = self.createFeature(configLayer)
                     forFeature[configLayer.fieldNameIndex("table_schema")] = ddLayerTable.schemaName
@@ -260,7 +259,6 @@ class DataDrivenInputMask:
                         return None
 
                     configLayer.reload()
-                    configLayer.startEditing()
                     forFeature = self.getConfigFeature(configLayer,  ddLayerTable)
 
                 self.app.ddManager.showFeatureForm(configLayer,  forFeature)

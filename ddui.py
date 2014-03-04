@@ -1018,7 +1018,7 @@ class DdFormWidget(DdWidget):
         self.inputWidgets.append(ddInputWidget)
 
     def initialize(self,  layer,  feature,  db):
-        self.oldSubsetString = ""
+        self.oldSubsetString = self.layer.subsetString()
         enableAll = False
 
         if feature.id() == -3333: # search feature
@@ -1047,7 +1047,7 @@ class DdFormWidget(DdWidget):
                         if len(thisPkList) != 1:
                             self.feature = None
                         else:
-                            self.oldSubsetString = self.layer.subsetString()
+                            #self.oldSubsetString = self.layer.subsetString()
                             thisPkField = self.layer.pendingFields().field(thisPkList[0])
 
                             if thisPkField.typeName().find("char") != -1:
@@ -2290,6 +2290,7 @@ class DdN2mTableWidget(DdN2mWidget):
     def fill(self):
         self.inputWidget.setRowCount(0)
         # display the features in the QTableWidget
+        self.debug("DdN2mTableWidget.fill " + self.tableLayer.subsetString())
         for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             self.appendRow(aFeat)
 
@@ -2408,7 +2409,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
         if result == 1: # user clicked OK
             # make sure user did not change parentFeatureId
-            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
+            #self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
             # refresh thisFeature with the new values
             self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
 
