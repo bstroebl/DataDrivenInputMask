@@ -247,9 +247,12 @@ class DdManager(object):
         for act in wereActions:
             layer.actions().addAction(act.type(),  act.name(), act.action())
 
-    def showFeatureForm(self,  layer,  feature,  showParents = True, title = None):
+    def showFeatureForm(self,  layer,  feature,  showParents = True, title = None,  askForSave = True):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
-        if data provider allows editing the layer is turned into editing mode
+        if the data provider allows editing the layer is turned into editing mode
+        if the user clicks OK all changes to teh feature are committed (no undo!)
+        if askForSave is true and the layer has pending changes the user is asked if the changes
+        shall be commited before the mask is opened
         returns 1 if user clicked OK, 0 if CANCEL'''
 
         layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
@@ -269,7 +272,7 @@ class DdManager(object):
             wasEditable = layer.isEditable()
 
             if wasEditable:
-                if layer.isModified():
+                if layer.isModified() and askForSave:
                     #ask user to save or discard changes
                     reply = QtGui.QMessageBox.question(None, QtGui.QApplication.translate("DdInfo", "Unsaved changes", None,
                         QtGui.QApplication.UnicodeUTF8),
