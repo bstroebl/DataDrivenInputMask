@@ -306,11 +306,17 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         if thisFeature == None:
             doAddFeature = True
-            thisFeature = self.createFeature(-777)
+            thisFeature = self.createFeature()
             thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] = self.featureId
             thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] = relatedId
 
-        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents,  title = thisValue)
+            if not self.tableLayer.addFeature(thisFeature):
+                DdError(QtGui.QApplication.translate("DdError", "Could not add feature to layer:", None,
+                                       QtGui.QApplication.UnicodeUTF8) + " " + aLayer.name())
+                return None
+
+        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  \
+            showParents = self.attribute.showParents,  title = thisValue,  askForSave = (not doAddFeature))
 
         if result == 1: # user clicked OK
             if doAddFeature:
