@@ -106,7 +106,78 @@ class DataDrivenUi(object):
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax, noSearchFields, showParents,  showChildren):
+    def configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
+        db,  createAction,  helpText):
+        '''read configuration from db'''
+
+        # read values for this table from config tables
+        query = QtSql.QSqlQuery(db)
+        sQuery = "SELECT COALESCE(\"table_help\", \'\'), \
+            \"table_action\", \
+            COALESCE(\"tab_alias\", \'\'), \
+            COALESCE(\"tab_tooltip\", \'\'), \
+            \"field_name\", \
+            COALESCE(\"field_alias\", \'\'), \
+            \"field_skip\", \
+            \"field_search\", \
+            \"field_min\", \
+            \"field_max\" \
+        FROM \"public\".\"dd_table\" t \
+            LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
+            LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
+        WHERE \"table_schema\" = :schema AND \"table_name\" = :table\
+        ORDER BY \"tab_order\", \"field_order\""
+        query.prepare(sQuery)
+        query.bindValue(":schema",  ddTable.schemaName)
+        query.bindValue(":table",  ddTable.tableName)
+        query.exec_()
+
+        if query.isActive():
+            lastTab = None
+            firstDataSet = True
+
+            while query.next():
+                if firstDataSet:
+                    helpText += query.value(0)
+                    firstDataSet = False
+                    createAction = query.value(1)
+
+                tabAlias = query.value(2)
+                tabTooltip = query.value(3)
+                fieldName = query.value(4)
+                fieldAlias = query.value(5)
+                fieldSkip = query.value(6)
+                fieldSearch =  query.value(7)
+                fieldMin = query.value(8)
+                fieldMax = query.value(9)
+
+                if tabAlias != lastTab and not fieldSkip:
+                    if tabAlias != "":
+                        lastTab = tabAlias
+                        fieldGroups[fieldName] = [tabAlias,  tabTooltip]
+
+                fieldOrder.append(fieldName)
+
+                if fieldAlias != "":
+                    labels[fieldName] = fieldAlias
+
+                if fieldSkip:
+                    skip.append(fieldName)
+
+                if not fieldSearch:
+                    noSearchFields.append(fieldName)
+
+                if fieldMin != None or fieldMax != None:
+                    minMax[fieldName] = [fieldMin,  fieldMax]
+        else:
+            self.showQueryError(query)
+
+        query.finish()
+
+        return [skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText]
+
+    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax, noSearchFields, \
+                      showParents,  showChildren,  readConfigTables,  createAction):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
@@ -253,7 +324,25 @@ class DataDrivenUi(object):
             skip.append(thisTable.tableName)
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
-                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields, showParents,  False)
+                if readConfigTables:
+                    pSkip,  pLabels,  pFieldOrder,  pFieldGroups,  pMinMax,  pNoSearchFields,  pCreateAction,  pHelpText = \
+                        self.configureLayer(aParent,  [],  {},  [],  {},  {},  [],  db,  createAction,  "")
+
+                    if pSkip == []:
+                        pSkip = skip
+                    if pLabels == {}:
+                        pLabels = labels
+                    if pFieldOrder == []:
+                        pFieldOrder = fieldOrder
+                    if pFieldGroups == {}:
+                        pFieldGroups = fieldGroups
+                    if pMinMax == {}:
+                        pMinMax = minMax
+                    if pNoSearchFields == []:
+                        pNoSearchFields = noSearchFields
+
+                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  pSkip,  pLabels,  pFieldOrder,  pFieldGroups,  \
+                                                                     pMinMax,  pNoSearchFields, showParents,  False,  readConfigTables,  pCreateAction)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
@@ -261,13 +350,18 @@ class DataDrivenUi(object):
 
     def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  \
         noSearchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True,  \
-        helpText = ""):
+        helpText = "",  createAction = True,  readConfigTables = False):
         '''creates default uis for this table (DdTable instance)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
         see ddmanager.initLayer for other parameters
         '''
 
-        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  showParents,  showChildren)
+        if readConfigTables:
+            skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
+                        self.configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  createAction,  helpText)
+
+        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
+                                                 showParents,  showChildren,  readConfigTables,  createAction)
 
         if  inputMask:
             ui = DdDialogWidget()
@@ -540,7 +634,10 @@ class DataDrivenUi(object):
                     attLabel = None
 
                 if subType == "table":
-                    attributes = self.getAttributes(ddRelationTable,  db,  {},  {})
+                    configList =  self.configureLayer(ddRelationTable,  [],  {},  [],  {},  {},  [],  db,  True,  "")
+                    rLabels = configList[1]
+                    rMinMax = configList[4]
+                    attributes = self.getAttributes(ddRelationTable,  db,  rLabels,  rMinMax)
                     ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
@@ -2274,7 +2371,7 @@ class DdN2mTableWidget(DdN2mWidget):
         fieldNames =  []
 
         for anAtt in self.attribute.attributes:
-            fieldNames.append(anAtt.name)
+            fieldNames.append(anAtt.getLabel())
         horizontalHeaders = fieldNames
 
         inputWidget.setHorizontalHeaderLabels(horizontalHeaders)
@@ -2290,7 +2387,6 @@ class DdN2mTableWidget(DdN2mWidget):
     def fill(self):
         self.inputWidget.setRowCount(0)
         # display the features in the QTableWidget
-        self.debug("DdN2mTableWidget.fill " + self.tableLayer.subsetString())
         for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             self.appendRow(aFeat)
 

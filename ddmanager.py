@@ -79,85 +79,6 @@ class DdManager(object):
         else:
             return None
 
-    def configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
-        db,  createAction,  helpText):
-        '''read configuration from db'''
-
-        # check for config tables
-        ddConfigTable = DdTable(schemaName = "public",  tableName = "dd_table")
-
-        if not self.isAccessible(db,  ddConfigTable,  showError = False):
-            if self.showConfigInfo:
-                self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
-                    "Config tables either not found or not accessible, loading default mask", None,
-                    QtGui.QApplication.UnicodeUTF8))
-                self.showConfigInfo = False
-        else:
-            # read values for this table from config tables
-            query = QtSql.QSqlQuery(db)
-            sQuery = "SELECT COALESCE(\"table_help\", \'\'), \
-                \"table_action\", \
-                COALESCE(\"tab_alias\", \'\'), \
-                COALESCE(\"tab_tooltip\", \'\'), \
-                \"field_name\", \
-                COALESCE(\"field_alias\", \'\'), \
-                \"field_skip\", \
-                \"field_search\", \
-                \"field_min\", \
-                \"field_max\" \
-            FROM \"public\".\"dd_table\" t \
-                LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
-                LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
-            WHERE \"table_schema\" = :schema AND \"table_name\" = :table\
-            ORDER BY \"tab_order\", \"field_order\""
-            query.prepare(sQuery)
-            query.bindValue(":schema",  ddTable.schemaName)
-            query.bindValue(":table",  ddTable.tableName)
-            query.exec_()
-
-            if query.isActive():
-                lastTab = None
-                firstDataSet = True
-
-                while query.next():
-                    if firstDataSet:
-                        helpText += query.value(0)
-                        firstDataSet = False
-                        createAction = query.value(1)
-
-                    tabAlias = query.value(2)
-                    tabTooltip = query.value(3)
-                    fieldName = query.value(4)
-                    fieldAlias = query.value(5)
-                    fieldSkip = query.value(6)
-                    fieldSearch =  query.value(7)
-                    fieldMin = query.value(8)
-                    fieldMax = query.value(9)
-
-                    if tabAlias != lastTab:
-                        if tabAlias != "":
-                            lastTab = tabAlias
-                            fieldGroups[fieldName] = [tabAlias,  tabTooltip]
-
-                    fieldOrder.append(fieldName)
-
-                    if fieldAlias != "":
-                        labels[fieldName] = fieldAlias
-
-                    if fieldSkip:
-                        skip.append(fieldName)
-
-                    if not fieldSearch:
-                        noSearchFields.append(fieldName)
-
-                    if fieldMin != None or fieldMax != None:
-                        minMax[fieldName] = [fieldMin,  fieldMax]
-            else:
-                self.showQueryError(query)
-
-            query.finish()
-        return [skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText]
-
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
         inputUi = None,  searchUi = None,  helpText = ""):
@@ -208,15 +129,22 @@ class DdManager(object):
                 return False
             else:
                 if inputMask or searchMask:
-                    # read from config tables
+                    # check for config tables
+                    ddConfigTable = DdTable(schemaName = "public",  tableName = "dd_table")
+                    readConfigTables = self.isAccessible(db,  ddConfigTable,  showError = False)
 
-                    skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
-                        self.configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  createAction,  helpText)
+                    if not readConfigTables:
+                        if self.showConfigInfo:
+                            self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
+                                "Config tables either not found or not accessible, loading default mask", None,
+                                QtGui.QApplication.UnicodeUTF8))
+                            self.showConfigInfo = False
 
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
                     autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
-                                                  noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText)
+                                                  noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText,  createAction,  \
+                                                  readConfigTables = readConfigTables)
 
                     if inputUi == None:
                         # use the automatically created mask if none has been provided
