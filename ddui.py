@@ -1665,7 +1665,13 @@ class DdLineEditInt(DdLineEdit):
                     thisMax = max
 
         if self.attribute.min != None or self.attribute.max != None:
-            validator = QtGui.QIntValidator(thisMin,  thisMax,  self.inputWidget)
+            validator = QtGui.QIntValidator(self.inputWidget)
+
+            if (isinstance(thisMin,  int) or isinstance(thisMin,  long)):
+                validator.setBottom(thisMin)
+
+            if (isinstance(thisMax,  int) or isinstance(thisMax,  long)):
+                validator.setTop(thisMax)
         else:
             validator = QInt64Validator(self.inputWidget)
 
