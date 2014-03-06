@@ -878,7 +878,7 @@ class DdWidget(object):
     def __str__(self):
         return "<ddui.DdWidget>"
 
-    def checkInput(self):
+    def checkInput(self,  layer,  feature):
         '''check if input is valid
         returns True if not implemented in child class'''
         return True
@@ -986,10 +986,10 @@ class DdDialogWidget(DdWidget):
         for aForm in self.forms:
             aForm.initialize(layer,  feature,  db)
 
-    def checkInput(self):
+    def checkInput(self,  layer,  feature):
         inputOk = True
         for aForm in self.forms:
-            if not aForm.checkInput():
+            if not aForm.checkInput(layer,  feature):
                 inputOk = False
                 break
 
@@ -1177,12 +1177,12 @@ class DdFormWidget(DdWidget):
             if not self.feature:
                 self.parent.setEnabled(False)
 
-    def checkInput(self):
+    def checkInput(self,  layer,  feature):
         inputOk = True
 
         if self.parent.isEnabled(): #only check if the tab is enbaled, e.g. parents are not enabled if this is a new feature
             for anInputWidget in self.inputWidgets:
-                if not anInputWidget.checkInput():
+                if not anInputWidget.checkInput(layer,  feature):
                     inputOk = False
                     break
 
@@ -1325,10 +1325,15 @@ class DdLineEdit(DdInputWidget):
         '''function to strip quotation marks and data type from default string'''
         thisValue = self.attribute.default
         thisValue = thisValue.split("::")[0]
-        thisValue = thisValue.replace("\'",  "")
+
+        if thisValue.find("nextval") != -1:
+            thisValue = thisValue + ")"
+        else:
+            thisValue = thisValue.replace("\'",  "")
+
         return thisValue
 
-    def getFeatureValue(self,  layer,  feature,  db):
+    def getFeatureValue(self,  layer,  feature):
         '''returns a str representing the value in this field for this feature;
         if the value is null, None is returned,
         if it is a new feature the default value is returned if available.'''
@@ -1361,6 +1366,10 @@ class DdLineEdit(DdInputWidget):
         else:
             self.chk.setChecked(thisValue == None)
 
+    def setValidator(self,  min = None,  max = None):
+        '''set a validator, if needed must be implemented in child classes'''
+        pass
+
     # public methods
     def setValue(self,  thisValue):
         '''sets thisValue into the input widget'''
@@ -1369,6 +1378,9 @@ class DdLineEdit(DdInputWidget):
             thisValue = ""
 
         self.inputWidget.setText(unicode(thisValue))
+
+    def toString(self,  thisValue):
+        return unicode(thisValue)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -1379,7 +1391,6 @@ class DdLineEdit(DdInputWidget):
             if thisValue == "":
                 thisValue = None
 
-        #QtGui.QMessageBox.information(None,  "DdLineEdit",  "getValue " + self.attribute.label  + " " + str(thisValue))
         return thisValue
 
     def setupUi(self,  parent,  db):
@@ -1461,20 +1472,46 @@ class DdLineEdit(DdInputWidget):
                 self.searchCbx.setVisible(True)
             else:
                 self.searchCbx.setVisible(False)
-                thisValue = self.getFeatureValue(layer,  feature,  db)
+                thisValue = self.getFeatureValue(layer,  feature)
                 self.setValue(thisValue)
+                self.setValidator(min = thisValue,  max = thisValue)
+                # make sure the validator does not kick out an already existing value
                 self.manageChk(thisValue)
                 self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
-    def checkInput(self):
+    def checkMinMax(self,  thisValue):
+        '''checks if value is within min/max range (if defined)'''
+        accepted = True
+
+        if self.hasChanges:
+            if self.attribute.min != None:
+                if thisValue < self.attribute.min:
+                    QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too small! Minimum is ",
+                              None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.min))
+                    accepted = False
+
+            if accepted:
+                if self.attribute.max != None:
+                    if thisValue > self.attribute.max:
+                        QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too large! Maximum is ",
+                              None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.max))
+                        accepted = False
+
+        return accepted
+
+    def checkInput(self,  layer,  feature):
         thisValue = self.getValue()
-        #QtGui.QMessageBox.information(None, "checkInput",  self.attribute.name + " " + str(thisValue))
+
         if self.attribute.notNull and thisValue == None:
             QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
                                                            QtGui.QApplication.UnicodeUTF8) )
             return False
         else:
-            return True
+            if self.getFeatureValue(layer,  feature) == thisValue:
+                # not changing a value is always allowed
+                return True
+            else:
+                return self.checkMinMax(thisValue)
 
     def getFieldIndex(self,  layer):
         '''return the field index for this DdInputWidget's attribute's name in this layer'''
@@ -1522,7 +1559,9 @@ class DdLineEdit(DdInputWidget):
                         elif self.attribute.type == "text":
                             thisValue = "\'" + unicode(thisValue) + "\'"
                         elif self.attribute.type == "date":
-                            thisValue = thisValue.toString("yyyy-MM-dd")
+                            thisValue = "\'" + thisValue.toString("yyyy-MM-dd") + "\'"
+                        else:
+                            thisValue = self.toString(thisValue)
 
                     searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
 
@@ -1553,7 +1592,7 @@ class DdLineEditInt(DdLineEdit):
     def __str__(self):
         return "<ddui.DdLineEditInt %s>" % str(self.attribute.name)
 
-    def getFeatureValue(self,  layer,  feature,  db):
+    def getFeatureValue(self,  layer,  feature):
         if feature == None:
             return None
 
@@ -1563,7 +1602,7 @@ class DdLineEditInt(DdLineEdit):
         if feature.id() < 0 and thisValue == None: # new feature and no value set
             if feature.id() != -3333: # no return value for search feature
                 if self.attribute.hasDefault:
-                    thisValue = self.attribute.default
+                    thisValue = self.getDefault()
                 else:
                     if self.attribute.isPK :
                         thisValue = self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1
@@ -1571,11 +1610,62 @@ class DdLineEditInt(DdLineEdit):
 
         return thisValue
 
-    def setValidator(self):
+    def getValue(self):
+        if self.chk.isChecked():
+            thisValue = None
+        else:
+            thisValue = self.inputWidget.text()
+
+            if thisValue == "":
+                thisValue = None
+            else:
+                try:
+                    thisValue = int(thisValue)
+                except ValueError:
+                    try:
+                        thisValue = long(thisValue)
+                    except ValueError:
+                        thisValue = None
+
+        return thisValue
+
+    def checkInput(self,  layer,  feature):
+        thisValue = self.getValue()
+
+        if self.attribute.notNull and thisValue == None:
+            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
+                                                           QtGui.QApplication.UnicodeUTF8) )
+            return False
+        else:
+            if self.getFeatureValue(layer,  feature) == thisValue:
+                # not changing a value is always allowed
+                return True
+            else:
+                if isinstance(thisValue,  int) or isinstance(thisValue,  long):
+                    return self.checkMinMax(thisValue)
+                else:
+                    return True
+
+    def setValidator(self,  min,  max):
         '''sets an appropriate QValidator for the QLineEdit
         if this DdInputWidget's attribute has min/max values validator is set to them'''
+
+        if self.attribute.min != None:
+            thisMin = self.attribute.min
+
+            if min != None:
+                if min < thisMin:
+                    thisMin = min
+
+        if self.attribute.max != None:
+            thisMax = self.attribute.max
+
+            if max != None:
+                if max > thisMax:
+                    thisMax = max
+
         if self.attribute.min != None or self.attribute.max != None:
-            validator = QtGui.QIntValidator(self.attribute.min,  self.attribute.max,  self.inputWidget)
+            validator = QtGui.QIntValidator(thisMin,  thisMax,  self.inputWidget)
         else:
             validator = QInt64Validator(self.inputWidget)
 
@@ -1583,24 +1673,17 @@ class DdLineEditInt(DdLineEdit):
 
     def initialize(self,  layer,  feature,  db):
         DdLineEdit.initialize(self,  layer,  feature,  db)
-        thisValue = self.getFeatureValue(layer,  feature,  db)
+        thisValue = self.getFeatureValue(layer,  feature)
+        isInt = isinstance(thisValue,  int)
 
-        if thisValue == None:
-            self.setValidator()
-        else:
-            isInt = isinstance(thisValue,  int)
+        if not  isInt: # could be a Longlong, or a serial, i.e. a nextval(sequence) expression
+            isInt = isinstance(thisValue,  long)
 
-            if not  isInt: # could be a Longlong, or a serial, i.e. a nextval(sequence) expression
-                isInt = isinstance(thisValue,  long)
+            if not  isInt:
+                self.inputWidget.setValidator(None) # remove the validator
 
-                if not  isInt:
-                    self.inputWidget.setValidator(None) # remove the validator
-
-            self.setValue(thisValue)
-            self.manageChk(thisValue)
-
-            if isInt:
-                self.setValidator()
+        self.setValue(thisValue)
+        self.manageChk(thisValue)
 
 class DdLineEditDouble(DdLineEdit):
     '''input widget (QLineEdit) for a DoubleValue'''
@@ -1620,12 +1703,15 @@ class DdLineEditDouble(DdLineEdit):
             # convert double to a locale string representation
             try:
                 thisDouble = float(thisValue)
-                loc = QtCore.QLocale.system()
-                thisValue = loc.toString(thisDouble)
+                thisValue = self.toString(thisDouble)
             except ValueError:
                 thisValue = ""
 
         self.inputWidget.setText(thisValue)
+
+    def toString(self,  thisValue):
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -1640,22 +1726,35 @@ class DdLineEditDouble(DdLineEdit):
                 thisDouble = loc.toDouble(thisValue)
 
                 if thisDouble[1]:
-                    thisValue = str(thisDouble[0])
+                    thisValue = thisDouble[0]
                 else:
                     thisValue = None
 
         return thisValue
 
-    def setValidator(self):
+    def setValidator(self,  min = None,  max = None):
         '''sets an appropriate QValidator for the QLineEdit
         if this DdInputWidget's attribute has min/max values validator is set to them'''
+
         validator = QtGui.QDoubleValidator(self.inputWidget)
 
         if self.attribute.min != None:
-            validator.setBottom(self.attribute.min)
+            thisMin = self.attribute.min
+
+            if min != None:
+                if min < thisMin:
+                    thisMin = min
+
+            validator.setBottom(thisMin)
 
         if self.attribute.max != None:
-            validator.setTop(self.attribute.max)
+            thisMax = self.attribute.max
+
+            if max != None:
+                if max > thisMax:
+                    thisMax = Max
+
+            validator.setTop(thisMax)
 
         validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
         validator.setLocale(QtCore.QLocale.system())
@@ -1666,13 +1765,13 @@ class DdLineEditDouble(DdLineEdit):
         thisDouble = loc.toDouble(thisValue)
 
         if not thisDouble[1]:
-            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input in Field is not a double according to local settings! ", None,
-                                                           QtGui.QApplication.UnicodeUTF8))
+            QtGui.QMessageBox.warning(None, self.label.text(),  \
+                QtGui.QApplication.translate("DdWarning", "Input in Field is not a double according to local settings! ", None,
+                QtGui.QApplication.UnicodeUTF8))
 
     def setupUi(self,  parent,  db):
         #QtGui.QMessageBox.information(None,  "DdLineEditFloat",  "setupUi " + self.attribute.name)
         DdLineEdit.setupUi(self,  parent,  db)
-        self.setValidator()
         self.inputWidget.textChanged.connect(self.__textChanged)
 
 class DdLineEditChar(DdLineEdit):
@@ -1684,8 +1783,8 @@ class DdLineEditChar(DdLineEdit):
     def __str__(self):
         return "<ddui.DdLineEditChar %s>" % str(self.attribute.name)
 
-    def checkInput(self):
-        ok = DdLineEdit.checkInput()
+    def checkInput(self,  layer,  feature):
+        ok = DdLineEdit.checkInput(layer,  feature)
 
         if ok:
             thisValue = self.getValue()
@@ -1713,7 +1812,7 @@ class DdComboBox(DdLineEdit):
     def __str__(self):
         return "<ddui.DdComboBox %s>" % str(self.attribute.name)
 
-    def getFeatureValue(self,  layer,  feature,  db):
+    def getFeatureValue(self,  layer,  feature):
         '''returns a value representing the value in this field for this feature'''
 
         if feature == None:
@@ -1726,9 +1825,9 @@ class DdComboBox(DdLineEdit):
             if feature.id() != -3333: # no return value for search feature
                 if self.attribute.hasDefault:
                     if self.attribute.isTypeInt():
-                        thisValue = int(self.attribute.default)
+                        thisValue = int(self.getDefault())
                     elif self.attribute.isTypeChar():
-                        thisValue = self.attribute.default
+                        thisValue = self.getDefault()
 
         return thisValue
 
@@ -1794,9 +1893,9 @@ class DdComboBox(DdLineEdit):
 
             if self.attribute.hasDefault:
                 if self.attribute.isTypeInt():
-                    thisValue = int(self.attribute.default)
+                    thisValue = int(self.getDefault())
                 elif self.attribute.isTypeChar():
-                    thisValue = self.attribute.default
+                    thisValue = self.getDefault()
 
         self.setValue(thisValue)
 
@@ -1834,7 +1933,29 @@ class DdDateEdit(DdLineEdit):
     def __str__(self):
         return "<ddui.DdDateEdit %s>" % str(self.attribute.name)
 
-    def getFeatureValue(self,  layer,  feature,  db):
+    def setValidator(self,  min = None,  max = None):
+        '''set the min and max date if attribute has min/max
+        use either the passed values or attributes min/max'''
+
+        if self.attribute.min != None:
+            thisMin = self.attribute.min
+
+            if min != None:
+                if min < self.attribute.min:
+                    thisMin = min
+
+            self.inputWidget.setMinimumDate(thisMin)
+
+        if self.attribute.max != None:
+            thisMax = self.attribute.max
+
+            if max != None:
+                if max > self.attribute.max:
+                    thisMax = max
+
+            self.inputWidget.setMaximumDate(thisMax)
+
+    def getFeatureValue(self,  layer,  feature):
         '''returns a QDate representing the value in this field for this feature'''
         if feature == None:
             return None
@@ -1845,7 +1966,7 @@ class DdDateEdit(DdLineEdit):
         if thisValue == None:
             if feature.id() != -3333: # no return value for search feature
                 if feature.id() < 0 and self.attribute.hasDefault:
-                    thisValue = self.attribute.default.toDate()
+                    thisValue = self.getDefault().toDate()
                 else:
                     if self.attribute.notNull:
                         thisValue = QtCore.QDate.currentDate()
@@ -1859,18 +1980,15 @@ class DdDateEdit(DdLineEdit):
         inputWidget.setDisplayFormat(loc.dateFormat())
         inputWidget.setObjectName("dat" + parent.objectName() + self.attribute.name)
         inputWidget.setToolTip(self.attribute.comment)
-
-        if self.attribute.min != None:
-            inputWidget.setMinimumDate(self.attribute.min)
-        if self.attribute.max != None:
-            inputWidget.setMaximumDate(self.attribute.max)
-
         inputWidget.dateChanged.connect(self.registerChange)
         return inputWidget
 
     def setNull(self,  setnull):
         if setnull:
-            thisValue = self.inputWidget.maximumDate()
+            if self.attribute.max != None:
+                thisValue = self.attribute.max
+            else:
+                thisValue = self.inputWidget.maximumDate()
         else:
             if self.attribute.hasDefault:
                 thisValue = self.getDefault()
@@ -1880,12 +1998,18 @@ class DdDateEdit(DdLineEdit):
 
         self.setValue(thisValue)
 
+    def toString(self,  thisValue):
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
     def setValue(self,  thisValue):
 
         if not thisValue: # i.e. None
-            self.inputWidget.setDate(QtCore.QDate.currentDate())
+            newDate = QtCore.QDate.currentDate()
         else:
-            self.inputWidget.setDate(thisValue)
+            newDate = thisValue
+
+        self.inputWidget.setDate(newDate)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -1904,7 +2028,7 @@ class DdCheckBox(DdLineEdit):
     def __str__(self):
         return "<ddui.DdCheckBox %s>" % str(self.attribute.name)
 
-    def getFeatureValue(self,  layer,  feature,  db):
+    def getFeatureValue(self,  layer,  feature):
         '''returns a boolean representing the value in this field for this feature'''
 
         if feature == None:
@@ -1922,7 +2046,7 @@ class DdCheckBox(DdLineEdit):
         if feature.id() < 0 and thisValue == None: # new feature and no value set
             if feature.id() != -3333: # no return value for search feature
                 if self.attribute.hasDefault:
-                    thisValue = bool(self.attribute.default)
+                    thisValue = bool(self.getDefault())
 
         return thisValue
 
@@ -1939,7 +2063,7 @@ class DdCheckBox(DdLineEdit):
 
         if not setnull:
             if self.attribute.hasDefault:
-                thisValue = self.attribute.default
+                thisValue = self.getDefault()
 
                 if thisValue == "true":
                     thisValue = True
@@ -1963,7 +2087,7 @@ class DdCheckBox(DdLineEdit):
             thisValue = None
         else:
             state = self.inputWidget.checkState()
-            #QtGui.QMessageBox.information(None, "", str(state))
+
             if state == 0:
                 thisValue = False
 
@@ -1971,16 +2095,6 @@ class DdCheckBox(DdLineEdit):
                 thisValue = True
 
         return thisValue
-
-    def checkInput(self):
-        thisValue = self.getValue()
-
-        if self.attribute.notNull and thisValue == None:
-            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
-                                                           QtGui.QApplication.UnicodeUTF8) )
-            return False
-        else:
-            return True
 
 class DdTextEdit(DdLineEdit):
     '''input widget (QTextEdit) for a text field'''

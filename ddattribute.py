@@ -171,15 +171,17 @@ class DdDateLayerAttribute(DdLayerAttribute):
                         else:
                             daysToAdd = "0"
 
-                        thisDate = QtCore.QDate.currentDate().addDays(int(daysToAdd) * factor)
+                    returnDate = QtCore.QDate.currentDate().addDays(int(daysToAdd) * factor)
                 else:
-                    thisDate = QtCore.QDate.fromString(thisDate,  self.dateFormat)
+                    returnDate = QtCore.QDate.fromString(thisDate,  self.dateFormat)
                     # returns a null date if string is not formatted as needed by dateFormat
 
-            if thisDate.isNull():
-                thisDate = None
+            if returnDate.isNull():
+                returnDate = None
+        else:
+            returnDate = None
 
-        return thisDate
+        return returnDate
 
 class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''

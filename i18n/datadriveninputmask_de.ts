@@ -37,7 +37,7 @@
         <translation>Dieser Layer ist keine PostgreSQL-Tabelle: </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1488"/>
+        <location filename="ddui.py" line="1525"/>
         <source>Field not found in layer: </source>
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
@@ -80,12 +80,12 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1411"/>
+        <location filename="ddui.py" line="1422"/>
         <source>Null</source>
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2102"/>
+        <location filename="ddui.py" line="2216"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
@@ -100,17 +100,17 @@
         <translation>Keine passenden Datensätze gefunden</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1414"/>
+        <location filename="ddui.py" line="1425"/>
         <source>Check if you want to save an empty (or null) value.</source>
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1457"/>
+        <location filename="ddui.py" line="1468"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1459"/>
+        <location filename="ddui.py" line="1470"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
     </message>
@@ -143,12 +143,12 @@
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2476"/>
+        <location filename="ddui.py" line="2590"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2478"/>
+        <location filename="ddui.py" line="2592"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -189,22 +189,22 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="ddui.py" line="1669"/>
+        <location filename="ddui.py" line="1768"/>
         <source>Input in Field is not a double according to local settings! </source>
         <translation>Ihre Eingabe in das Feld ist gemäß den lokalen Einstellungen kein Double-Wert!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1695"/>
+        <location filename="ddui.py" line="1794"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1700"/>
+        <location filename="ddui.py" line="1799"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1979"/>
+        <location filename="ddui.py" line="1636"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
@@ -232,6 +232,16 @@
         <location filename="ddmanager.py" line="722"/>
         <source>Enter password for </source>
         <translation>Passwort für </translation>
+    </message>
+    <message>
+        <location filename="ddui.py" line="1489"/>
+        <source>Field value is too small! Minimum is </source>
+        <translation>Der Feldwert ist zu klein! Mindesteingabe ist </translation>
+    </message>
+    <message>
+        <location filename="ddui.py" line="1496"/>
+        <source>Field value is too large! Maximum is </source>
+        <translation>Der Feldwert ist zu groß! Höchsteingabe ist </translation>
     </message>
 </context>
 </TS>
