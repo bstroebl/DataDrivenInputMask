@@ -55,7 +55,6 @@ class DdFormHelper:
                 break
 
         #self.prntWidget = self.thisDialog.parentWidget()
-        #QtGui.QMessageBox.information(None,  "",  str(self.prntWidget))
 
 def ddFormInit1(dialog, layerId, featureId):
     dialog.setProperty("helper", DdFormHelper(dialog, layerId, featureId))
@@ -67,8 +66,6 @@ def ddFormInit(dialog, layerId, featureId):
 
     for aLayer in lIface.layers():
         if aLayer.id() == layerId:
-            #QtGui.QMessageBox.information(None,  "", aLayer.name())
-            #thisDialog.hide()
             feat = QgsFeature()
             featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
 
@@ -81,7 +78,6 @@ def ddFormInit(dialog, layerId, featureId):
                         inputUi = None,  searchUi = None,  helpText = "")
                     layerValues = ddManager.ddLayers[aLayer.id()]
 
-                #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
                 db = layerValues[1]
                 ui = layerValues[2]
                 dlg = DdDialog(ddManager,  ui,  aLayer,  feat,  db,  dialog)
@@ -186,7 +182,6 @@ class DataDrivenUi(object):
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
-                #QtGui.QMessageBox.information(None, "debug",  anAtt.name + " isPK")
                 n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels,  showChildren)
                 ddAttributes = ddAttributes + n2mAttributes
 
@@ -203,7 +198,6 @@ class DataDrivenUi(object):
              #check if this attribute is supposed to be skipped
             for skipName in skip:
                 if skipName == anAttribute.name:
-                    #QtGui.QMessageBox.information(None, "debug",  "skipping " + anAttribute.name)
                     nextAtt = True
                     break
 
@@ -316,8 +310,6 @@ class DataDrivenUi(object):
 
         ddForms.append(ddFormWidget)
         ddSearchForms.append(ddSearchFormWidget)
-
-        #QtGui.QMessageBox.information(None, "attributes for",  thisTable.tableName + ": \n" + msg)
 
         if showParents:
             # do not show this table in the parent's form
@@ -459,17 +451,10 @@ class DataDrivenUi(object):
         else:
             DbError(query)
 
-        #myParents = "myParents:"
-        #for aParent in parents:
-        #    myParents = myParents + " " + aParent.tableName
-
-        #QtGui.QMessageBox.information(None, "getParents",  "called with " + thisTable.tableName + "\n" + myParents)
-
         return parents
 
     def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels,  showChildren):
         '''find those tables (n2mtable) where our pk is a fk'''
-        #QtGui.QMessageBox.information(None, "Debug", "getN2mAttributes:" + thisTable.tableName)
         n2mAttributes = []
         pkQuery = QtSql.QSqlQuery(db)
         sPkQuery = "SELECT array_length(pk.conkey, 1), att.attname, att.attnum, c.oid as table_oid,n.nspname,c.relname, f.numfields, COALESCE(d.description,'') as comment, COALESCE(inpk.in,0) as inpk \
@@ -489,7 +474,6 @@ class DataDrivenUi(object):
                     AND :attNum = ANY(fk.confkey) "
                     #  0 = d.objsubid: comment on table only, not on its columns
         pkQuery.prepare(sPkQuery)
-        #QtGui.QMessageBox.information(None, str(attNum), str(thisTable.oid))
         pkQuery.bindValue(":oid", thisTable.oid)
         pkQuery.bindValue(":attNum", attNum)
         pkQuery.exec_()
@@ -552,7 +536,6 @@ class DataDrivenUi(object):
                                     subType = "table"
                                     maxRows = 1
                                     showParents = False
-                                    #QtGui.QMessageBox.information(None, "relatedQuery.size()", str(relatedQuery.size()))
                                 elif relatedQuery.size() == 1:
                                     while relatedQuery.next():
                                         relatedOid = relatedQuery.value(0)
@@ -572,7 +555,6 @@ class DataDrivenUi(object):
                                             subType = "list"
                                         else:
                                             subType = "tree"
-                                            #QtGui.QMessageBox.information(None, "Debug", "tree: " + relatedSchema + "." + relatedTable + "." + relationRelatedIdField)
 
                                         relatedIdField = None
                                         relatedDisplayCandidate = None
@@ -711,7 +693,6 @@ class DataDrivenUi(object):
                             try:
                                 fkComment = fk[3]
                             except IndexError:
-                                #QtGui.QMessageBox.information(None, "",  "no fkComment for " + attName)
                                 fkComment = ""
 
                             if attComment == "":
@@ -823,7 +804,6 @@ class DataDrivenUi(object):
                 if contype == "f":
                     continue
 
-               # QtGui.QMessageBox.information(None, "",  str(attNum) + ": " + fieldType + " " + valAttName + " " + keySql)
                 try:
                     fk = foreignKeys[attName]
                     if fk[0] != "varchar": # we do not already have a varchar field as value field
@@ -1111,7 +1091,6 @@ class DdFormWidget(DdWidget):
 
     def addInputWidget(self,  ddInputWidget):
         '''insert this DdInputWidget into this DdForm'''
-        #QtGui.QMessageBox.information(None,  "addInputWidget",  ddInputWidget.attribute.name)
         self.inputWidgets.append(ddInputWidget)
 
     def initialize(self,  layer,  feature,  db):
@@ -1515,7 +1494,6 @@ class DdLineEdit(DdInputWidget):
 
     def getFieldIndex(self,  layer):
         '''return the field index for this DdInputWidget's attribute's name in this layer'''
-        #QtGui.QMessageBox.information(None, "getFieldIndex",  "layer: " + layer.name() + " attribute: " + self.attribute.name)
         if layer:
             fieldIndex = layer.fieldNameIndex(self.attribute.name)
         else:
@@ -1696,7 +1674,6 @@ class DdLineEditDouble(DdLineEdit):
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
-        #QtGui.QMessageBox.information(None,  "DdLineEditDouble",  "init " + self.attribute.name)
 
     def __str__(self):
         return "<ddui.DdLineEditDouble %s>" % str(self.attribute.name)
@@ -1776,7 +1753,6 @@ class DdLineEditDouble(DdLineEdit):
                 QtGui.QApplication.UnicodeUTF8))
 
     def setupUi(self,  parent,  db):
-        #QtGui.QMessageBox.information(None,  "DdLineEditFloat",  "setupUi " + self.attribute.name)
         DdLineEdit.setupUi(self,  parent,  db)
         self.inputWidget.textChanged.connect(self.__textChanged)
 
@@ -1924,7 +1900,6 @@ class DdComboBox(DdLineEdit):
         return thisValue
 
     def setupUi(self,  parent,  db):
-        #QtGui.QMessageBox.information(None,  "DdLineEdit",  "setupUi " + self.attribute.name)
         DdLineEdit.setupUi(self,  parent,  db)
         if self.readValues(db):
             self.fill()
@@ -2545,7 +2520,6 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def fillRow(self, thisRow, thisFeature):
         '''fill thisRow with values from thisFeature'''
-        #QtGui.QMessageBox.information(None,'',str(thisRow))
 
         for i in range(len(self.attribute.attributes)):
             anAtt = self.attribute.attributes[i]

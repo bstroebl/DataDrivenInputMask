@@ -35,7 +35,6 @@ class DdDialog(QtGui.QDialog):
         # Set up the user interface from Designer.
         self.ddManager = ddManager
         self.ui = ui
-        #QtGui.QMessageBox.information(None, "", str(self.ui))
         self.layer = layer
         self.feature = feature
         self.db = db
@@ -107,7 +106,6 @@ class DdSearchDialog(QtGui.QDialog):
         # Set up the user interface from Designer.
         self.ddManager = ddManager
         self.ui = ui
-        #QtGui.QMessageBox.information(None, "", str(self.ui))
         self.layer = layer
         self.db = db
         self.feature = QgsFeature(-3333)
