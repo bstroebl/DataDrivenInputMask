@@ -32,6 +32,7 @@ from dderror import DdError,  DbError
 from ddui import DataDrivenUi
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
+import ddtools
 
 class DdManager(object):
     """DdManager manages all masks in the current project"""
@@ -582,30 +583,7 @@ class DdManager(object):
         return comment
 
     def __getOid(self,  thisTable,  db):
-        ''' query the DB to get a table's oid'''
-        query = QtSql.QSqlQuery(db)
-        sQuery = "SELECT c.oid FROM pg_class c \
-        JOIN pg_namespace n ON c.relnamespace = n.oid \
-        WHERE n.nspname = :schema AND c.relname = :table"
-        query.prepare(sQuery)
-        query.bindValue(":schema", thisTable.schemaName)
-        query.bindValue(":table", thisTable.tableName)
-        query.exec_()
-
-        oid = None
-
-        if query.isActive():
-            if query.size() == 0:
-                query.finish()
-            else:
-                while query.next():
-                    oid = query.value(0)
-                    break
-                query.finish()
-        else:
-            DbError(query)
-
-        return oid
+        return ddtools.getOid(thisTable,  db)
 
     def __isTable(self,  thisTable,  db):
         '''checks if the given relation is a table'''

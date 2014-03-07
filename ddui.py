@@ -30,6 +30,7 @@ from qgis.core import *
 from dderror import DdError,  DbError
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
+import ddtools
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
@@ -822,6 +823,10 @@ class DataDrivenUi(object):
 
         return foreignKeys
 
+    def getOid(self,  thisTable,  db):
+        ''' query the DB to get a table's oid'''
+        return ddtools.getOid(thisTable,  db)
+
     def __attributeQuery(self,  order = "lower(att.attname)"):
         sQuery = "SELECT \
         att.attname, \
@@ -1603,7 +1608,8 @@ class DdLineEditInt(DdLineEdit):
                     try:
                         thisValue = long(thisValue)
                     except ValueError:
-                        thisValue = None
+                        pass
+                        #thisValue = None
 
         return thisValue
 
