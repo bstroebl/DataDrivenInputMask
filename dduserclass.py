@@ -178,15 +178,14 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         checkedRelatedValues = []
         valueDict = {}
         defaultValues = self.getDefaultValues()
+        subsetString = ""
 
         if self.__hasCatalog():
             if catalogId != None:
                 subsetString = "\"" + self.attribute.relatedCatalogIdField + "\" = "+ str(catalogId)
-            else:
-                subsetString = ""
 
-            if self.relatedLayer.setSubsetString(subsetString):
-                self.relatedLayer.reload()
+        if self.relatedLayer.setSubsetString(subsetString):
+            self.relatedLayer.reload()
 
         for relatedFeature in self.relatedLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             relatedId = relatedFeature.id()
