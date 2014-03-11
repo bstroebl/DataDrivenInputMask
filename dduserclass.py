@@ -80,7 +80,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
     def __str__(self):
         return "<ddui.DdN2mCheckableTableWidget %s>" % str(self.attribute.label)
 
-    def __hasCatalog(self):
+    def hasCatalog(self):
         return (self.attribute.catalogTable != None and self.attribute.relatedCatalogIdField != None and
             self.attribute.catalogIdField != None and self.attribute.catalogDisplayField != None)
 
@@ -125,7 +125,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                     self.relationRelatedIdIndex = i
                     break
 
-            if self.__hasCatalog():
+            if self.hasCatalog():
                 self.catalogLayer = self.loadAdditionalLayer(db,  self.attribute.catalogTable)
                 self.fillCatalog()
             else:
@@ -180,7 +180,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         defaultValues = self.getDefaultValues()
         subsetString = ""
 
-        if self.__hasCatalog():
+        if self.hasCatalog():
             if catalogId != None:
                 subsetString = "\"" + self.attribute.relatedCatalogIdField + "\" = "+ str(catalogId)
 
@@ -252,7 +252,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         self.fillRow(thisRow, passedValues, thisValue)
 
     def setupUi(self,  parent,  db):
-        if self.__hasCatalog():
+        if self.hasCatalog():
             frame = QtGui.QFrame(parent)
             frame.setFrameShape(QtGui.QFrame.StyledPanel)
             frame.setFrameShadow(QtGui.QFrame.Raised)
