@@ -179,11 +179,11 @@ class DataDrivenUi(object):
 
         ddForms = []
         ddSearchForms = []
-        ddAttributes = self.getAttributes(thisTable, db,  labels,  minMax)
+        ddAttributes = self.getAttributes(thisTable, db,  labels,  minMax) # do not pass skip here otherwise pk fields might not be included
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
-                n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels,  showChildren)
+                n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels,  showChildren,  skip)
                 ddAttributes = ddAttributes + n2mAttributes
 
         #check if we need a QToolBox
@@ -454,8 +454,9 @@ class DataDrivenUi(object):
 
         return parents
 
-    def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels,  showChildren):
+    def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels,  showChildren,  skip = []):
         '''find those tables (n2mtable) where our pk is a fk'''
+
         n2mAttributes = []
         pkQuery = QtSql.QSqlQuery(db)
         sPkQuery = "SELECT array_length(pk.conkey, 1), att.attname, att.attnum, c.oid as table_oid,n.nspname,c.relname, f.numfields, COALESCE(d.description,'') as comment, COALESCE(inpk.in,0) as inpk \
@@ -618,9 +619,10 @@ class DataDrivenUi(object):
 
                 if subType == "table":
                     configList =  self.configureLayer(ddRelationTable,  [],  {},  [],  {},  {},  [],  db,  True,  "")
+                    skipThese = configList[0]
                     rLabels = configList[1]
                     rMinMax = configList[4]
-                    attributes = self.getAttributes(ddRelationTable,  db,  rLabels,  rMinMax)
+                    attributes = self.getAttributes(ddRelationTable,  db,  rLabels,  rMinMax,  skipThese)
                     ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
@@ -629,14 +631,22 @@ class DataDrivenUi(object):
                                        subType,  relationComment,  attLabel,  \
                                        relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList,  relatedForeignKeys)
 
-                n2mAttributes.append(ddAtt)
+                try:
+                    skip.index(ddAtt.name)
+                    addAtt = False
+                except:
+                    addAtt = True
+
+                if addAtt:
+                    n2mAttributes.append(ddAtt)
+
             pkQuery.finish()
         else:
             DbError(pkQuery)
 
         return n2mAttributes
 
-    def getAttributes(self,  thisTable, db,  labels,  minMax):
+    def getAttributes(self,  thisTable, db,  labels,  minMax,  skip = []):
         ''' query the DB and create DdAttributes'''
 
         ddAttributes = []
@@ -657,6 +667,16 @@ class DataDrivenUi(object):
 
                 while query.next():
                     attName = query.value(0)
+                    nextResult = False
+
+                    for skipName in skip:
+                        if skipName == attName:
+                            nextResult = True
+                            break
+
+                    if nextResult:
+                        continue
+
                     attNum = query.value(1)
                     attNotNull = query.value(2)
                     attHasDefault = query.value(3)
