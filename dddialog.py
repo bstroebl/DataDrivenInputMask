@@ -70,7 +70,7 @@ class DdDialog(QtGui.QDialog):
             if hasChanges:
                 self.done(1)
             else:
-                self.done(0)
+                self.done(2)
 
     def reject(self):
         self.ui.discard()
