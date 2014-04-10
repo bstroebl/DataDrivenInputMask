@@ -487,7 +487,7 @@ class DdManager(object):
         if keyColumn:
             uri.setKeyColumn(keyColumn)
 
-        vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres")
+        vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres",  False)
         # double check if layer is valid
         if not vlayer.dataProvider().isValid():
             DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
