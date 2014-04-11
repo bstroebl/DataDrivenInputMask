@@ -1535,7 +1535,7 @@ class DdLineEdit(DdInputWidget):
         fieldIndex = self.getFieldIndex(layer)
 
         if self.hasChanges:
-            layer.changeAttributeValue(feature.id(),  fieldIndex,  thisValue,  False)
+            layer.changeAttributeValue(feature.id(),  fieldIndex,  thisValue)
 
         return self.hasChanges
 
