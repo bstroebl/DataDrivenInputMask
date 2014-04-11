@@ -1055,7 +1055,8 @@ class DdDialogWidget(DdWidget):
 
 class DdFormWidget(DdWidget):
     '''DdForms are the content of DdDialog, each DdDialog needs at least one DdForm (tab).
-    The class arranges its input widgets either in a QToolBox or in the DdDialogWidget's current tab'''
+    The class arranges its input widgets either in a QToolBox or in the DdDialogWidget's current tab
+    A form can represent a (parent) layer with the corresponding (parent) feature'''
 
     def __init__(self,  ddTable, hasToolBox = False,  layer = None):
         DdWidget.__init__(self)
@@ -1186,7 +1187,7 @@ class DdFormWidget(DdWidget):
 
         if self.parent.isEnabled(): #only check if the tab is enbaled, e.g. parents are not enabled if this is a new feature
             for anInputWidget in self.inputWidgets:
-                if not anInputWidget.checkInput(layer,  feature):
+                if not anInputWidget.checkInput(self.layer,  self.feature):
                     inputOk = False
                     break
 
