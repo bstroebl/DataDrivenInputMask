@@ -1488,7 +1488,7 @@ class DdLineEdit(DdInputWidget):
         '''checks if value is within min/max range (if defined)'''
         accepted = True
 
-        if self.hasChanges:
+        if self.hasChanges and thisValue != None:
             if self.attribute.min != None:
                 if thisValue < self.attribute.min:
                     QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too small! Minimum is ",
