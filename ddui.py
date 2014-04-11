@@ -2174,8 +2174,9 @@ class DdN2mWidget(DdInputWidget):
                 break
 
     def reset(self):
-        if self.tableLayer.setSubsetString(self.oldSubsetString):
-            self.tableLayer.reload()
+        if self.tableLayer != None:
+            if self.tableLayer.setSubsetString(self.oldSubsetString):
+                self.tableLayer.reload()
 
     def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False,  skip = []):
         # find the layer in the project
