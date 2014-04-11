@@ -27,7 +27,7 @@ tags=
 homepage=https://github.com/bstroebl/DataDrivenInputMask/wiki
 tracker=http://hub.qgis.org/projects/datadriveninputmask
 repository=https://github.com/bstroebl/DataDrivenInputMask
-icon=
+icon=datadriveninputmask.png
 # experimental flag
 experimental=False
 
