@@ -1607,10 +1607,6 @@ class DdLineEditInt(DdLineEdit):
             if feature.id() != -3333: # no return value for search feature
                 if self.attribute.hasDefault:
                     thisValue = self.getDefault()
-                else:
-                    if self.attribute.isPK :
-                        thisValue = self.getMaxValueFromTable(self.attribute.table.schemaName,  self.attribute.table.tableName,  db) + 1
-                        thisValue = str(thisValue)
 
         return thisValue
 
