@@ -1975,6 +1975,10 @@ class DdDateEdit(DdLineEdit):
                     if self.attribute.notNull:
                         thisValue = QtCore.QDate.currentDate()
 
+        if isinstance(thisValue,  unicode):
+            if thisValue.find("now") != -1 or thisValue.find("current_date") != -1:
+                thisValue = QtCore.QDate.currentDate()
+
         return thisValue
 
     def createInputWidget(self,  parent):
