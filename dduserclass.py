@@ -53,6 +53,15 @@ class DdPushButton(DdInputWidget):
         hLayout.addStretch()
         parent.layout().addRow(hLayout)
 
+        pParent = parent
+
+        while (True):
+            pParent = pParent.parentWidget()
+
+            if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
+                self.parentDialog = pParent
+                break
+
     def clicked(self):
         QtGui.QMessageBox.information(None,  "",  self.label + " has been clicked")
 
