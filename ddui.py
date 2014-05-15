@@ -1967,6 +1967,9 @@ class DdDateEdit(DdLineEdit):
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
+        if thisValue == QtCore.QDate():
+            thisValue = None
+
         if thisValue == None:
             if feature.id() != -3333: # no return value for search feature
                 if feature.id() < 0 and self.attribute.hasDefault:
