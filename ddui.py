@@ -2563,11 +2563,14 @@ class DdN2mTableWidget(DdN2mWidget):
                 except KeyError:
                     aValue = 'NULL'
 
-            if isinstance(anAtt,  DdDateLayerAttribute):
-                loc = QtCore.QLocale.system()
-                aValue = loc.toString(aValue)
+            if isinstance(aValue,  QtCore.QPyNullVariant):
+                aValue = 'NULL'
             else:
-                aValue = unicode(aValue)
+                if isinstance(anAtt,  DdDateLayerAttribute):
+                    loc = QtCore.QLocale.system()
+                    aValue = loc.toString(aValue)
+                else:
+                    aValue = unicode(aValue)
 
             item = QtGui.QTableWidgetItem(aValue)
 
