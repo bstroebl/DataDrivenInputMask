@@ -31,6 +31,7 @@ from dderror import DdError,  DbError
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
 import ddtools
+import xml.etree.ElementTree as ET
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
@@ -916,6 +917,14 @@ class DdWidget(object):
         must be implemented in child classes'''
         raise NotImplementedError("Should have implemented search")
 
+    def createSearch(self,  parentElement):
+        '''creates search xml'''
+        pass
+
+    def applySearch(self,  parentElement):
+        '''read the appropriate parentElement's tag and apply to the widget'''
+        pass
+
     def debug(self,  msg):
         QgsMessageLog.logMessage(msg)
 
@@ -1052,6 +1061,16 @@ class DdDialogWidget(DdWidget):
                 searchSql += thisSearch
 
         return searchSql
+
+    def createSearch(self,  parentElement):
+        #parentElement is the XML root element in this case
+        for aForm in self.forms:
+            aForm.createSearch(parentElement)
+
+    def applySearch(self,  parentElement):
+        #parentElement is the XML root element in this case
+        for aForm in self.forms:
+            aForm.applySearch(parentElement)
 
 class DdFormWidget(DdWidget):
     '''DdForms are the content of DdDialog, each DdDialog needs at least one DdForm (tab).
@@ -1257,6 +1276,38 @@ class DdFormWidget(DdWidget):
         if self.layer.geometryType() != 4:
             self.parentDialog.ddManager.iface.mapCanvas().refresh()
 
+
+    def createSearch(self,  parentElement):
+        #parentElement is the XML root element in this case
+        #check if there is already an element for this table (happens if tabs are used)
+        tableElement = None
+
+        for aTableElement in parentElement.findall("table"):
+            if aTableElement.get("tableName",  None) == self.ddTable.tableName:
+                tableElement = aTableElement
+                break
+
+        if tableElement == None: #create it
+            tableElement = ET.SubElement(parentElement,  "table")
+            tableElement.set("tableName",  self.ddTable.tableName)
+
+        for anInputWidget in self.inputWidgets:
+            anInputWidget.createSearch(tableElement)
+
+    def applySearch(self,  parentElement):
+        #parentElement is the XML root element in this case
+        #check if there is an element for this table
+        tableElement = None
+
+        for aTableElement in parentElement.findall("table"):
+            if aTableElement.get("tableName",  None) == self.ddTable.tableName:
+                tableElement = aTableElement
+                break
+
+        if tableElement != None: #create it
+            for anInputWidget in self.inputWidgets:
+                anInputWidget.applySearch(tableElement)
+
 class DdInputWidget(DdWidget):
     '''abstract super class for any input widget, corresponds to a DdAttribute'''
 
@@ -1273,7 +1324,6 @@ class DdInputWidget(DdWidget):
         '''enable the inputWidget'''
         if self.inputWidget != None:
             self.inputWidget.setEnabled(enable)
-
 
     def registerChange(self , thisValue):
         '''slot to be called when user changes the input'''
@@ -1383,6 +1433,10 @@ class DdLineEdit(DdInputWidget):
             thisValue = ""
 
         self.inputWidget.setText(unicode(thisValue))
+
+    def setSearchValue(self,  thisValue):
+        '''sets the search value, diverging implementations in subclasses'''
+        self.setValue(thisValue)
 
     def toString(self,  thisValue):
         return unicode(thisValue)
@@ -1570,6 +1624,62 @@ class DdLineEdit(DdInputWidget):
                     searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
 
         return searchSql
+
+    def createSearch(self,  parentElement):
+        thisValue = self.getValue()
+        operator = self.searchCbx.currentText()
+
+        if not self.chk.isChecked():
+            fieldElement = ET.SubElement(parentElement,  "field")
+            fieldElement.set("fieldName",  self.attribute.name)
+            fieldElement.set("widgetType",  "DdLineEdit")
+            ET.SubElement(fieldElement, "operator").text = operator
+            valueElement = ET.SubElement(fieldElement, "value")
+
+            if operator != "IS NULL" and thisValue != None:
+                if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
+                    thisValue = str(thisValue)
+                elif self.attribute.isTypeChar():
+                    thisValue = unicode(thisValue)
+                else:
+                    if self.attribute.type == "bool":
+                        thisValue = str(thisValue)
+                    elif self.attribute.type == "text":
+                        thisValue = unicode(thisValue)
+                    elif self.attribute.type == "date":
+                        thisValue = thisValue.toString("yyyy-MM-dd")
+                    else:
+                        thisValue = self.toString(thisValue)
+
+                #if thisValue != "None":
+                valueElement.text = thisValue
+
+    def applySearch(self,  parentElement):
+        notFound = True
+        for fieldElement in parentElement.findall("field"):
+            if fieldElement.get("fieldName") == self.attribute.name:
+                notFound = False
+                operatorElement = fieldElement.find("operator")
+
+                if operatorElement != None:
+                    self.chk.setChecked(False)
+                    operator = operatorElement.text
+
+                    for i in range(self.searchCbx.count()):
+                        if self.searchCbx.itemText( i ) == operator:
+                            self.searchCbx.setCurrentIndex( i )
+                            break
+
+                    valueElement = fieldElement.find("value")
+
+                    if valueElement != None:
+                        value = valueElement.text
+                        self.setSearchValue (value)
+
+                break
+
+        if notFound:
+            self.chk.setChecked(True)
 
 class QInt64Validator(QtGui.QValidator):
     '''a QValidator for int64 values'''
@@ -1913,6 +2023,15 @@ class DdComboBox(DdLineEdit):
                 if self.inputWidget.itemData(i) == thisValue:
                     self.inputWidget.setCurrentIndex(i)
                     break
+
+    def setSearchValue(self,  thisValue):
+        '''search value is always type string (because it is stored in xml)
+        foreign keys normally are of type int'''
+
+        if self.attribute.isTypeInt():
+            thisValue = int(thisValue)
+
+        self.setValue(thisValue)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -2363,6 +2482,37 @@ class DdN2mListWidget(DdN2mWidget):
 
         return searchSql
 
+    def createSearch(self,  parentElement):
+        if self.hasChanges:
+            fieldElement = ET.SubElement(parentElement,  "field")
+            fieldElement.set("fieldName",  self.attribute.name)
+            fieldElement.set("widgetType",  "DdN2mListWidget")
+
+            for i in range(self.inputWidget.count()):
+                anItem = self.inputWidget.item(i)
+                if anItem.checkState() == 2:
+                    valueElement = ET.SubElement(fieldElement, "value")
+                    valueElement.text = str(anItem.id)
+
+    def applySearch(self,  parentElement):
+        self.inputWidget.itemChanged.disconnect(self.registerChange)
+
+        for fieldElement in parentElement.findall("field"):
+            if fieldElement.get("fieldName") == self.attribute.name:
+
+                for valueElement in fieldElement.findall("value"):
+                    thisValue = int(valueElement.text)
+
+                    for i in range(self.inputWidget.count()):
+                        anItem = self.inputWidget.item(i)
+
+                        if anItem.id == thisValue:
+                            anItem.setCheckState(2)
+                            self.hasChanges = True
+                            break
+
+        self.inputWidget.itemChanged.connect(self.registerChange)
+
 class DdN2mTreeWidget(DdN2mWidget):
     '''input widget (clickable QTreeWidget) for n2m relations with more than one additional field in the related table
     TreeWidget is initialized directly from the DB'''
@@ -2475,6 +2625,39 @@ class DdN2mTreeWidget(DdN2mWidget):
                                     self.attribute.relationRelatedIdField + "\" IN (" + ids + "))"
 
         return searchSql
+
+    def createSearch(self,  parentElement):
+        if self.hasChanges:
+            fieldElement = ET.SubElement(parentElement,  "field")
+            fieldElement.set("fieldName",  self.attribute.name)
+            fieldElement.set("widgetType",  "DdN2mTreeWidget")
+
+            for i in range(self.inputWidget.topLevelItemCount() -1):
+                anItem = self.inputWidget.topLevelItem(i)
+
+                if anItem.checkState(0) == 2:
+                    ET.SubElement(fieldElement, "value").text = str(anItem.id)
+
+    def applySearch(self,  parentElement):
+        self.inputWidget.itemChanged.disconnect(self.registerChange)
+
+        for fieldElement in parentElement.findall("field"):
+            if fieldElement.get("fieldName") == self.attribute.name:
+
+                for valueElement in fieldElement.findall("value"):
+                    thisValue = int(valueElement.text)
+
+                    for i in range(self.inputWidget.topLevelItemCount() -1):
+                        anItem = self.inputWidget.topLevelItem(i)
+
+                        if anItem.id == thisValue:
+                            anItem.setCheckState(0,  2)
+                            self.hasChanges = True
+                            break
+                break
+
+        self.inputWidget.itemChanged.connect(self.registerChange)
+
 
 class DdN2mTableWidget(DdN2mWidget):
     '''a input widget for n-to-m relations with more than one field in the relation table

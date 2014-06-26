@@ -26,6 +26,8 @@ dddialog
 
 from PyQt4 import QtGui,  QtCore
 from qgis.core import *
+import xml.etree.ElementTree as ET
+import os
 
 # create the dialog
 class DdDialog(QtGui.QDialog):
@@ -112,10 +114,21 @@ class DdSearchDialog(QtGui.QDialog):
         fields = self.layer.pendingFields()
         self.feature.initAttributes(fields.count())
         self.ui.setupUi(self,  self.db)
+        self.ui.buttonBox.accepted.disconnect(self.accept)
+        self.ui.buttonBox.rejected.disconnect(self.reject)
+        self.ui.buttonBox.clicked.connect(self.clicked)
+        self.ui.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel| \
+                                             QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Save| \
+                                             QtGui.QDialogButtonBox.Open|QtGui.QDialogButtonBox.Reset)
         okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
+
         okBtn.setEnabled(True)
         self.setTitle()
         self.initialize()
+        root = self.ddManager.getLastSearch(self.layer)
+
+        if root != None:
+            self.applySearch(root)
 
     def setTitle(self):
         title = self.layer.name()
@@ -128,6 +141,21 @@ class DdSearchDialog(QtGui.QDialog):
 
     def initialize(self):
         self.ui.initialize(self.layer,  self.feature,  self.db)
+
+    def clicked(self,  thisButton):
+        if thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok):
+            root = self.createSearch()
+            self.ddManager.setLastSearch(self.layer,  root)
+            self.accept()
+        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Cancel):
+            self.reject()
+        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Save):
+            self.saveSearch()
+        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Open):
+            root = self.loadSearch()
+            self.applySearch(root)
+        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Reset):
+            self.initialize()
 
     def accept(self):
         searchString = self.ui.search(self.layer)
@@ -160,6 +188,53 @@ class DdSearchDialog(QtGui.QDialog):
             self.done(1)
         else:
             self.done(0)
+
+    def createSearch(self):
+        root = ET.Element('DdSearch')
+        self.ui.createSearch(root)
+        return root
+
+    def saveSearch(self):
+        path = self.ddManager.getSearchPath()
+        title = QtGui.QApplication.translate("DdLabel", "Save search as", None, QtGui.QApplication.UnicodeUTF8)
+        filter = "DdXML (*.ddsx)"
+
+        if os.name == "posix":
+            fd = QtGui.QFileDialog(None,  title,  path,  filter)
+            fd.setDefaultSuffix("ddsx")
+            fd.setAcceptMode(QtGui.QFileDialog.AcceptSave)
+
+            if fd.exec_() == 1:
+                saveAs = fd.selectedFiles()[0]
+            else:
+                saveAs = ""
+
+        else:
+            saveAs = QtGui.QFileDialog.getSaveFileName(None,  title,  path, filter)
+
+        if saveAs != "":
+            root = self.createSearch()
+            tree = ET.ElementTree()
+            tree._setroot(root)
+            tree.write(saveAs,encoding = "utf-8",  xml_declaration = True)
+            path = os.path.abspath(os.path.dirname(saveAs))
+            self.ddManager.saveSearchPath(path)
+
+    def applySearch(self,  root):
+        self.ui.applySearch(root)
+
+    def loadSearch(self):
+        path = self.ddManager.getSearchPath()
+        loadThis = QtGui.QFileDialog.getOpenFileName(None,  QtGui.QApplication.translate("DdLabel", "Load search", None,
+                                                           QtGui.QApplication.UnicodeUTF8),  path, "DdXML (*.ddsx)")
+
+        if loadThis != None:
+            tree = ET.parse(loadThis)
+            root = tree.getroot()
+        else:
+            root = ET.Element('DdSearch')
+
+        return root
 
     def reject(self):
         self.ui.discard()

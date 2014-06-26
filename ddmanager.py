@@ -58,6 +58,30 @@ class DdManager(object):
     def __str__(self):
         return "<ddui.DdManager>"
 
+    def saveSearchPath(self,  path = ""):
+        settings = QtCore.QSettings()
+        settings.beginGroup("DataDrivenInputMask")
+        settings.setValue(u"lastSearchPath", path)
+        settings.endGroup()
+
+    def getSearchPath(self):
+        settings = QtCore.QSettings()
+        settings.beginGroup("DataDrivenInputMask")
+        path = settings.value("lastSearchPath",  "",  type=str)
+        settings.endGroup()
+
+        return path
+
+    def getLastSearch(self,  layer):
+        layerValues = self.__getLayerValues(layer)
+        return layerValues[6]
+
+    def setLastSearch(self,  layer,  root):
+        layerValues = self.__getLayerValues(layer)
+
+        if layerValues != None:
+            self.ddLayers[layer.id()][6] =  root
+
     def highlightFeature(self,  layer,  feature):
         '''highlight the feature if it has a geometry'''
         geomType = layer.geometryType()
@@ -172,7 +196,8 @@ class DdManager(object):
                     #else:
                         #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
 
-                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize]
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  None]
+                    # parameter 6 holds the last search or None if no last search exists
                     self.__connectSignals(layer)
 
                     if createAction:
@@ -181,7 +206,7 @@ class DdManager(object):
                     return True
                 else:
                     # no auto masks, both were provided
-                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize]
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  None]
                     return True
 
     def makeDdTable(self,  layer,  db = None):
@@ -384,7 +409,7 @@ class DdManager(object):
             if showParents == None:
                 showParents = layerValues[4]
 
-            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize,  None]
 
 
     def getDbForLayer(self,  layer):
@@ -405,7 +430,7 @@ class DdManager(object):
             searchUi = layerValues[3]
             showParents = layerValues[4]
             thisSize = layerValues[5]
-            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize]
+            self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize,  None]
 
     def findPostgresLayer(self, db,  ddTable):
         layerList = self.iface.legendInterface().layers()
