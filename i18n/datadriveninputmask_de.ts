@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="de_DE">
+<!DOCTYPE TS><TS version="2.0" language="de_DE" sourcelanguage="">
 <context>
     <name>DBError</name>
     <message>
@@ -193,7 +192,7 @@
     <message>
         <location filename="dddialog.py" line="228"/>
         <source>Load search</source>
-        <translation>Scuhe laden</translation>
+        <translation type="unfinished">Suche laden</translation>
     </message>
 </context>
 <context>
