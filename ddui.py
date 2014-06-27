@@ -168,7 +168,7 @@ class DataDrivenUi(object):
                 if fieldMin != None or fieldMax != None:
                     minMax[fieldName] = [fieldMin,  fieldMax]
         else:
-            self.showQueryError(query)
+            DbError(query)
 
         query.finish()
 
@@ -1626,6 +1626,7 @@ class DdLineEdit(DdInputWidget):
         return searchSql
 
     def createSearch(self,  parentElement):
+        '''create the search XML'''
         thisValue = self.getValue()
         operator = self.searchCbx.currentText()
 
