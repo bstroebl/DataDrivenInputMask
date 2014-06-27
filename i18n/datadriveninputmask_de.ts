@@ -46,7 +46,7 @@
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
     <message>
-        <location filename="dduserclass.py" line="353"/>
+        <location filename="dduserclass.py" line="474"/>
         <source>Could not save changes for layer:</source>
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
@@ -61,7 +61,7 @@
         <translation>Bitte aktivieren Sie einen Layer!</translation>
     </message>
     <message>
-        <location filename="dduserclass.py" line="323"/>
+        <location filename="dduserclass.py" line="444"/>
         <source>Could not add feature to layer:</source>
         <translation>Hinzufügen von Feature gescheitert zu Layer:</translation>
     </message>
@@ -79,12 +79,12 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1481"/>
+        <location filename="dduserclass.py" line="185"/>
         <source>Null</source>
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2347"/>
+        <location filename="ddui.py" line="2348"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
@@ -99,7 +99,7 @@
         <translation>Keine passenden Datensätze gefunden</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1484"/>
+        <location filename="dduserclass.py" line="149"/>
         <source>Check if you want to save an empty (or null) value.</source>
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
@@ -142,12 +142,12 @@
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2787"/>
+        <location filename="ddui.py" line="2788"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2789"/>
+        <location filename="ddui.py" line="2790"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -180,7 +180,7 @@
         <translation>Konfiguriere Maske</translation>
     </message>
     <message>
-        <location filename="dduserclass.py" line="180"/>
+        <location filename="dduserclass.py" line="301"/>
         <source>Show all</source>
         <translation>Zeige alle</translation>
     </message>
@@ -198,22 +198,22 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="ddui.py" line="1884"/>
+        <location filename="ddui.py" line="1885"/>
         <source>Input in Field is not a double according to local settings! </source>
         <translation>Ihre Eingabe in das Feld ist gemäß den lokalen Einstellungen kein Double-Wert!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1909"/>
+        <location filename="ddui.py" line="1910"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1914"/>
+        <location filename="ddui.py" line="1915"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1747"/>
+        <location filename="ddui.py" line="1748"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>

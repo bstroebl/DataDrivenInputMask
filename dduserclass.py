@@ -27,7 +27,7 @@ to be used in subclasses of DataDrivenUi
 """
 
 
-from ddui import DdInputWidget,  DdN2mWidget
+from ddui import DdInputWidget,  DdN2mWidget,  DdLineEdit
 from dderror import DdError
 from qgis.core import *
 from PyQt4 import QtCore,  QtGui
@@ -40,7 +40,7 @@ class DdPushButton(DdInputWidget):
         DdInputWidget.__init__(self,  attribute)
 
     def __str__(self):
-        return "<ddui.DdPushButton %s>" % str(self.attribute.label)
+        return "<dduserclass.DdPushButton %s>" % str(self.attribute.label)
 
     def setupUi(self,  parent,  db):
         self.label = self.getLabel()
@@ -72,6 +72,127 @@ class DdPushButton(DdInputWidget):
     def save(self,  layer,  feature,  db):
         return False
 
+class DdLineEditSlider(DdLineEdit):
+    '''a slider in a QGroupBox used for integer values, needs min and max (defaults to 0 and 10)
+    optionally a dict with labels for each slider value can be parsed on initialization'''
+
+    def __init__(self,  attribute,  valueLabels = {}):
+        DdLineEdit.__init__(self,  attribute)
+        self.valueLabels = valueLabels
+
+    def __str__(self):
+        return "<dduserclass.DdLineEditSlider %s>" % str(self.attribute.name)
+
+    def createInputWidget(self,  parent):
+        inputWidget = QtGui.QSlider(parent) # defaultInputWidget
+        inputWidget.setObjectName("slid" + parent.objectName() + self.attribute.name)
+        min = self.attribute.min
+        max = self.attribute.max
+
+        # default settings by ddattibute.DdAttribute
+        if min <= -32768:
+            min = 0
+
+        if max >= 32767:
+            max = 10
+
+        inputWidget.setMinimum(min)
+        inputWidget.setMaximum(max)
+        inputWidget.setOrientation(QtCore.Qt.Horizontal)
+        inputWidget.setTickPosition(QtGui.QSlider.TicksAbove)
+        inputWidget.setTickInterval(1)
+        inputWidget.valueChanged.connect(self.onValueChanged)
+
+        return inputWidget
+
+    def setValue(self,  thisValue):
+        '''sets the slider to thisValue'''
+
+        if thisValue == None:
+            thisValue = self.attribute.min
+
+        self.inputWidget.setValue(thisValue)
+        self.updateLabel(thisValue)
+
+    def setSearchValue(self,  thisValue):
+        self.setValue(int(thisValue))
+        self.updateLabel(thisValue)
+
+    def getValue(self):
+        if self.chk.isChecked():
+            thisValue = None
+        else:
+            thisValue = self.inputWidget.value()
+
+        return thisValue
+
+    def setupUi(self,  parent,  db):
+        '''setup the group box and add it to the parent's formLayout'''
+        self.gbx = QtGui.QGroupBox(parent)
+        self.gbx.setTitle(self.getLabel())
+        self.gbx.setObjectName("gbx" + parent.objectName() + self.attribute.name)
+        hLayout = QtGui.QHBoxLayout(self.gbx)
+        self.searchCbx = QtGui.QComboBox(self.gbx)
+        searchItems = ["=",  "!=", ">",  "<",  ">=",  "<="]
+
+        if not self.attribute.notNull:
+            searchItems += ["IS NULL"]
+
+        self.searchCbx.addItems(searchItems)
+        hLayout.addWidget(self.searchCbx)
+        self.inputWidget = self.createInputWidget(self.gbx)
+        self.inputWidget.setToolTip(self.attribute.comment)
+        hLayout.addWidget(self.inputWidget)
+        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
+                                                           QtGui.QApplication.UnicodeUTF8),  parent)
+        self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
+        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want to save an empty (or null) value.", None,
+                                                           QtGui.QApplication.UnicodeUTF8))
+        self.chk.stateChanged.connect(self.chkStateChanged)
+        self.chk.setVisible(not self.attribute.notNull)
+        hLayout.addWidget(self.chk)
+
+        parent.layout().addRow(self.gbx)
+
+    def setNull(self,  setnull):
+        '''Set this inputWidget to NULL'''
+        if setnull:
+            thisValue = None
+        else:
+            if self.attribute.hasDefault:
+                thisValue = self.getDefault()
+            else:
+                thisValue = None
+
+        self.setValue(thisValue)
+
+    def checkMinMax(self,  thisValue):
+        '''the slider value is always within min/max range by design'''
+        return True
+
+    def onValueChanged(self,  sliderValue):
+        '''Slot to be called when the slider value changes'''
+        self.registerChange(sliderValue)
+        self.updateLabel(sliderValue)
+
+    def updateLabel(self,  thisValue):
+        newLabel = self.getLabel()
+
+        if self.chk.isChecked():
+            thisValue = None
+
+        if thisValue == None:
+            newLabel += ": " + QtGui.QApplication.translate("DdInfo", "Null", None,
+                                                           QtGui.QApplication.UnicodeUTF8)
+        else:
+            try:
+                valueLabel = self.valueLabels[thisValue]
+            except KeyError:
+                valueLabel = str(thisValue)
+            newLabel += ": " + valueLabel
+
+        self.gbx.setTitle(newLabel)
+
 class DdN2mCheckableTableWidget(DdN2mWidget):
     '''a table widget for a n2m relation with more than the
     pk fields in the relation table but with checkboxes to assign a value
@@ -87,7 +208,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         self.catalogLayer = None
 
     def __str__(self):
-        return "<ddui.DdN2mCheckableTableWidget %s>" % str(self.attribute.label)
+        return "<dduserclass.DdN2mCheckableTableWidget %s>" % str(self.attribute.label)
 
     def hasCatalog(self):
         return (self.attribute.catalogTable != None and self.attribute.relatedCatalogIdField != None and
