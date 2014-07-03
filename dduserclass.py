@@ -108,6 +108,12 @@ class DdLineEditSlider(DdLineEdit):
     def setValue(self,  thisValue):
         '''sets the slider to thisValue'''
 
+        if isinstance(thisValue,  unicode) or isinstance(thisValue,  str):
+            try:
+                thisValue = int(thisValue)
+            except ValueError:
+                thisValue = None
+
         if thisValue == None:
             thisValue = self.attribute.min
 
@@ -115,7 +121,7 @@ class DdLineEditSlider(DdLineEdit):
         self.updateLabel(thisValue)
 
     def setSearchValue(self,  thisValue):
-        self.setValue(int(thisValue))
+        self.setValue(thisValue)
         self.updateLabel(thisValue)
 
     def getValue(self):
