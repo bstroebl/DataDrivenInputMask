@@ -411,6 +411,17 @@ class DdManager(object):
 
             self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize,  None]
 
+    def addInputWidget(self, layer,  inputWidget, ddFormWidgetIndex = None,  beforeWidget = None,  toUi = True,  toSearchUi = True):
+        layerValues = self.__getLayerValues(layer)
+        ui = layerValues[2]
+        searchUi = layerValues[3]
+
+        if ui != None and toUi:
+            ui.addInputWidget(inputWidget, ddFormWidgetIndex,  beforeWidget)
+
+        if searchUi != None and toSearchUi:
+            searchUi.addInputWidget(inputWidget, ddFormWidgetIndex,  beforeWidget)
+
 
     def getDbForLayer(self,  layer):
         return self.__createDb(layer)

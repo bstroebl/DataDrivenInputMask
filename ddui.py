@@ -996,6 +996,20 @@ class DdDialogWidget(DdWidget):
         '''add this DdFormWidget to the ui'''
         self.forms.append(ddFormWidget)
 
+    def addInputWidget(self, inputWidget, ddFormWidgetIndex = None,  beforeWidget = None):
+        '''add inputWidget to form with ddFormWidgetIndex beforeWidget (index in form)'''
+        if len(self.forms) > 0:
+            if isinstance(ddFormWidgetIndex,  int):
+                try:
+                    ddFormWidget = self.forms[ddFormWidgetIndex]
+                except IndexError:
+                    ddFormWidget = self.forms(len(self.forms) - 1)
+
+            else:
+                ddFormWidget = self.forms(len(self.forms) - 1)
+
+            ddFormWidget.addInputWidget(inputWidget,  beforeWidget)
+
     def initialize(self,  layer,  feature,  db):
         for aForm in self.forms:
             aForm.initialize(layer,  feature,  db)
@@ -1134,9 +1148,13 @@ class DdFormWidget(DdWidget):
         if self.layer == None: # has not been passed to __init__
             self.layer = self.__getLayer(db)
 
-    def addInputWidget(self,  ddInputWidget):
-        '''insert this DdInputWidget into this DdForm'''
-        self.inputWidgets.append(ddInputWidget)
+    def addInputWidget(self,  ddInputWidget,  beforeWidget = None):
+        '''insert this DdInputWidget into this DdForm before Widget'''
+
+        if beforeWidget == None or not isinstance(beforeWidget,  int):
+            self.inputWidgets.append(ddInputWidget)
+        else:
+            self.inputWidgets.insert(beforeWidget,  ddInputWidget)
 
     def initialize(self,  layer,  feature,  db):
         self.oldSubsetString = self.layer.subsetString()
