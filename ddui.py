@@ -1627,6 +1627,8 @@ class DdLineEdit(DdInputWidget):
                     elif self.attribute.isTypeChar():
                         if operator == "IN":
                             thisValue = unicode(thisValue)
+                        elif operator == "LIKE" or operator == "ILIKE":
+                            thisValue = "\'" + unicode(thisValue.replace("*", "%")) + "\'"
                         else:
                             thisValue = "\'" + unicode(thisValue) + "\'"
                     else:
@@ -1638,6 +1640,8 @@ class DdLineEdit(DdInputWidget):
                         elif self.attribute.type == "text":
                             if operator == "IN":
                                 thisValue = unicode(thisValue)
+                            elif operator == "LIKE" or operator == "ILIKE":
+                                thisValue = "\'" + unicode(thisValue.replace("*", "%")) + "\'"
                             else:
                                 thisValue = "\'" + unicode(thisValue) + "\'"
                         elif self.attribute.type == "date":
