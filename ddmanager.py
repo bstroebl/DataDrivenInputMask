@@ -896,3 +896,6 @@ class DdManager(object):
 
         if withSql:
             self.iface.messageBar().pushMessage("Query",  "%(query)s" % {"query": query.lastQuery()}, level=QgsMessageBar.CRITICAL)
+
+    def showError(self,  msg):
+        DdError(msg,  iface = self.iface)
