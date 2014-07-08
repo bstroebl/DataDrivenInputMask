@@ -1461,12 +1461,12 @@ class DdLineEdit(DdInputWidget):
 
         if not self.attribute.isFK:
             if self.attribute.isTypeChar():
-                searchItems += ["LIKE",  "ILIKE"]
+                searchItems += ["IN", "LIKE",  "ILIKE"]
             elif (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
-                searchItems += [ ">",  "<",  ">=",  "<="]
+                searchItems += [ "IN", ">",  "<",  ">=",  "<="]
             else:
                 if  self.attribute.type == "text":
-                    searchItems += ["LIKE",  "ILIKE"]
+                    searchItems += ["IN", "LIKE",  "ILIKE"]
                 elif  self.attribute.type == "date":
                     searchItems += [ ">",  "<",  ">=",  "<="]
 
@@ -1607,7 +1607,10 @@ class DdLineEdit(DdInputWidget):
                     if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
                         thisValue = str(thisValue)
                     elif self.attribute.isTypeChar():
-                        thisValue = "\'" + unicode(thisValue) + "\'"
+                        if operator == "IN":
+                            thisValue = unicode(thisValue)
+                        else:
+                            thisValue = "\'" + unicode(thisValue) + "\'"
                     else:
                         if self.attribute.type == "bool":
                             if thisValue:
@@ -1615,13 +1618,19 @@ class DdLineEdit(DdInputWidget):
                             else:
                                 thisValue = "\'f\'"
                         elif self.attribute.type == "text":
-                            thisValue = "\'" + unicode(thisValue) + "\'"
+                            if operator == "IN":
+                                thisValue = unicode(thisValue)
+                            else:
+                                thisValue = "\'" + unicode(thisValue) + "\'"
                         elif self.attribute.type == "date":
                             thisValue = "\'" + thisValue.toString("yyyy-MM-dd") + "\'"
                         else:
                             thisValue = self.toString(thisValue)
 
-                    searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
+                    if operator == "IN":
+                        searchSql += "\"" + self.attribute.name + "\" " + operator + " (" + thisValue + ")"
+                    else:
+                        searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
 
         return searchSql
 
