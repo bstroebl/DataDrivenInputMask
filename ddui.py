@@ -2327,10 +2327,8 @@ class DdN2mWidget(DdInputWidget):
                 self.parentDialog = pParent
                 break
 
-    def reset(self):
-        if self.tableLayer != None:
-            if self.tableLayer.setSubsetString(self.oldSubsetString):
-                self.tableLayer.reload()
+    #def reset(self):
+    #    self.applySubsetString(True)
 
     def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False,  skip = []):
         # find the layer in the project
@@ -2353,13 +2351,7 @@ class DdN2mWidget(DdInputWidget):
                                                 inputUi = None,  searchUi = None,  helpText = "") # reinitialize inputMask only
 
         self.featureId = feature.id()
-
-        # reduce the features in self.tableLayer to those related to feature
-        subsetString = self.attribute.subsetString
-        subsetString += str(self.featureId)
         self.oldSubsetString = self.tableLayer.subsetString()
-        self.tableLayer.setSubsetString(subsetString)
-        self.tableLayer.reload()
 
         if self.featureId == -3333: #search ui
             self.forEdit = True
@@ -2378,6 +2370,22 @@ class DdN2mWidget(DdInputWidget):
                         if not self.forEdit:
                             DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
                                                                        QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name())
+
+    def applySubsetString(self,  reset = True):
+        if self.tableLayer != None:
+            if reset:
+                    if self.tableLayer.setSubsetString(self.oldSubsetString):
+                        self.tableLayer.reload()
+                        return True
+            else:
+                # reduce the features in self.tableLayer to those related to feature
+                subsetString = self.attribute.subsetString
+                subsetString += str(self.featureId)
+                if self.tableLayer.setSubsetString(subsetString):
+                    self.tableLayer.reload()
+                    return True
+
+        return False
 
     def createFeature(self, fid = None):
         '''create a new QgsFeature for the relation table with this fid'''
@@ -2440,6 +2448,7 @@ class DdN2mListWidget(DdN2mWidget):
                 feat.setAttribute(relatedIdField,  itemId)
                 self.tableLayer.addFeature(feat,  False)
             else:
+                self.applySubsetString(False)
                 self.tableLayer.selectAll()
 
                 for aFeature in self.tableLayer.selectedFeatures():
@@ -2448,12 +2457,13 @@ class DdN2mListWidget(DdN2mWidget):
                             idToDelete = aFeature.id()
                             self.tableLayer.deleteFeature(idToDelete)
                             break
+                self.applySubsetString(True)
             self.hasChanges = True
         else: # do not show any changes
             self.inputWidget.itemChanged.disconnect(self.registerChange)
 
             if thisItem.checkState() == 2:
-                 thisItem.setCheckState(0)
+                thisItem.setCheckState(0)
             else:
                 thisItem.setCheckState(2)
 
@@ -2568,6 +2578,7 @@ class DdN2mTreeWidget(DdN2mWidget):
                     feat.setAttribute(relatedIdField,  itemId)
                     self.tableLayer.addFeature(feat,  False)
                 else:
+                    self.applySubsetString(False)
                     self.tableLayer.selectAll()
 
                     for aFeature in self.tableLayer.selectedFeatures():
@@ -2577,6 +2588,7 @@ class DdN2mTreeWidget(DdN2mWidget):
                                 self.tableLayer.deleteFeature(idToDelete)
                                 break
 
+                    self.applySubsetString(True)
                 self.hasChanges = True
             else: # do not show any changes
                 self.inputWidget.itemChanged.disconnect(self.registerChange)
@@ -2724,6 +2736,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def fill(self):
         self.inputWidget.setRowCount(0)
+        self.applySubsetString(False)
         # display the features in the QTableWidget
         for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             self.appendRow(aFeat)
@@ -2733,6 +2746,9 @@ class DdN2mTableWidget(DdN2mWidget):
                 self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
         else:
             self.addButton.setEnabled(False)
+
+        # reset here in case the same table is connected twice
+        self.applySubsetString(True)
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:

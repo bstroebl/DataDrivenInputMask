@@ -315,6 +315,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         valueDict = {}
         defaultValues = self.getDefaultValues()
         subsetString = ""
+        oldSubsetString = self.relatedLayer.subsetString()
 
         if self.hasCatalog():
             if catalogId != None:
@@ -322,6 +323,8 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         if self.relatedLayer.setSubsetString(subsetString):
             self.relatedLayer.reload()
+
+        self.applySubsetString(False)
 
         for relatedFeature in self.relatedLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             relatedId = relatedFeature.id()
@@ -341,6 +344,11 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                 relatedValues.append(relatedValue)
                 #defaultValues[] = relatedId
                 valueDict[relatedValue] = [relatedId, defaultValues]
+
+        self.applySubsetString(True)
+
+        if self.relatedLayer.setSubsetString(oldSubsetString):
+            self.relatedLayer.reload()
 
         checkedRelatedValues.sort()
         relatedValues.sort()
