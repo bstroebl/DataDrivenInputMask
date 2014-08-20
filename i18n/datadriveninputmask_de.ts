@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0" language="de_DE" sourcelanguage="">
+<!DOCTYPE TS>
+<TS version="2.0" language="de_DE">
 <context>
     <name>DBError</name>
     <message>
@@ -46,7 +47,7 @@
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
     <message>
-        <location filename="dduserclass.py" line="480"/>
+        <location filename="dduserclass.py" line="488"/>
         <source>Could not save changes for layer:</source>
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
@@ -61,7 +62,7 @@
         <translation>Bitte aktivieren Sie einen Layer!</translation>
     </message>
     <message>
-        <location filename="dduserclass.py" line="450"/>
+        <location filename="dduserclass.py" line="458"/>
         <source>Could not add feature to layer:</source>
         <translation>Hinzufügen von Feature gescheitert zu Layer:</translation>
     </message>
@@ -84,7 +85,7 @@
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2379"/>
+        <location filename="ddui.py" line="2366"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
@@ -142,12 +143,12 @@
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2819"/>
+        <location filename="ddui.py" line="2830"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2821"/>
+        <location filename="ddui.py" line="2832"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -198,22 +199,22 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="ddui.py" line="1916"/>
+        <location filename="ddui.py" line="1911"/>
         <source>Input in Field is not a double according to local settings! </source>
         <translation>Ihre Eingabe in das Feld ist gemäß den lokalen Einstellungen kein Double-Wert!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1941"/>
+        <location filename="ddui.py" line="1936"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1946"/>
+        <location filename="ddui.py" line="1941"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1779"/>
+        <location filename="ddui.py" line="1780"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
@@ -251,6 +252,11 @@
         <location filename="ddui.py" line="1573"/>
         <source>Field value is too large! Maximum is </source>
         <translation>Der Feldwert ist zu groß! Höchsteingabe ist </translation>
+    </message>
+    <message>
+        <location filename="ddui.py" line="1791"/>
+        <source>Input must be an integer!</source>
+        <translation>Die Eingabe muß eine Ganzzahl sein!</translation>
     </message>
 </context>
 </TS>

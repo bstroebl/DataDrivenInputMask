@@ -1556,7 +1556,7 @@ class DdLineEdit(DdInputWidget):
                 self.manageChk(thisValue)
                 self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
-    def checkMinMax(self,  thisValue):
+    def validate(self,  thisValue):
         '''checks if value is within min/max range (if defined)'''
         accepted = True
 
@@ -1588,7 +1588,7 @@ class DdLineEdit(DdInputWidget):
                 # not changing a value is always allowed
                 return True
             else:
-                return self.checkMinMax(thisValue)
+                return self.validate(thisValue)
 
     def getFieldIndex(self,  layer):
         '''return the field index for this DdInputWidget's attribute's name in this layer'''
@@ -1713,22 +1713,6 @@ class DdLineEdit(DdInputWidget):
         if notFound:
             self.chk.setChecked(True)
 
-class QInt64Validator(QtGui.QValidator):
-    '''a QValidator for int64 values'''
-    def __init__(self,  parent = None):
-        QtGui.QValidator.__init__(self,  parent)
-        self.min = -9223372036854775808
-        self.max = 9223372036854775807
-
-    def validate(self, input, pos):
-        thisLong = int(input)
-
-        if self.min < thisLong and self.max > thisLong:
-            return QtGui.QValidator.Acceptable,  pos
-        else:
-            return QtGui.QValidator.Invalid,  pos
-
-
 class DdLineEditInt(DdLineEdit):
     '''input widget (QLineEdit) for an IntegerValue'''
 
@@ -1761,14 +1745,31 @@ class DdLineEditInt(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                try:
-                    thisValue = int(thisValue)
-                except ValueError:
-                    try:
-                        thisValue = long(thisValue)
-                    except ValueError:
-                        pass
-                        #thisValue = None
+                loc = self.inputWidget.validator().locale()
+                gSeparator = loc.groupSeparator()
+                dPoint = loc.decimalPoint()
+
+                while(True):
+                    validationState = self.inputWidget.validator().validate(thisValue, 0)[0]
+
+                    if validationState == 0: #clearly invalid
+                        thisValue = None
+                        break
+                    elif validationState == 1: # intermediate
+                        thisValue = thisValue.replace(gSeparator,"")
+
+                        if thisValue.find(dPoint) > -1:
+                            thisDouble = loc.toDouble(thisValue)
+
+                            if thisDouble[1]:
+                                thisValue = thisDouble[0]
+                                break
+                            else:
+                                thisValue = None
+                                break
+                    else:
+                        thisValue = int(thisValue)
+                        break
 
         return thisValue
 
@@ -1784,55 +1785,49 @@ class DdLineEditInt(DdLineEdit):
                 # not changing a value is always allowed
                 return True
             else:
-                if isinstance(thisValue,  int) or isinstance(thisValue,  long):
-                    return self.checkMinMax(thisValue)
-                else:
+                if isinstance(thisValue,  int):
                     return True
+                else:
+                    QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input must be an integer!", None,
+                                                           QtGui.QApplication.UnicodeUTF8) )
+                    return False
+
+    def validate(self,  thisValue):
+        return True # validation takes place in getValue
 
     def setValidator(self,  min,  max):
         '''sets an appropriate QValidator for the QLineEdit
-        if this DdInputWidget's attribute has min/max values validator is set to them'''
+        if this DdInputWidget's attribute has min/max values validator is set to them
+        A Python2 int covers PostgreSQL's int2, int4 and int8
+        Upon initialization setValidator is called with the current value as min and max'''
 
-        if self.attribute.min != None:
-            thisMin = self.attribute.min
+        thisMin = self.attribute.min
+        # integer attributes always have a min and max corresponding to the min/max values of the pg data type
 
-            if min != None:
-                if min < thisMin:
-                    thisMin = min
+        if min != None:
+            if min < thisMin:
+                thisMin = min
+                # make sure current value is allowed although attribute's min might be different
 
-        if self.attribute.max != None:
-            thisMax = self.attribute.max
+        thisMax = self.attribute.max
 
-            if max != None:
-                if max > thisMax:
-                    thisMax = max
+        if max != None:
+            if max > thisMax:
+                thisMax = max
+                # make sure current value is allowed although attribute's max might be different
 
-        if self.attribute.min != None or self.attribute.max != None:
-            validator = QtGui.QIntValidator(self.inputWidget)
+        loc = QtCore.QLocale.system()
+        loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
+        validator = QtGui.QIntValidator(self.inputWidget)
+        validator.setLocale(loc)
 
-            if (isinstance(thisMin,  int) or isinstance(thisMin,  long)):
-                validator.setBottom(thisMin)
+        if isinstance(thisMin,  int):
+            validator.setBottom(thisMin)
 
-            if (isinstance(thisMax,  int) or isinstance(thisMax,  long)):
-                validator.setTop(thisMax)
-        else:
-            validator = QInt64Validator(self.inputWidget)
+        if isinstance(thisMax,  int):
+            validator.setTop(thisMax)
 
         self.inputWidget.setValidator(validator)
-
-    def initialize(self,  layer,  feature,  db):
-        DdLineEdit.initialize(self,  layer,  feature,  db)
-        thisValue = self.getFeatureValue(layer,  feature)
-        isInt = isinstance(thisValue,  int)
-
-        if not  isInt: # could be a Longlong, or a serial, i.e. a nextval(sequence) expression
-            isInt = isinstance(thisValue,  long)
-
-            if not  isInt:
-                self.inputWidget.setValidator(None) # remove the validator
-
-        self.setValue(thisValue)
-        self.manageChk(thisValue)
 
 class DdLineEditDouble(DdLineEdit):
     '''input widget (QLineEdit) for a DoubleValue'''

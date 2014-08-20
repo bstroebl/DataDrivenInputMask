@@ -98,6 +98,8 @@ class DdAttribute(object):
                     self.min = -32768
                 elif self.type == "int4":
                     self.min = -2147483648
+                elif self.type == "int8":
+                    self.min = -9223372036854775808
 
             if max != None:
                 try:
@@ -109,6 +111,8 @@ class DdAttribute(object):
                     self.max = 32767
                 elif self.type == "int4":
                     self.max = 2147483647
+                elif self.type == "int8":
+                    self.max = 9223372036854775807
         elif self.isTypeFloat:
             if min != None:
                 try:
