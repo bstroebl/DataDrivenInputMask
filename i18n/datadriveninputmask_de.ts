@@ -37,7 +37,7 @@
         <translation>Dieser Layer ist keine PostgreSQL-Tabelle: </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1601"/>
+        <location filename="ddui.py" line="1622"/>
         <source>Field not found in layer: </source>
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
@@ -85,7 +85,7 @@
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2366"/>
+        <location filename="ddui.py" line="2436"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
@@ -105,12 +105,12 @@
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1545"/>
+        <location filename="ddui.py" line="1549"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1547"/>
+        <location filename="ddui.py" line="1551"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
     </message>
@@ -143,12 +143,12 @@
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="ddui.py" line="2830"/>
+        <location filename="ddui.py" line="2900"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="2832"/>
+        <location filename="ddui.py" line="2902"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -199,22 +199,17 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="ddui.py" line="1911"/>
-        <source>Input in Field is not a double according to local settings! </source>
-        <translation>Ihre Eingabe in das Feld ist gemäß den lokalen Einstellungen kein Double-Wert!</translation>
-    </message>
-    <message>
-        <location filename="ddui.py" line="1936"/>
+        <location filename="ddui.py" line="2006"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1941"/>
+        <location filename="ddui.py" line="2011"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1780"/>
+        <location filename="ddui.py" line="1598"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
@@ -244,19 +239,19 @@
         <translation>Passwort für </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1566"/>
+        <location filename="ddui.py" line="1574"/>
         <source>Field value is too small! Minimum is </source>
         <translation>Der Feldwert ist zu klein! Mindesteingabe ist </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1573"/>
+        <location filename="ddui.py" line="1583"/>
         <source>Field value is too large! Maximum is </source>
         <translation>Der Feldwert ist zu groß! Höchsteingabe ist </translation>
     </message>
     <message>
-        <location filename="ddui.py" line="1791"/>
-        <source>Input must be an integer!</source>
-        <translation>Die Eingabe muß eine Ganzzahl sein!</translation>
+        <location filename="ddui.py" line="1609"/>
+        <source>Input is not valid! Field type is %s</source>
+        <translation>Die Eingabe ist ungültig! Der Feldtyp ist %s</translation>
     </message>
 </context>
 </TS>
