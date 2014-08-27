@@ -1397,12 +1397,13 @@ class DdLineEdit(DdInputWidget):
     def getDefault(self):
         '''function to strip quotation marks and data type from default string'''
         thisValue = self.attribute.default
-        thisValue = thisValue.split("::")[0]
+        if True:
+            thisValue = thisValue.split("::")[0]
 
-        if thisValue.find("nextval") != -1:
-            thisValue = thisValue + ")"
-        else:
-            thisValue = thisValue.replace("\'",  "")
+            if thisValue.find("nextval") != -1:
+                thisValue = thisValue + ")"
+            else:
+                thisValue = thisValue.replace("\'",  "")
 
         return thisValue
 
@@ -1521,7 +1522,10 @@ class DdLineEdit(DdInputWidget):
             thisValue = None
         else:
             if self.attribute.hasDefault:
-                thisValue = self.getDefault()
+                if self.searchCbx.isVisible():
+                    thisValue = ""
+                else:
+                    thisValue = self.getDefault()
             else:
                 thisValue = ""
 
@@ -1556,27 +1560,38 @@ class DdLineEdit(DdInputWidget):
                 self.manageChk(thisValue)
                 self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
-    def validate(self,  thisValue):
-        '''checks if value is within min/max range (if defined)'''
+    def validate(self,  thisValue,  feature,  showMsg = True):
+        '''checks if value is within min/max range (if defined) and returns the value;
+        subclasses can manipulate thisValue in order to make it valid input'''
         accepted = True
+        msgShown = False
 
-        if self.hasChanges and thisValue != None:
-            if self.attribute.min != None:
-                if thisValue < self.attribute.min:
-                    QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too small! Minimum is ",
-                              None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.min))
-                    accepted = False
-
-            if accepted:
-                if self.attribute.max != None:
-                    if thisValue > self.attribute.max:
-                        QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too large! Maximum is ",
-                              None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.max))
+        if self.hasChanges:
+            if thisValue != None:
+                if self.attribute.min != None:
+                    if thisValue < self.attribute.min:
+                        if showMsg:
+                            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too small! Minimum is ",
+                                None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.min))
+                            msgShown = True
                         accepted = False
 
-        return accepted
+                if accepted:
+                    if self.attribute.max != None:
+                        if thisValue > self.attribute.max:
+                            if showMsg:
+                                QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too large! Maximum is ",
+                                    None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.max))
+                                msgShown = True
+                            accepted = False
+            else:
+                if not self.chk.isChecked() and self.attribute.hasDefault:
+                    thisValue = self.getDefault()
+
+        return [accepted,  msgShown]
 
     def checkInput(self,  layer,  feature):
+        ''' check if current value is an acceptable result '''
         thisValue = self.getValue()
 
         if self.attribute.notNull and thisValue == None:
@@ -1588,7 +1603,13 @@ class DdLineEdit(DdInputWidget):
                 # not changing a value is always allowed
                 return True
             else:
-                return self.validate(thisValue)
+                accepted,  msgShown = self.validate(thisValue,  feature)
+
+                if not accepted and not msgShown:
+                    QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input is not valid! Field type is %s", None,
+                                                           QtGui.QApplication.UnicodeUTF8)  % str(self.attribute.type) )
+
+                return accepted
 
     def getFieldIndex(self,  layer):
         '''return the field index for this DdInputWidget's attribute's name in this layer'''
@@ -1722,6 +1743,24 @@ class DdLineEditInt(DdLineEdit):
     def __str__(self):
         return "<ddui.DdLineEditInt %s>" % str(self.attribute.name)
 
+    def setValue(self,  thisValue):
+
+        if thisValue == None:
+            thisValue = ""
+        else:
+            # convert int to a locale string representation
+            try:
+                thisInt = int(thisValue)
+                thisValue = self.toString(thisInt)
+            except ValueError:
+                thisValue = ""
+
+        self.inputWidget.setText(thisValue)
+
+    def toString(self,  thisValue):
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
     def getFeatureValue(self,  layer,  feature):
         if feature == None:
             return None
@@ -1729,7 +1768,8 @@ class DdLineEditInt(DdLineEdit):
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
-        if feature.id() < 0 and thisValue == None: # new feature and no value set
+        if feature.id() < 0 and (thisValue == None or not isinstance(thisValue,  int)):
+            # new feature and no value set or sequence value in its original form
             if feature.id() != -3333: # no return value for search feature
                 if self.attribute.hasDefault:
                     thisValue = self.getDefault()
@@ -1746,56 +1786,82 @@ class DdLineEditInt(DdLineEdit):
                 thisValue = None
             else:
                 loc = self.inputWidget.validator().locale()
-                gSeparator = loc.groupSeparator()
-                dPoint = loc.decimalPoint()
+                intValue,  accepted = loc.toInt(thisValue.replace(loc.groupSeparator(), ""))
 
-                while(True):
-                    validationState = self.inputWidget.validator().validate(thisValue, 0)[0]
-
-                    if validationState == 0: #clearly invalid
-                        thisValue = None
-                        break
-                    elif validationState == 1: # intermediate
-                        thisValue = thisValue.replace(gSeparator,"")
-
-                        if thisValue.find(dPoint) > -1:
-                            thisDouble = loc.toDouble(thisValue)
-
-                            if thisDouble[1]:
-                                thisValue = thisDouble[0]
-                                break
-                            else:
-                                thisValue = None
-                                break
-                    else:
-                        thisValue = int(thisValue)
-                        break
+                if accepted:
+                    thisValue = intValue
 
         return thisValue
 
-    def checkInput(self,  layer,  feature):
-        thisValue = self.getValue()
-
-        if self.attribute.notNull and thisValue == None:
-            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
-                                                           QtGui.QApplication.UnicodeUTF8) )
-            return False
+    def setNull(self,  setnull):
+        '''Set this inputWidget to NULL; set only to default if default is an integer'''
+        if setnull:
+            thisValue = None
         else:
-            if self.getFeatureValue(layer,  feature) == thisValue:
-                # not changing a value is always allowed
-                return True
-            else:
-                if isinstance(thisValue,  int):
-                    return True
+            if self.attribute.hasDefault:
+                if self.searchCbx.isVisible():
+                    thisValue = ""
                 else:
-                    QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input must be an integer!", None,
-                                                           QtGui.QApplication.UnicodeUTF8) )
-                    return False
+                    thisValue = self.getDefault()
 
-    def validate(self,  thisValue):
-        return True # validation takes place in getValue
+                    try:
+                        thisValue = str(int(thisValue))
+                    except ValueError:
+                        thisValue = ""
+            else:
+                thisValue = ""
 
-    def setValidator(self,  min,  max):
+        self.setValue(thisValue)
+
+    def checkDefault(self,  feature):
+        accepted = True
+        thisValue = self.getDefault()
+
+        try:
+            thisValue = int(thisValue)
+        except ValueError:
+            if feature.id() >= 0: # only sequence values for new features
+                thisValue = None
+                accepted = False
+
+        return [accepted,  thisValue]
+
+    def validate(self,  thisValue, feature,  showMsg = True):
+        accepted = True
+        msgShown = False
+
+        if isinstance(thisValue,  int):
+            return DdLineEdit.validate(self, thisValue,  feature,  showMsg)
+        else:
+            if thisValue == None:
+                if not self.chk.isChecked() and self.attribute.hasDefault:
+                    accepted,  thisValue = self.checkDefault(feature)
+            else:
+                loc = self.inputWidget.validator().locale()
+                validationState = self.inputWidget.validator().validate(thisValue, 0)[0]
+
+                if validationState == 0: #clearly invalid
+                    if self.attribute.hasDefault: # could be a serial
+                        if thisValue == self.getDefault(): # unchanged serial => ok
+                            accepted,  thisValue = self.checkDefault(feature)
+                        else:
+                            accepted = False
+                    else:
+                        accepted = False
+
+                else: #validationState == 1:  intermediate, 2: accepted
+                    thisValue,  accepted = loc.toInt(thisValue.replace(loc.groupSeparator(), ""))
+                    # replace groupSeparator but not decimalSeparator
+
+                    if accepted:
+                        accepted,  msgShown = DdLineEdit.validate(self, thisValue,  feature,  showMsg)
+
+            if accepted:
+                self.setValue(thisValue)
+
+            return [accepted,  msgShown]
+
+    def setValidator(self,  min = None,  max = None):
         '''sets an appropriate QValidator for the QLineEdit
         if this DdInputWidget's attribute has min/max values validator is set to them
         A Python2 int covers PostgreSQL's int2, int4 and int8
@@ -1805,20 +1871,22 @@ class DdLineEditInt(DdLineEdit):
         # integer attributes always have a min and max corresponding to the min/max values of the pg data type
 
         if min != None:
-            if min < thisMin:
-                thisMin = min
-                # make sure current value is allowed although attribute's min might be different
+            if isinstance(min,  int):
+                if min < thisMin:
+                    thisMin = min
+                    # make sure current value is allowed although attribute's min might be different
 
         thisMax = self.attribute.max
 
         if max != None:
-            if max > thisMax:
-                thisMax = max
-                # make sure current value is allowed although attribute's max might be different
+            if isinstance(max,  int):
+                if max > thisMax:
+                    thisMax = max
+                    # make sure current value is allowed although attribute's max might be different
 
+        validator = QtGui.QIntValidator(self.inputWidget)
         loc = QtCore.QLocale.system()
         loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
-        validator = QtGui.QIntValidator(self.inputWidget)
         validator.setLocale(loc)
 
         if isinstance(thisMin,  int):
@@ -1865,8 +1933,8 @@ class DdLineEditDouble(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                loc = QtCore.QLocale.system()
-                thisDouble = loc.toDouble(thisValue)
+                loc = self.inputWidget.validator().locale()
+                thisDouble = loc.toDouble(thisValue.replace(loc.groupSeparator(), ""))
 
                 if thisDouble[1]:
                     thisValue = thisDouble[0]
@@ -1895,26 +1963,29 @@ class DdLineEditDouble(DdLineEdit):
 
             if max != None:
                 if max > thisMax:
-                    thisMax = Max
+                    thisMax = max
 
             validator.setTop(thisMax)
 
         validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
-        validator.setLocale(QtCore.QLocale.system())
+        loc = QtCore.QLocale.system()
+        loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
+        validator.setLocale(loc)
         self.inputWidget.setValidator(validator)
 
-    def __textChanged(self,  thisValue):
-        loc = QtCore.QLocale.system()
-        thisDouble = loc.toDouble(thisValue)
+    def validate(self,  thisValue, feature,  showMsg = True):
+        accepted = True
+        msgShown = False
 
-        if not thisDouble[1]:
-            QtGui.QMessageBox.warning(None, self.label.text(),  \
-                QtGui.QApplication.translate("DdWarning", "Input in Field is not a double according to local settings! ", None,
-                QtGui.QApplication.UnicodeUTF8))
+        if isinstance(thisValue,  float):
+            accepted,  msgShown = DdLineEdit.validate(self, thisValue,  feature,  showMsg)
+        else:
+            accepted = (not self.attribute.notNull and thisValue == None)
 
-    def setupUi(self,  parent,  db):
-        DdLineEdit.setupUi(self,  parent,  db)
-        self.inputWidget.textChanged.connect(self.__textChanged)
+        if accepted:
+            self.setValue(thisValue)
+
+        return [accepted,  msgShown]
 
 class DdLineEditChar(DdLineEdit):
     '''input widget (QLineEdit) for a char or varchar'''
