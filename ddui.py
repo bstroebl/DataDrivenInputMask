@@ -2145,7 +2145,10 @@ class DdComboBox(DdLineEdit):
         foreign keys normally are of type int'''
 
         if self.attribute.isTypeInt():
-            thisValue = int(thisValue)
+            try:
+                thisValue = int(thisValue)
+            except:
+                thisValue = None
 
         self.setValue(thisValue)
 
