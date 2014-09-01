@@ -1490,7 +1490,7 @@ class DdLineEdit(DdInputWidget):
                     searchItems += [ ">",  "<",  ">=",  "<="]
 
         if not self.attribute.notNull:
-            searchItems += ["IS NULL"]
+            searchItems += ["IS NULL",  "IS NOT NULL"]
 
         self.searchCbx.addItems(searchItems)
         hLayout.addWidget(self.searchCbx)
@@ -1639,7 +1639,7 @@ class DdLineEdit(DdInputWidget):
         operator = self.searchCbx.currentText()
 
         if not self.chk.isChecked():
-            if operator == "IS NULL":
+            if operator == "IS NULL" or operator == "IS NOT NULL":
                 searchSql += "\"" + self.attribute.name + "\" " + operator
             else:
                 if thisValue != None:
@@ -1689,20 +1689,23 @@ class DdLineEdit(DdInputWidget):
             ET.SubElement(fieldElement, "operator").text = operator
             valueElement = ET.SubElement(fieldElement, "value")
 
-            if operator != "IS NULL" and thisValue != None:
-                if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
-                    thisValue = str(thisValue)
-                elif self.attribute.isTypeChar():
-                    thisValue = unicode(thisValue)
-                else:
-                    if self.attribute.type == "bool":
+            if operator == "IS NULL" or operator == "IS NOT NULL":
+                thisValue = ""
+            else:
+                if thisValue != None:
+                    if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
                         thisValue = str(thisValue)
-                    elif self.attribute.type == "text":
+                    elif self.attribute.isTypeChar():
                         thisValue = unicode(thisValue)
-                    elif self.attribute.type == "date":
-                        thisValue = thisValue.toString("yyyy-MM-dd")
                     else:
-                        thisValue = self.toString(thisValue)
+                        if self.attribute.type == "bool":
+                            thisValue = str(thisValue)
+                        elif self.attribute.type == "text":
+                            thisValue = unicode(thisValue)
+                        elif self.attribute.type == "date":
+                            thisValue = thisValue.toString("yyyy-MM-dd")
+                        else:
+                            thisValue = self.toString(thisValue)
 
                 #if thisValue != "None":
                 valueElement.text = thisValue
