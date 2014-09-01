@@ -1539,6 +1539,7 @@ class DdLineEdit(DdInputWidget):
         self.hasChanges = True
 
     def initialize(self,  layer,  feature,  db):
+
         if feature == None:
             self.searchCbx.setVisible(False)
             self.manageChk(None)
@@ -1756,7 +1757,8 @@ class DdLineEditInt(DdLineEdit):
                 thisInt = int(thisValue)
                 thisValue = self.toString(thisInt)
             except ValueError:
-                thisValue = ""
+                if thisValue != self.getDefault():
+                    thisValue = ""
 
         self.inputWidget.setText(thisValue)
 
@@ -1779,7 +1781,7 @@ class DdLineEditInt(DdLineEdit):
 
         return thisValue
 
-    def getValue(self):
+    def getValue(self,  noSerial = False):
         if self.chk.isChecked():
             thisValue = None
         else:
@@ -1793,6 +1795,9 @@ class DdLineEditInt(DdLineEdit):
 
                 if accepted:
                     thisValue = intValue
+                else:
+                    if noSerial: # if thisValue is a serial we set it to None
+                        thisValue = None
 
         return thisValue
 
@@ -1828,6 +1833,16 @@ class DdLineEditInt(DdLineEdit):
                 accepted = False
 
         return [accepted,  thisValue]
+
+    def save(self,  layer,  feature,  db):
+        thisValue = self.getValue(noSerial = True)
+        # save None in case of a serial (which is only allowed for new features anyways
+        fieldIndex = self.getFieldIndex(layer)
+
+        if self.hasChanges:
+            layer.changeAttributeValue(feature.id(),  fieldIndex,  thisValue)
+
+        return self.hasChanges
 
     def validate(self,  thisValue, feature,  showMsg = True):
         accepted = True
