@@ -314,6 +314,9 @@ class DdManager(object):
                                 DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
                                    QtGui.QApplication.UnicodeUTF8) + " "+ layer.name(),  iface = self.iface)
                                 result = 0
+                            else:
+                                if feature.id() <= 0: # new feature discarded
+                                    result = 0
                         elif reply == QtGui.QMessageBox.Save:
                             if not layer.commitChanges():
                                 DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
