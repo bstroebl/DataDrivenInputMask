@@ -1966,13 +1966,25 @@ class DdLineEditDouble(DdLineEdit):
         if this DdInputWidget's attribute has min/max values validator is set to them'''
 
         validator = QtGui.QDoubleValidator(self.inputWidget)
+        loc = QtCore.QLocale.system()
+
+        # if locale and database decimal separator differ and a db default has been inserted into
+        # a new feature we run into trouble if not making sure that min and max are floats
 
         if self.attribute.min != None:
             thisMin = self.attribute.min
 
             if min != None:
-                if min < thisMin:
-                    thisMin = min
+                success = True
+
+                try:
+                    min = float(min)
+                except ValueError:
+                    min,  succcess = loc.toFloat(min)
+
+                if success:
+                    if min < thisMin:
+                        thisMin = min
 
             validator.setBottom(thisMin)
 
@@ -1980,13 +1992,20 @@ class DdLineEditDouble(DdLineEdit):
             thisMax = self.attribute.max
 
             if max != None:
-                if max > thisMax:
-                    thisMax = max
+                success = True
+
+                try:
+                    max = float(max)
+                except ValueError:
+                    max,  succcess = loc.toFloat(max)
+
+                if success:
+                    if max > thisMax:
+                        thisMax = max
 
             validator.setTop(thisMax)
 
         validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
-        loc = QtCore.QLocale.system()
         loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
         validator.setLocale(loc)
         self.inputWidget.setValidator(validator)
