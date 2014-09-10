@@ -219,10 +219,11 @@ class DdManyToManyAttribute(DdAttribute):
 class DdTableAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a relationTable'''
     def __init__(self,  relationTable, comment ,  label,   \
-                 relationFeatureIdField,  attributes,  maxRows,  showParents):
+                 relationFeatureIdField,  attributes,  maxRows,  showParents,  pkAttName):
         DdManyToManyAttribute.__init__(self,  relationTable,  "table",  relationFeatureIdField,  comment,  label)
 
         self.attributes = attributes # an array with DdAttributes
+        self.pkAttName = pkAttName
 
         for anAtt in self.attributes:
 
@@ -353,7 +354,7 @@ class DdCheckableTableAttribute(DdN2mAttribute,  DdTableAttribute):
         DdN2mAttribute.__init__(self,  relationTable,  relatedTable,  "default",  comment ,  label,   \
                  relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = [])
         DdTableAttribute.__init__(self,  relationTable, comment ,  label,   \
-                 relationFeatureIdField,  attributes,  maxRows = None,  showParents = False)
+                 relationFeatureIdField,  attributes,  maxRows = None,  showParents = False,  pkAttName = None)
 
         self.type = "checkableTable"
         self.catalogTable = catalogTable

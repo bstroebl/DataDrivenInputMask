@@ -276,7 +276,7 @@ class DataDrivenUi(object):
                     ddInputWidget = DdN2mTreeWidget(anAttribute)
             elif anAttribute.type == "table":
                 ddInputWidget = DdN2mTableWidget(anAttribute)
-                addToSearch = False
+                #addToSearch = False
             else: # one line attributes
                 if anAttribute.isFK:
                     ddInputWidget = DdComboBox(anAttribute)
@@ -624,7 +624,7 @@ class DataDrivenUi(object):
                     rLabels = configList[1]
                     rMinMax = configList[4]
                     attributes = self.getAttributes(ddRelationTable,  db,  rLabels,  rMinMax,  skipThese)
-                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents)
+                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents,  attName)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
 
@@ -1334,6 +1334,7 @@ class DdInputWidget(DdWidget):
         self.attribute = ddAttribute
         self.hasChanges = False
         self.inputWidget = None
+        self.searchMode = False
 
     def __str__(self):
         return "<ddui.DdInputWidget %s>" % str(self.attribute.name)
@@ -1419,7 +1420,7 @@ class DdLineEdit(DdInputWidget):
         thisValue = feature[fieldIndex]
 
         if feature.id() < 0 and thisValue == None: # new feature
-            if feature.id() != -3333: # no return value for search feature
+            if self.searchMode: # no return value for search feature
                 if self.attribute.hasDefault:
                     thisValue = self.getDefault()
 
@@ -1545,6 +1546,7 @@ class DdLineEdit(DdInputWidget):
             self.manageChk(None)
         else:
             if feature.id() == -3333: # searchFeature
+                self.searchMode = True
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
                 self.chk.setText(QtGui.QApplication.translate("DdInfo", "Ignore", None,
@@ -1647,6 +1649,8 @@ class DdLineEdit(DdInputWidget):
                     if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
                         thisValue = str(thisValue)
                     elif self.attribute.isTypeChar():
+                        thisValue = thisValue.replace("\'", "").strip()
+
                         if operator == "IN":
                             thisValue = unicode(thisValue)
                         elif operator == "LIKE" or operator == "ILIKE":
@@ -1672,20 +1676,40 @@ class DdLineEdit(DdInputWidget):
                             thisValue = self.toString(thisValue)
 
                     if operator == "IN":
-                        searchSql += "\"" + self.attribute.name + "\" " + operator + " (" + thisValue + ")"
+                        inSql = ""
+                        for aValue in thisValue.split(","):
+                            aValue = aValue.strip()
+
+                            if inSql == "":
+                                inSql = "\"" + self.attribute.name + "\" " + operator + " ("
+                            else:
+                                inSql += ","
+
+                            if self.attribute.isTypeChar():
+                                inSql += "\'" + aValue + "\'"
+                            else:
+                                if self.attribute.type == "text":
+                                    inSql += "\'" + aValue + "\'"
+                                else:
+                                    inSql += aValue
+
+                        searchSql +=  inSql + ")"
                     else:
                         searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
 
         return searchSql
 
+    #TODO: Suche mit IN richtig abspeichern und laden
     def createSearch(self,  parentElement):
         '''create the search XML'''
-        thisValue = self.getValue()
-        operator = self.searchCbx.currentText()
+        fieldElement = None
 
         if not self.chk.isChecked():
+            thisValue = self.getValue()
+            operator = self.searchCbx.currentText()
             fieldElement = ET.SubElement(parentElement,  "field")
             fieldElement.set("fieldName",  self.attribute.name)
+            fieldElement.set("type",  self.attribute.type)
             fieldElement.set("widgetType",  "DdLineEdit")
             ET.SubElement(fieldElement, "operator").text = operator
             valueElement = ET.SubElement(fieldElement, "value")
@@ -1697,12 +1721,12 @@ class DdLineEdit(DdInputWidget):
                     if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
                         thisValue = str(thisValue)
                     elif self.attribute.isTypeChar():
-                        thisValue = unicode(thisValue)
+                        thisValue = unicode(thisValue.replace("\'", "").strip())
                     else:
                         if self.attribute.type == "bool":
                             thisValue = str(thisValue)
                         elif self.attribute.type == "text":
-                            thisValue = unicode(thisValue)
+                            thisValue = unicode(thisValue.replace("\'", "").strip())
                         elif self.attribute.type == "date":
                             thisValue = thisValue.toString("yyyy-MM-dd")
                         else:
@@ -1710,6 +1734,8 @@ class DdLineEdit(DdInputWidget):
 
                 #if thisValue != "None":
                 valueElement.text = thisValue
+
+        return fieldElement
 
     def applySearch(self,  parentElement):
         notFound = True
@@ -1753,12 +1779,13 @@ class DdLineEditInt(DdLineEdit):
             thisValue = ""
         else:
             # convert int to a locale string representation
-            try:
-                thisInt = int(thisValue)
-                thisValue = self.toString(thisInt)
-            except ValueError:
-                if thisValue != self.getDefault():
-                    thisValue = ""
+            if not self.searchMode:
+                try:
+                    thisInt = int(thisValue)
+                    thisValue = self.toString(thisInt)
+                except ValueError:
+                    if thisValue != self.getDefault():
+                        thisValue = ""
 
         self.inputWidget.setText(thisValue)
 
@@ -1790,7 +1817,7 @@ class DdLineEditInt(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                if self.searchCbx.isVisible():
+                if self.searchMode():
                     loc = QtCore.QLocale.system()
                 else:
                     loc = self.inputWidget.validator().locale()
@@ -1800,7 +1827,7 @@ class DdLineEditInt(DdLineEdit):
                 if accepted:
                     thisValue = intValue
                 else:
-                    if not self.searchCbx.isVisible():
+                    if not self.searchMode():
                         if noSerial: # if thisValue is a serial we set it to None
                             thisValue = None
 
@@ -1934,12 +1961,13 @@ class DdLineEditDouble(DdLineEdit):
         if thisValue == None:
             thisValue = ""
         else:
-            # convert double to a locale string representation
-            try:
-                thisDouble = float(thisValue)
-                thisValue = self.toString(thisDouble)
-            except ValueError:
-                thisValue = ""
+            if not self.searchMode:
+                # convert double to a locale string representation
+                try:
+                    thisDouble = float(thisValue)
+                    thisValue = self.toString(thisDouble)
+                except ValueError:
+                    thisValue = ""
 
         self.inputWidget.setText(thisValue)
 
@@ -1956,7 +1984,7 @@ class DdLineEditDouble(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                if self.searchCbx.isVisible():
+                if self.searchMode():
                     loc = QtCore.QLocale.system()
                 else:
                     loc = self.inputWidget.validator().locale()
@@ -1966,7 +1994,7 @@ class DdLineEditDouble(DdLineEdit):
                 if thisDouble[1]:
                     thisValue = thisDouble[0]
                 else:
-                    if not self.searchCbx.isVisible():
+                    if not self.searchMode():
                         thisValue = None
 
         return thisValue
@@ -2276,6 +2304,19 @@ class DdDateEdit(DdLineEdit):
 
         self.setValue(thisValue)
 
+    def setSearchValue(self,  thisValue):
+        '''sets the search value'''
+        if thisValue != None:
+            if isinstance(thisValue,  unicode) or isinstance(thisValue,  str): # this is the case when derived from XML
+                newDate = QtCore.QDate.fromString(thisValue,  "yyyy-MM-dd")
+
+                if newDate.isNull():
+                    thisValue = None
+                else:
+                    thisValue = newDate
+
+        self.setValue(thisValue)
+
     def toString(self,  thisValue):
         loc = QtCore.QLocale.system()
         return loc.toString(thisValue)
@@ -2351,6 +2392,13 @@ class DdCheckBox(DdLineEdit):
         self.setValue(thisValue)
 
     def setValue(self,  thisValue):
+        if isinstance(thisValue,  str): # happens whe read from XML
+                if thisValue.upper() == "TRUE":
+                    thisValue = True
+                elif thisValue.upper() == "FALSE":
+                    thisValue = False
+                else:
+                    thisValue = None
 
         if None == thisValue: #handle Null values
             if self.inputWidget.isTristate():
@@ -2470,6 +2518,7 @@ class DdN2mWidget(DdInputWidget):
         self.oldSubsetString = self.tableLayer.subsetString()
 
         if self.featureId == -3333: #search ui
+            self.searchMode = True
             self.forEdit = True
         else:
             self.forEdit = self.featureId > 0
@@ -2641,9 +2690,12 @@ class DdN2mListWidget(DdN2mWidget):
         return searchSql
 
     def createSearch(self,  parentElement):
+        fieldElement = None
+
         if self.hasChanges:
             fieldElement = ET.SubElement(parentElement,  "field")
             fieldElement.set("fieldName",  self.attribute.name)
+            fieldElement.set("type",  self.attribute.type)
             fieldElement.set("widgetType",  "DdN2mListWidget")
 
             for i in range(self.inputWidget.count()):
@@ -2651,6 +2703,8 @@ class DdN2mListWidget(DdN2mWidget):
                 if anItem.checkState() == 2:
                     valueElement = ET.SubElement(fieldElement, "value")
                     valueElement.text = str(anItem.id)
+
+        return fieldElement
 
     def applySearch(self,  parentElement):
         self.inputWidget.itemChanged.disconnect(self.registerChange)
@@ -2787,9 +2841,12 @@ class DdN2mTreeWidget(DdN2mWidget):
         return searchSql
 
     def createSearch(self,  parentElement):
+        fieldElement = None
+
         if self.hasChanges:
             fieldElement = ET.SubElement(parentElement,  "field")
             fieldElement.set("fieldName",  self.attribute.name)
+            fieldElement.set("type",  self.attribute.type)
             fieldElement.set("widgetType",  "DdN2mTreeWidget")
 
             for i in range(self.inputWidget.topLevelItemCount() -1):
@@ -2797,6 +2854,8 @@ class DdN2mTreeWidget(DdN2mWidget):
 
                 if anItem.checkState(0) == 2:
                     ET.SubElement(fieldElement, "value").text = str(anItem.id)
+
+        return fieldElement
 
     def applySearch(self,  parentElement):
         self.inputWidget.itemChanged.disconnect(self.registerChange)
@@ -2818,7 +2877,6 @@ class DdN2mTreeWidget(DdN2mWidget):
 
         self.inputWidget.itemChanged.connect(self.registerChange)
 
-
 class DdN2mTableWidget(DdN2mWidget):
     '''a input widget for n-to-m relations with more than one field in the relation table
     The input widget consists of a QTableWidget and an add (+) and a remove (-) button'''
@@ -2826,6 +2884,8 @@ class DdN2mTableWidget(DdN2mWidget):
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
         self.fkValues = {}
+        self.root = ET.Element('DdSearch')
+        self.ddManager = QgsApplication.instance().ddManager
 
     def __str__(self):
         return "<ddui.DdN2mTableWidget %s>" % str(self.attribute.name)
@@ -2852,24 +2912,73 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def fill(self):
         self.inputWidget.setRowCount(0)
-        self.applySubsetString(False)
-        # display the features in the QTableWidget
-        for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-            self.appendRow(aFeat)
 
-        if self.forEdit:
-            if self.attribute.maxRows:
-                self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+        if self.searchMode:
+            ddTable = self.ddManager.makeDdTable(self.tableLayer)
+            thisFeature = self.createFeature(-3333)
+
+            for tableElement in self.root.findall("table"):
+                if tableElement.get("tableName") == ddTable.tableName:
+                    for fieldElement in tableElement.findall("field"):
+                        for anAttr in self.attribute.attributes:
+                            attName = anAttr.name
+
+                            if fieldElement.get("fieldName") == attName:
+                                operatorElement = fieldElement.find("operator")
+                                searchString = ""
+
+                                if operatorElement != None:
+                                    operator = operatorElement.text
+                                    valueElement = fieldElement.find("value")
+
+                                    if valueElement != None:
+                                        textValue = valueElement.text
+
+                                        if anAttr.isFK:
+                                            values = self.fkValues[anAttr.name]
+
+                                            if anAttr.isTypeInt():
+                                                lookupValue = int(textValue)
+                                            elif anAttr.isTypeFloat():
+                                                lookupValue = float(textValue)
+                                            else:
+                                                lookupValue = textValue
+
+                                            try:
+                                                aValue = values[lookupValue]
+                                            except KeyError:
+                                                aValue = textValue
+                                        else:
+                                            aValue = textValue
+                                    else:
+                                        aValue = ""
+
+                                    searchString = operator + " " + aValue
+
+                                thisFeature[self.tableLayer.fieldNameIndex(attName)] =  searchString
+                                break
+
+                    self.appendRow(thisFeature)
+                    self.addButton.setEnabled(False)
         else:
-            self.addButton.setEnabled(False)
+            self.applySubsetString(False)
+            # display the features in the QTableWidget
+            for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+                self.appendRow(aFeat)
 
-        # reset here in case the same table is connected twice
-        self.applySubsetString(True)
+            if self.forEdit:
+                if self.attribute.maxRows:
+                    self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+            else:
+                self.addButton.setEnabled(False)
+
+            # reset here in case the same table is connected twice
+            self.applySubsetString(True)
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:
+            self.searchMode = feature.id() == -3333
             self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
-            #self.inputWidget.clear()
 
             # read the values for any foreignKeys
             for anAtt in self.attribute.attributes:
@@ -2903,21 +3012,25 @@ class DdN2mTableWidget(DdN2mWidget):
             anAtt = self.attribute.attributes[i]
             aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
 
-            if anAtt.isFK:
-                values = self.fkValues[anAtt.name]
-                try:
-                    aValue = values[aValue]
-                except KeyError:
-                    aValue = 'NULL'
-
-            if isinstance(aValue,  QtCore.QPyNullVariant):
-                aValue = 'NULL'
+            if self.searchMode:
+                if isinstance(aValue,  QtCore.QPyNullVariant):
+                    aValue = ""
             else:
-                if isinstance(anAtt,  DdDateLayerAttribute):
-                    loc = QtCore.QLocale.system()
-                    aValue = loc.toString(aValue)
+                if anAtt.isFK:
+                    values = self.fkValues[anAtt.name]
+                    try:
+                        aValue = values[aValue]
+                    except KeyError:
+                        aValue = 'NULL'
+
+                if isinstance(aValue,  QtCore.QPyNullVariant):
+                    aValue = 'NULL'
                 else:
-                    aValue = unicode(aValue)
+                    if isinstance(anAtt,  DdDateLayerAttribute):
+                        loc = QtCore.QLocale.system()
+                        aValue = loc.toString(aValue)
+                    else:
+                        aValue = unicode(aValue)
 
             item = QtGui.QTableWidgetItem(aValue)
 
@@ -2969,6 +3082,83 @@ class DdN2mTableWidget(DdN2mWidget):
                 self.parentDialog = pParent
                 break
 
+    def search(self,  layer):
+        '''create search sql-string'''
+        searchSql = ""
+        ddTable = self.ddManager.makeDdTable(self.tableLayer)
+
+        if self.inputWidget.rowCount() == 1:
+            for tableElement in self.root.findall("table"):
+                if tableElement.get("tableName") == ddTable.tableName:
+                    for fieldElement in tableElement.findall("field"):
+                        fieldName = fieldElement.get("fieldName")
+
+                        for anAttribute in self.attribute.attributes:
+                            if anAttribute.name == fieldName:
+                                if searchSql == "":
+                                    searchSql = self.attribute.pkAttName + " IN (SELECT "  + self.attribute.relationFeatureIdField
+                                    searchSql += " FROM \"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\" WHERE "
+                                else:
+                                    searchSql += " AND "
+
+                                operatorElement= fieldElement.find("operator")
+
+                                if operatorElement != None:
+                                    operator = operatorElement.text
+                                    thisValue = ""
+
+                                    if operator != "IS NULL" and operator != "IS NOT NULL":
+                                        valueElement = fieldElement.find("value")
+
+                                        if valueElement != None:
+                                            thisValue = valueElement.text
+
+                                            if (anAttribute.isTypeInt() or anAttribute.isTypeFloat()):
+                                                thisValue = thisValue
+                                            elif anAttribute.isTypeChar():
+                                                if thisValue[:1] != "\'":
+                                                    thisValue = thisValue = "\'" + thisValue + "\'"
+                                            else:
+                                                if anAttribute.type == "bool":
+                                                    if thisValue.upper() == "TRUE":
+                                                        thisValue = "\'t\'"
+                                                    else:
+                                                        thisValue = "\'f\'"
+                                                elif anAttribute.type == "text":
+                                                    if thisValue[:1] != "\'":
+                                                        thisValue = thisValue = "\'" + thisValue + "\'"
+                                                elif anAttribute.type == "date":
+                                                    thisValue = thisValue = "\'" + thisValue + "\'"
+
+                                    if operator == "IN":
+                                        searchSql += "\"" + anAttribute.name + "\" " + operator + " (" + thisValue + ")"
+                                    else:
+                                        searchSql += "\"" + anAttribute.name + "\" " + operator + " " + thisValue
+
+                                break
+
+        if searchSql != "":
+            searchSql += ")"
+
+        return searchSql
+
+    def createSearch(self,  parentElement):
+        ddTable = self.ddManager.makeDdTable(self.tableLayer)
+
+        for tableElement in self.root.findall("table"):
+            if tableElement.get("tableName") == ddTable.tableName:
+                parentElement.append(tableElement)
+                break
+
+    def applySearch(self,  parentElement):
+        ddTable = self.ddManager.makeDdTable(self.tableLayer)
+        for tableElement in parentElement.findall("table"):
+            if tableElement.get("tableName") == ddTable.tableName:
+                self.root = ET.Element('DdSearch')
+                self.root.append(tableElement)
+                self.fill()
+                break
+
     # SLOTS
     def selectionChanged(self):
         '''slot to be called when the QTableWidget's selection has changed'''
@@ -2977,42 +3167,62 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def doubleClick(self,  thisRow,  thisColumn):
         '''slot to be called when the user double clicks on the QTableWidget'''
-        featureItem = self.inputWidget.item(thisRow,  0)
-        thisFeature = featureItem.feature
-        result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents)
+        if self.featureId == -3333:
+            self.ddManager.setLastSearch(self.tableLayer,  self.root)
+            result = self.ddManager.showSearchForm(self.tableLayer)
 
-        if result == 1: # user clicked OK
-            # make sure user did not change parentFeatureId
-            #self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
-            # refresh thisFeature with the new values
-            self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
+            if result == 1:
+                self.root = self.ddManager.ddLayers[self.tableLayer.id()][6]
+                thisRow = self.inputWidget.currentRow()
+                self.inputWidget.removeRow(thisRow)
+                self.fill()
+        else:
+            featureItem = self.inputWidget.item(thisRow,  0)
+            thisFeature = featureItem.feature
+            result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents)
 
-            self.fillRow(thisRow,  thisFeature)
-            self.hasChanges = True
+            if result == 1: # user clicked OK
+                # make sure user did not change parentFeatureId
+                #self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
+                # refresh thisFeature with the new values
+                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
+
+                self.fillRow(thisRow,  thisFeature)
+                self.hasChanges = True
 
     def add(self):
         '''slot to be called when the user clicks on the add button'''
-        thisFeature = self.createFeature()
-        # set the parentFeature's id
-        thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] =  self.featureId
+        if self.featureId == -3333:
+            result = self.ddManager.showSearchForm(self.tableLayer)
 
-        if self.tableLayer.addFeature(thisFeature):
-            result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  askForSave = False)
-
-            if result == 1: # user clicked OK
+            if result == 1:
+                self.root = self.ddManager.ddLayers[self.tableLayer.id()][6]
                 self.fill()
-        #else:
-         #   self.tableLayer.deleteFeature(thisFeature.id())
-         #   self.fill()
+        else:
+            thisFeature = self.createFeature()
+            # set the parentFeature's id
+            thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] =  self.featureId
+
+            if self.tableLayer.addFeature(thisFeature):
+                result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  askForSave = False)
+
+                if result == 1: # user clicked OK
+                    self.fill()
 
     def remove(self):
         '''slot to be called when the user clicks on the remove button'''
         thisRow = self.inputWidget.currentRow()
-        featureItem = self.inputWidget.takeItem(thisRow,  0)
-        thisFeature = featureItem.feature
-        self.tableLayer.deleteFeature(thisFeature.id())
-        self.inputWidget.removeRow(thisRow)
-        self.hasChanges = True
 
-        if self.attribute.maxRows:
-            self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+        if self.featureId == -3333:
+            self.inputWidget.removeRow(thisRow)
+            self.addButton.setEnabled(True)
+            self.root = ET.Element('DdSearch')
+        else:
+            featureItem = self.inputWidget.takeItem(thisRow,  0)
+            thisFeature = featureItem.feature
+            self.tableLayer.deleteFeature(thisFeature.id())
+            self.inputWidget.removeRow(thisRow)
+            self.hasChanges = True
+
+            if self.attribute.maxRows:
+                self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)

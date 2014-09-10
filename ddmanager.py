@@ -33,6 +33,7 @@ from ddui import DataDrivenUi
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
 import ddtools
+import xml.etree.ElementTree as ET
 
 class DdManager(object):
     """DdManager manages all masks in the current project"""
@@ -56,7 +57,7 @@ class DdManager(object):
         QgsMessageLog.logMessage(title + "\n" + str)
 
     def __str__(self):
-        return "<ddui.DdManager>"
+        return "<ddmanager.DdManager>"
 
     def saveSearchPath(self,  path = ""):
         settings = QtCore.QSettings()
@@ -72,15 +73,17 @@ class DdManager(object):
 
         return path
 
-    def getLastSearch(self,  layer):
-        layerValues = self.__getLayerValues(layer)
-        return layerValues[6]
-
     def setLastSearch(self,  layer,  root):
         layerValues = self.__getLayerValues(layer)
 
         if layerValues != None:
-            self.ddLayers[layer.id()][6] =  root
+            if root == None:
+                return False
+            else:
+                self.ddLayers[layer.id()][6] =  root
+                return True
+        else:
+            return False
 
     def highlightFeature(self,  layer,  feature):
         '''highlight the feature if it has a geometry'''
@@ -133,6 +136,7 @@ class DdManager(object):
         - helpText [string] help text for this mask, may be html formatted'''
 
         thisSize = None # stores the size of the DdDialog
+        root = ET.Element('DdSearch')
 
         if inputUi != None:
             inputMask = False # do not make one but use the one provided
@@ -196,7 +200,7 @@ class DdManager(object):
                     #else:
                         #self.ddLayers.pop(layer.id(),  None) # remove entries if they exist
 
-                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  None]
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  root]
                     # parameter 6 holds the last search or None if no last search exists
                     self.__connectSignals(layer)
 
@@ -206,7 +210,7 @@ class DdManager(object):
                     return True
                 else:
                     # no auto masks, both were provided
-                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  None]
+                    self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  root]
                     return True
 
     def makeDdTable(self,  layer,  db = None):
@@ -360,8 +364,9 @@ class DdManager(object):
 
         return result
 
-    def showSearchForm(self,  layer):
+    def showSearchForm(self,  layer,  root = None):
         '''api method showSearchForm: show the data-driven search mask for a layer
+        root is a search-XML Element to be applied upon startup, if not given lastSearch is applied
         returns 1 if user clicked OK, 0 if CANCEL'''
         layerValues = self.__getLayerValues(layer,  inputMask = False,  searchMask = True)
 
@@ -370,7 +375,7 @@ class DdManager(object):
             db = layerValues[1]
             searchUi = layerValues[3]
             thisSize = layerValues[5]
-            dlg = DdSearchDialog(self,  searchUi,  layer,  db)
+            dlg = DdSearchDialog(searchUi,  layer,  db,  root = root)
             dlg.show()
 
             if thisSize != None:
@@ -379,7 +384,6 @@ class DdManager(object):
             result = dlg.exec_()
             thisSize = dlg.size()
             self.ddLayers[layer.id()][5] = thisSize
-
             return result
 
     def showDdForm(self,  fid):

@@ -26,6 +26,7 @@ dddialog
 
 from PyQt4 import QtGui,  QtCore
 from qgis.core import *
+from qgis.gui import *
 import xml.etree.ElementTree as ET
 import os
 
@@ -103,10 +104,9 @@ class DdDialog(QtGui.QDialog):
 
 class DdSearchDialog(QtGui.QDialog):
     '''Each searchDialog is a child of QDialog'''
-    def __init__(self,  ddManager,  ui,  layer,  db,  parent = None):
-        QtGui.QDialog.__init__(self,  parent)
-        # Set up the user interface from Designer.
-        self.ddManager = ddManager
+    def __init__(self, ui, layer, db, parent = None,  root = None):
+        QtGui.QDialog.__init__(self, parent)
+        self.ddManager = QgsApplication.instance().ddManager
         self.ui = ui
         self.layer = layer
         self.db = db
@@ -125,10 +125,14 @@ class DdSearchDialog(QtGui.QDialog):
         okBtn.setEnabled(True)
         self.setTitle()
         self.initialize()
-        root = self.ddManager.getLastSearch(self.layer)
 
-        if root != None:
-            self.applySearch(root)
+        if root == None:
+            root = self.ddManager.ddLayers[self.layer.id()][6]
+
+        self.applySearch(root)
+
+    def debug(self,  str):
+        QgsMessageLog.logMessage(str)
 
     def setTitle(self):
         title = self.layer.name()
@@ -145,8 +149,9 @@ class DdSearchDialog(QtGui.QDialog):
     def clicked(self,  thisButton):
         if thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok):
             root = self.createSearch()
-            self.ddManager.setLastSearch(self.layer,  root)
-            self.accept()
+
+            if self.ddManager.setLastSearch(self.layer,  root):
+                self.accept()
         elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Cancel):
             self.reject()
         elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Save):
@@ -159,6 +164,7 @@ class DdSearchDialog(QtGui.QDialog):
 
     def accept(self):
         searchString = self.ui.search(self.layer)
+        self.debug(searchString)
 
         if searchString != "":
             oldSubsetString = self.layer.subsetString()
