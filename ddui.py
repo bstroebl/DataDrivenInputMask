@@ -1790,14 +1790,19 @@ class DdLineEditInt(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                loc = self.inputWidget.validator().locale()
+                if self.searchCbx.isVisible():
+                    loc = QtCore.QLocale.system()
+                else:
+                    loc = self.inputWidget.validator().locale()
+
                 intValue,  accepted = loc.toInt(thisValue.replace(loc.groupSeparator(), ""))
 
                 if accepted:
                     thisValue = intValue
                 else:
-                    if noSerial: # if thisValue is a serial we set it to None
-                        thisValue = None
+                    if not self.searchCbx.isVisible():
+                        if noSerial: # if thisValue is a serial we set it to None
+                            thisValue = None
 
         return thisValue
 
@@ -1951,13 +1956,18 @@ class DdLineEditDouble(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                loc = self.inputWidget.validator().locale()
+                if self.searchCbx.isVisible():
+                    loc = QtCore.QLocale.system()
+                else:
+                    loc = self.inputWidget.validator().locale()
+
                 thisDouble = loc.toDouble(thisValue.replace(loc.groupSeparator(), ""))
 
                 if thisDouble[1]:
                     thisValue = thisDouble[0]
                 else:
-                    thisValue = None
+                    if not self.searchCbx.isVisible():
+                        thisValue = None
 
         return thisValue
 
