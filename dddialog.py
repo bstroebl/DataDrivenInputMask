@@ -164,7 +164,6 @@ class DdSearchDialog(QtGui.QDialog):
 
     def accept(self):
         searchString = self.ui.search(self.layer)
-        self.debug(searchString)
 
         if searchString != "":
             oldSubsetString = self.layer.subsetString()
@@ -234,7 +233,7 @@ class DdSearchDialog(QtGui.QDialog):
         loadThis = QtGui.QFileDialog.getOpenFileName(None,  QtGui.QApplication.translate("DdLabel", "Load search", None,
                                                            QtGui.QApplication.UnicodeUTF8),  path, "DdXML (*.ddsx)")
 
-        if loadThis != None:
+        if loadThis != u"":
             tree = ET.parse(loadThis)
             root = tree.getroot()
         else:

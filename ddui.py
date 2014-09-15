@@ -1817,7 +1817,7 @@ class DdLineEditInt(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                if self.searchMode():
+                if self.searchMode:
                     loc = QtCore.QLocale.system()
                 else:
                     loc = self.inputWidget.validator().locale()
@@ -1827,7 +1827,7 @@ class DdLineEditInt(DdLineEdit):
                 if accepted:
                     thisValue = intValue
                 else:
-                    if not self.searchMode():
+                    if not self.searchMode:
                         if noSerial: # if thisValue is a serial we set it to None
                             thisValue = None
 
@@ -1984,7 +1984,7 @@ class DdLineEditDouble(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                if self.searchMode():
+                if self.searchMode:
                     loc = QtCore.QLocale.system()
                 else:
                     loc = self.inputWidget.validator().locale()
@@ -1994,7 +1994,7 @@ class DdLineEditDouble(DdLineEdit):
                 if thisDouble[1]:
                     thisValue = thisDouble[0]
                 else:
-                    if not self.searchMode():
+                    if not self.searchMode:
                         thisValue = None
 
         return thisValue
@@ -2509,7 +2509,7 @@ class DdN2mWidget(DdInputWidget):
             except KeyError:
                 skip.append(self.attribute.relationFeatureIdField)
                 self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = skip,  \
-                                                showParents = doShowParents,  searchMask = False,  \
+                                                showParents = doShowParents,  searchMask = True,  \
                                                 labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
                                                 createAction = True,  db = None,  inputMask = True,   \
                                                 inputUi = None,  searchUi = None,  helpText = "") # reinitialize inputMask only
@@ -2977,7 +2977,10 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:
-            self.searchMode = feature.id() == -3333
+            if feature.id() == -3333:
+                self.root = ET.Element('DdSearch')
+                self.searchMode = True
+
             self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
 
             # read the values for any foreignKeys
@@ -3167,7 +3170,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def doubleClick(self,  thisRow,  thisColumn):
         '''slot to be called when the user double clicks on the QTableWidget'''
-        if self.featureId == -3333:
+        if self.searchMode:
             self.ddManager.setLastSearch(self.tableLayer,  self.root)
             result = self.ddManager.showSearchForm(self.tableLayer)
 
@@ -3192,7 +3195,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def add(self):
         '''slot to be called when the user clicks on the add button'''
-        if self.featureId == -3333:
+        if self.searchMode:
             result = self.ddManager.showSearchForm(self.tableLayer)
 
             if result == 1:
@@ -3213,7 +3216,7 @@ class DdN2mTableWidget(DdN2mWidget):
         '''slot to be called when the user clicks on the remove button'''
         thisRow = self.inputWidget.currentRow()
 
-        if self.featureId == -3333:
+        if self.searchMode:
             self.inputWidget.removeRow(thisRow)
             self.addButton.setEnabled(True)
             self.root = ET.Element('DdSearch')

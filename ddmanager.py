@@ -382,8 +382,8 @@ class DdManager(object):
                 dlg.resize(thisSize)
 
             result = dlg.exec_()
-            thisSize = dlg.size()
-            self.ddLayers[layer.id()][5] = thisSize
+            newSize = dlg.size()
+            self.ddLayers[layer.id()][5] = newSize
             return result
 
     def showDdForm(self,  fid):
