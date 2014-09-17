@@ -1726,12 +1726,15 @@ class DdLineEdit(DdInputWidget):
                         betweenValue = self.getBetweenValue()
 
                         if betweenValue != None:
+                            if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
+                                betweenValue = str(betweenValue)
                             if self.attribute.type == "date":
                                 betweenValue = "\'" + betweenValue.toString("yyyy-MM-dd") + "\'"
 
                             searchSql += "\"" + self.attribute.name + "\" BETWEEN " + thisValue + " AND " + betweenValue
                         else:
-                            searchSql += "" # this is an error
+                            operator = ">="
+                            searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
                     else:
                         searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
 
@@ -1748,7 +1751,7 @@ class DdLineEdit(DdInputWidget):
             fieldElement.set("fieldName",  self.attribute.name)
             fieldElement.set("type",  self.attribute.type)
             fieldElement.set("widgetType",  "DdLineEdit")
-            ET.SubElement(fieldElement, "operator").text = operator
+            operatorElement = ET.SubElement(fieldElement, "operator")
             valueElement = ET.SubElement(fieldElement, "value")
 
             if operator == "IS NULL" or operator == "IS NOT NULL":
@@ -1792,7 +1795,10 @@ class DdLineEdit(DdInputWidget):
 
                         betweenElement = ET.SubElement(fieldElement, "bvalue")
                         betweenElement.text = betweenValue
+                    else:
+                        operator = ">="
 
+            operatorElement.text = operator
         return fieldElement
 
     def applySearch(self,  parentElement):
@@ -2044,15 +2050,26 @@ class DdLineEditDouble(DdLineEdit):
         if thisValue == None:
             thisValue = ""
         else:
-            if not self.searchMode:
-                # convert double to a locale string representation
-                try:
-                    thisDouble = float(thisValue)
-                    thisValue = self.toString(thisDouble)
-                except ValueError:
-                    thisValue = ""
+            try:
+                thisDouble = float(thisValue)
+                thisValue = self.toString(thisDouble)
+            except ValueError:
+                thisValue = ""
 
         self.inputWidget.setText(thisValue)
+
+    def setBetweenValue(self,  thisValue):
+
+        if thisValue == None:
+            thisValue = ""
+        else:
+            try:
+                thisDouble = float(thisValue)
+                thisValue = self.toString(thisDouble)
+            except ValueError:
+                thisValue = ""
+
+        self.betweenWidget.setText(thisValue)
 
     def toString(self,  thisValue):
         loc = QtCore.QLocale.system()
@@ -2072,6 +2089,26 @@ class DdLineEditDouble(DdLineEdit):
                 else:
                     loc = self.inputWidget.validator().locale()
 
+                thisDouble = loc.toDouble(thisValue.replace(loc.groupSeparator(), ""))
+
+                if thisDouble[1]:
+                    thisValue = thisDouble[0]
+                else:
+                    if not self.searchMode:
+                        thisValue = None
+
+        return thisValue
+
+    def getBetweenValue(self):
+        if self.chk.isChecked():
+            thisValue = None
+        else:
+            thisValue = self.betweenWidget.text()
+
+            if thisValue == "":
+                thisValue = None
+            else:
+                loc = QtCore.QLocale.system()
                 thisDouble = loc.toDouble(thisValue.replace(loc.groupSeparator(), ""))
 
                 if thisDouble[1]:
