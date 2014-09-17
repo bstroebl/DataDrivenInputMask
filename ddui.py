@@ -1430,7 +1430,10 @@ class DdLineEdit(DdInputWidget):
         inputWidget = QtGui.QLineEdit(parent) # defaultInputWidget
         inputWidget.setObjectName("txl" + parent.objectName() + self.attribute.name)
         inputWidget.textChanged.connect(self.registerChange)
-        return inputWidget
+        betweenWidget = QtGui.QLineEdit(parent) # defaultInputWidget
+        betweenWidget.setObjectName("txl" + parent.objectName() + self.attribute.name + "between")
+        betweenWidget.textChanged.connect(self.registerChange)
+        return [inputWidget,  betweenWidget]
 
     def manageChk(self,  thisValue):
         '''check/uncheck the null checkbox depending on the value and
@@ -1458,6 +1461,14 @@ class DdLineEdit(DdInputWidget):
         '''sets the search value, diverging implementations in subclasses'''
         self.setValue(thisValue)
 
+    def setBetweenValue(self,  thisValue):
+        '''sets thisValue into the betweenWidget'''
+
+        if thisValue == None:
+            thisValue = ""
+
+        self.betweenWidget.setText(unicode(thisValue))
+
     def toString(self,  thisValue):
         return unicode(thisValue)
 
@@ -1472,6 +1483,18 @@ class DdLineEdit(DdInputWidget):
 
         return thisValue
 
+    def getBetweenValue(self):
+        thisValue = None
+
+        if not self.chk.isChecked():
+            if self.betweenWidget != None:
+                thisValue = self.betweenWidget.text()
+
+                if thisValue == "":
+                    thisValue = None
+
+        return thisValue
+
     def setupUi(self,  parent,  db):
         '''setup the label and add the inputWidget to parents formLayout'''
         self.label = self.createLabel(parent)
@@ -1483,21 +1506,29 @@ class DdLineEdit(DdInputWidget):
             if self.attribute.isTypeChar():
                 searchItems += ["IN", "LIKE",  "ILIKE"]
             elif (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
-                searchItems += [ "IN", ">",  "<",  ">=",  "<="]
+                searchItems += [ "IN", ">",  "<",  ">=",  "<=",  "BETWEEN...AND..."]
             else:
                 if  self.attribute.type == "text":
                     searchItems += ["IN", "LIKE",  "ILIKE"]
                 elif  self.attribute.type == "date":
-                    searchItems += [ ">",  "<",  ">=",  "<="]
+                    searchItems += [ ">",  "<",  ">=",  "<=",  "BETWEEN...AND..."]
 
         if not self.attribute.notNull:
             searchItems += ["IS NULL",  "IS NOT NULL"]
 
         self.searchCbx.addItems(searchItems)
+        self.searchCbx.currentIndexChanged.connect(self.searchCbxChanged)
         hLayout.addWidget(self.searchCbx)
-        self.inputWidget = self.createInputWidget(parent)
+        inputWidgets = self.createInputWidget(parent)
+        self.inputWidget = inputWidgets[0]
+        self.betweenWidget = inputWidgets[1]
         self.inputWidget.setToolTip(self.attribute.comment)
         hLayout.addWidget(self.inputWidget)
+
+        if self.betweenWidget != None:
+            self.betweenWidget.setVisible(False)
+            hLayout.addWidget(self.betweenWidget)
+
         self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
                                                            QtGui.QApplication.UnicodeUTF8),  parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
@@ -1532,12 +1563,8 @@ class DdLineEdit(DdInputWidget):
 
         self.setValue(thisValue)
 
-    def chkStateChanged(self,  newState):
-        '''slot: disables the input widget if the null checkbox is checked and vice versa'''
-        self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
-        self.searchCbx.setEnabled(newState == QtCore.Qt.Unchecked)
-        self.setNull(newState == QtCore.Qt.Checked)
-        self.hasChanges = True
+        if self.betweenWidget != None:
+            self.setBetweenValue(thisValue)
 
     def initialize(self,  layer,  feature,  db):
 
@@ -1555,6 +1582,7 @@ class DdLineEdit(DdInputWidget):
                                                                QtGui.QApplication.UnicodeUTF8))
                 self.searchCbx.setVisible(True)
             else:
+                self.searchMode = False
                 self.searchCbx.setVisible(False)
                 thisValue = self.getFeatureValue(layer,  feature)
                 self.setValue(thisValue)
@@ -1694,12 +1722,21 @@ class DdLineEdit(DdInputWidget):
                                     inSql += aValue
 
                         searchSql +=  inSql + ")"
+                    elif operator == "BETWEEN...AND...":
+                        betweenValue = self.getBetweenValue()
+
+                        if betweenValue != None:
+                            if self.attribute.type == "date":
+                                betweenValue = "\'" + betweenValue.toString("yyyy-MM-dd") + "\'"
+
+                            searchSql += "\"" + self.attribute.name + "\" BETWEEN " + thisValue + " AND " + betweenValue
+                        else:
+                            searchSql += "" # this is an error
                     else:
                         searchSql += "\"" + self.attribute.name + "\" " + operator + " " + thisValue
 
         return searchSql
 
-    #TODO: Suche mit IN richtig abspeichern und laden
     def createSearch(self,  parentElement):
         '''create the search XML'''
         fieldElement = None
@@ -1735,6 +1772,27 @@ class DdLineEdit(DdInputWidget):
                 #if thisValue != "None":
                 valueElement.text = thisValue
 
+                if operator == "BETWEEN...AND...":
+                    betweenValue = self.getBetweenValue()
+
+                    if betweenValue != None:
+                        if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
+                            betweenValue = str(betweenValue)
+                        elif self.attribute.isTypeChar():
+                            betweenValue = unicode(betweenValue.replace("\'", "").strip())
+                        else:
+                            if self.attribute.type == "bool":
+                                betweenValue = str(betweenValue)
+                            elif self.attribute.type == "text":
+                                betweenValue = unicode(betweenValue.replace("\'", "").strip())
+                            elif self.attribute.type == "date":
+                                betweenValue = betweenValue.toString("yyyy-MM-dd")
+                            else:
+                                betweenValue = self.toString(betweenValue)
+
+                        betweenElement = ET.SubElement(fieldElement, "bvalue")
+                        betweenElement.text = betweenValue
+
         return fieldElement
 
     def applySearch(self,  parentElement):
@@ -1757,12 +1815,35 @@ class DdLineEdit(DdInputWidget):
 
                     if valueElement != None:
                         value = valueElement.text
-                        self.setSearchValue (value)
+                        self.setSearchValue(value)
+                        bvalueElement = fieldElement.find("bvalue")
+
+                        if bvalueElement != None:
+                            betweenValue = bvalueElement.text
+                            self.setBetweenValue(betweenValue)
 
                 break
 
         if notFound:
             self.chk.setChecked(True)
+
+    #slots
+    def chkStateChanged(self,  newState):
+        '''slot: disables the input widget if the null checkbox is checked and vice versa'''
+        self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+
+        if self.betweenWidget != None:
+            if self.betweenWidget.isVisible():
+                self.betweenWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+
+        self.searchCbx.setEnabled(newState == QtCore.Qt.Unchecked)
+        self.setNull(newState == QtCore.Qt.Checked)
+        self.hasChanges = True
+
+    def searchCbxChanged(self,  thisIndex):
+        '''steer visibility of betweenWidget'''
+        if self.betweenWidget != None:
+            self.betweenWidget.setVisible(self.searchCbx.itemText(thisIndex) == "BETWEEN...AND...")
 
 class DdLineEditInt(DdLineEdit):
     '''input widget (QLineEdit) for an IntegerValue'''
@@ -1839,7 +1920,7 @@ class DdLineEditInt(DdLineEdit):
             thisValue = None
         else:
             if self.attribute.hasDefault:
-                if self.searchCbx.isVisible():
+                if self.searchMode:
                     thisValue = ""
                 else:
                     thisValue = self.getDefault()
@@ -1852,6 +1933,7 @@ class DdLineEditInt(DdLineEdit):
                 thisValue = ""
 
         self.setValue(thisValue)
+        self.setBetweenValue(thisValue)
 
     def checkDefault(self,  feature):
         accepted = True
@@ -1946,6 +2028,7 @@ class DdLineEditInt(DdLineEdit):
             validator.setTop(thisMax)
 
         self.inputWidget.setValidator(validator)
+        self.betweenWidget.setValidator(validator)
 
 class DdLineEditDouble(DdLineEdit):
     '''input widget (QLineEdit) for a DoubleValue'''
@@ -2047,6 +2130,7 @@ class DdLineEditDouble(DdLineEdit):
         loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
         validator.setLocale(loc)
         self.inputWidget.setValidator(validator)
+        self.betweenWidget.setValidator(validator)
 
     def validate(self,  thisValue, feature,  showMsg = True):
         accepted = True
@@ -2124,7 +2208,7 @@ class DdComboBox(DdLineEdit):
         inputWidget.setObjectName("cbx" + parent.objectName() + self.attribute.name)
         inputWidget.setEditable(True)
         inputWidget.currentIndexChanged.connect(self.registerChange)
-        return inputWidget
+        return [inputWidget,  None]
 
     def readValues(self,  db):
         '''read the values to be shown in the QComboBox from the db'''
@@ -2244,6 +2328,7 @@ class DdDateEdit(DdLineEdit):
                     thisMin = min
 
             self.inputWidget.setMinimumDate(thisMin)
+            self.betweenWidget.setMinimumDate(thisMin)
 
         if self.attribute.max != None:
             thisMax = self.attribute.max
@@ -2253,6 +2338,7 @@ class DdDateEdit(DdLineEdit):
                     thisMax = max
 
             self.inputWidget.setMaximumDate(thisMax)
+            self.betweenWidget.setMaximumDate(thisMax)
 
     def getFeatureValue(self,  layer,  feature):
         '''returns a QDate representing the value in this field for this feature'''
@@ -2287,7 +2373,12 @@ class DdDateEdit(DdLineEdit):
         inputWidget.setObjectName("dat" + parent.objectName() + self.attribute.name)
         inputWidget.setToolTip(self.attribute.comment)
         inputWidget.dateChanged.connect(self.registerChange)
-        return inputWidget
+        betweenWidget = QtGui.QDateEdit(parent)
+        betweenWidget.setCalendarPopup(True)
+        betweenWidget.setDisplayFormat(loc.dateFormat())
+        betweenWidget.setObjectName("dat" + parent.objectName() + self.attribute.name + "between")
+        betweenWidget.dateChanged.connect(self.registerChange)
+        return [inputWidget,  betweenWidget]
 
     def setNull(self,  setnull):
         if setnull:
@@ -2302,6 +2393,7 @@ class DdDateEdit(DdLineEdit):
             else:
                 thisValue = None
 
+        self.setBetweenValue(thisValue)
         self.setValue(thisValue)
 
     def setSearchValue(self,  thisValue):
@@ -2316,6 +2408,19 @@ class DdDateEdit(DdLineEdit):
                     thisValue = newDate
 
         self.setValue(thisValue)
+
+    def setBetweenValue(self,  thisValue):
+        '''sets the between value'''
+        newDate = QtCore.QDate.currentDate()
+
+        if thisValue != None:
+            if isinstance(thisValue,  unicode) or isinstance(thisValue,  str): # this is the case when derived from XML
+                newDate = QtCore.QDate.fromString(thisValue,  "yyyy-MM-dd")
+
+                if newDate.isNull():
+                    newDate = QtCore.QDate.currentDate()
+
+        self.betweenWidget.setDate(newDate)
 
     def toString(self,  thisValue):
         loc = QtCore.QLocale.system()
@@ -2335,6 +2440,14 @@ class DdDateEdit(DdLineEdit):
             thisValue = None
         else:
             thisValue = self.inputWidget.date()
+
+        return thisValue
+
+    def getBetweenValue(self):
+        if self.chk.isChecked():
+            thisValue = None
+        else:
+            thisValue = self.betweenWidget.date()
 
         return thisValue
 
@@ -2373,7 +2486,7 @@ class DdCheckBox(DdLineEdit):
         inputWidget = QtGui.QCheckBox(parent)
         inputWidget.setObjectName("chk" + parent.objectName() + self.attribute.name)
         inputWidget.stateChanged.connect(self.registerChange)
-        return inputWidget
+        return [inputWidget,  None]
 
     def setNull(self,  setnull):
         '''Set this inputWidget to NULL'''
@@ -2439,7 +2552,7 @@ class DdTextEdit(DdLineEdit):
         inputWidget.setTabChangesFocus(True)
         inputWidget.setObjectName("txt" + parent.objectName() + self.attribute.name)
         inputWidget.textChanged.connect(self.registerChange)
-        return inputWidget
+        return [inputWidget,  None]
 
     def setValue(self,  thisValue):
 
@@ -2477,7 +2590,8 @@ class DdN2mWidget(DdInputWidget):
 
     def setupUi(self,  parent,  db):
         label = self.createLabel(parent)
-        self.inputWidget = self.createInputWidget(parent)
+        inputWidgets = self.createInputWidget(parent)
+        self.inputWidget = inputWidgets[0]
         self.setSizeMax(self.inputWidget)
         self.inputWidget.setToolTip(self.attribute.comment)
         parent.layout().addRow(label)
@@ -2521,6 +2635,7 @@ class DdN2mWidget(DdInputWidget):
             self.searchMode = True
             self.forEdit = True
         else:
+            self.searchMode = False
             self.forEdit = self.featureId > 0
 
             if self.forEdit:
@@ -2638,7 +2753,7 @@ class DdN2mListWidget(DdN2mWidget):
         inputWidget = QtGui.QListWidget(parent) # defaultInputWidget
         inputWidget.setObjectName("lst" + parent.objectName() + self.attribute.name)
         inputWidget.itemChanged.connect(self.registerChange)
-        return inputWidget
+        return [inputWidget,  None]
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:
@@ -2777,7 +2892,7 @@ class DdN2mTreeWidget(DdN2mWidget):
         inputWidget.setColumnCount(1)
         inputWidget.setObjectName("tre" + parent.objectName() + self.attribute.name)
         inputWidget.itemChanged.connect(self.registerChange)
-        return inputWidget
+        return [inputWidget,  None]
 
     def initialize(self,  layer,  feature,  db):
         if feature != None:
@@ -2908,7 +3023,7 @@ class DdN2mTableWidget(DdN2mWidget):
         inputWidget.cellDoubleClicked.connect(self.doubleClick)
         inputWidget.itemSelectionChanged.connect(self.selectionChanged)
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
-        return inputWidget
+        return [inputWidget,  None]
 
     def fill(self):
         self.inputWidget.setRowCount(0)
@@ -2980,6 +3095,8 @@ class DdN2mTableWidget(DdN2mWidget):
             if feature.id() == -3333:
                 self.root = ET.Element('DdSearch')
                 self.searchMode = True
+            else:
+                self.searchMode = False
 
             self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
 
@@ -3054,7 +3171,8 @@ class DdN2mTableWidget(DdN2mWidget):
         frame.setFrameShadow(QtGui.QFrame.Raised)
         frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
         label = self.createLabel(frame)
-        self.inputWidget = self.createInputWidget(frame)
+        inputWidgets = self.createInputWidget(frame)
+        self.inputWidget = inputWidgets[0]
         self.setSizeMax(frame)
         self.inputWidget.setToolTip(self.attribute.comment)
         verticalLayout = QtGui.QVBoxLayout(frame)
