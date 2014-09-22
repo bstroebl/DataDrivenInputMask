@@ -1665,6 +1665,7 @@ class DdLineEdit(DdInputWidget):
 
     def search(self,  layer):
         '''create search sql-string'''
+
         searchSql = ""
         thisValue = self.getValue()
         operator = self.searchCbx.currentText()
@@ -2714,8 +2715,10 @@ class DdN2mWidget(DdInputWidget):
         provider = self.tableLayer.dataProvider()
         fields = self.tableLayer.pendingFields()
         newFeature.initAttributes(fields.count())
-        for i in range(fields.count()):
-            newFeature.setAttribute(i,provider.defaultValue(i))
+
+        if not self.searchMode:
+            for i in range(fields.count()):
+                newFeature.setAttribute(i,provider.defaultValue(i))
 
         return newFeature
 
@@ -3102,6 +3105,13 @@ class DdN2mTableWidget(DdN2mWidget):
                                                 aValue = textValue
                                         else:
                                             aValue = textValue
+
+                                            if operator == "BETWEEN...AND...":
+                                                bvalueElement = fieldElement.find("bvalue")
+
+                                                if bvalueElement != None:
+                                                    operator = "BETWEEN"
+                                                    aValue += " AND " + bvalueElement.text
                                     else:
                                         aValue = ""
 
@@ -3275,7 +3285,7 @@ class DdN2mTableWidget(DdN2mWidget):
                                                 thisValue = thisValue
                                             elif anAttribute.isTypeChar():
                                                 if thisValue[:1] != "\'":
-                                                    thisValue = thisValue = "\'" + thisValue + "\'"
+                                                    thisValue = "\'" + thisValue + "\'"
                                             else:
                                                 if anAttribute.type == "bool":
                                                     if thisValue.upper() == "TRUE":
@@ -3284,12 +3294,29 @@ class DdN2mTableWidget(DdN2mWidget):
                                                         thisValue = "\'f\'"
                                                 elif anAttribute.type == "text":
                                                     if thisValue[:1] != "\'":
-                                                        thisValue = thisValue = "\'" + thisValue + "\'"
+                                                        thisValue = "\'" + thisValue + "\'"
                                                 elif anAttribute.type == "date":
-                                                    thisValue = thisValue = "\'" + thisValue + "\'"
+                                                    thisValue = "\'" + thisValue + "\'"
 
                                     if operator == "IN":
                                         searchSql += "\"" + anAttribute.name + "\" " + operator + " (" + thisValue + ")"
+                                    elif operator == "BETWEEN...AND...":
+                                        bvalueElement = fieldElement.find("bvalue")
+
+                                        if bvalueElement != None:
+                                            betweenValue = bvalueElement.text
+
+                                            if betweenValue != None:
+                                                if anAttribute.type == "date":
+                                                    betweenValue = "\'" + betweenValue + "\'"
+
+                                                searchSql += "\"" + anAttribute.name + "\" BETWEEN " + thisValue + " AND " + betweenValue
+                                            else:
+                                                operator = ">="
+                                                searchSql += "\"" + anAttribute.name + "\" " + operator + " " + thisValue
+                                        else:
+                                            operator = ">="
+                                            searchSql += "\"" + anAttribute.name + "\" " + operator + " " + thisValue
                                     else:
                                         searchSql += "\"" + anAttribute.name + "\" " + operator + " " + thisValue
 
