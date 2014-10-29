@@ -89,6 +89,19 @@ def ddFormInit(dialog, layerId, featureId):
                 if result == 1:
                     layer.setModified()
 
+class DdEventFilter(QtCore.QObject):
+    '''Event filter class to be applied to DdLineEdit's input widgets
+    throws a signal even when the input widget is not enabled'''
+    doubleClicked = QtCore.pyqtSignal()
+
+    def eventFilter(self, watchedObject, event):
+        typ = event.type()
+
+        if typ == QtCore.QEvent.MouseButtonDblClick:
+            self.doubleClicked.emit()
+
+        return False # if you want to filter the event out, i.e. stop it being handled further, return true; otherwise return false.
+
 class DataDrivenUi(object):
     '''Creates the DataDrivenUi
 
@@ -1521,6 +1534,9 @@ class DdLineEdit(DdInputWidget):
         hLayout.addWidget(self.searchCbx)
         inputWidgets = self.createInputWidget(parent)
         self.inputWidget = inputWidgets[0]
+        self.eventFilter = DdEventFilter(self.inputWidget)
+        self.inputWidget.installEventFilter(self.eventFilter)
+        self.eventFilter.doubleClicked.connect(self.onDoubleClick)
         self.betweenWidget = inputWidgets[1]
         self.inputWidget.setToolTip(self.attribute.comment)
         hLayout.addWidget(self.inputWidget)
@@ -1851,6 +1867,12 @@ class DdLineEdit(DdInputWidget):
         '''steer visibility of betweenWidget'''
         if self.betweenWidget != None:
             self.betweenWidget.setVisible(self.searchCbx.itemText(thisIndex) == "BETWEEN...AND...")
+
+    def onDoubleClick(self):
+        '''slot called when event filter on self.inputWidget throws doubleClick signal'''
+        if self.chk.isChecked():
+            self.chk.setChecked(False)
+            self.inputWidget.setFocus()
 
 class DdLineEditInt(DdLineEdit):
     '''input widget (QLineEdit) for an IntegerValue'''
