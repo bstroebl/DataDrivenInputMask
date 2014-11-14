@@ -1699,7 +1699,12 @@ class DdLineEdit(DdInputWidget):
                         if operator == "IN":
                             thisValue = unicode(thisValue)
                         elif operator == "LIKE" or operator == "ILIKE":
-                            thisValue = "\'" + unicode(thisValue.replace("*", "%")) + "\'"
+                            thisValue = thisValue.replace("*", "%") #get rid of user's wildcard
+                            
+                            if thisValue.find("%") == -1:
+                                thisValue = "%" + thisValue + "%" # add wildcard
+                                
+                            thisValue = "\'" + unicode(thisValue) + "\'"
                         else:
                             thisValue = "\'" + unicode(thisValue) + "\'"
                     else:
@@ -1712,7 +1717,12 @@ class DdLineEdit(DdInputWidget):
                             if operator == "IN":
                                 thisValue = unicode(thisValue)
                             elif operator == "LIKE" or operator == "ILIKE":
-                                thisValue = "\'" + unicode(thisValue.replace("*", "%")) + "\'"
+                                thisValue = thisValue.replace("*", "%") #get rid of user's wildcard
+                            
+                                if thisValue.find("%") == -1:
+                                    thisValue = "%" + thisValue + "%" # add wildcard
+                                    
+                                thisValue = "\'" + unicode(thisValue) + "\'"
                             else:
                                 thisValue = "\'" + unicode(thisValue) + "\'"
                         elif self.attribute.type == "date":
