@@ -26,19 +26,23 @@ Error classes
 """
 from PyQt4 import QtGui
 from qgis.gui import QgsMessageBar
+from qgis.core import QgsMessageLog
 
 class DdError(object):
     '''General error'''
-    def __init__(self,  value,  fatal = False,  iface = None):
+    def __init__(self,  value,  fatal = False,  iface = None,  showInLog = False):
         self.value = value
 
         if fatal:
             raise FatalError(value)
         else:
-            if iface:
-                iface.messageBar().pushMessage("DdError",  value, level=QgsMessageBar.CRITICAL)
+            if showInLog:
+                QgsMessageLog.logMessage("DdError: " + value,  level=QgsMessageLog.CRITICAL)
             else:
-                QtGui.QMessageBox.warning(None, "DdError",  value)
+                if iface:
+                    iface.messageBar().pushMessage("DdError",  value, level=QgsMessageBar.CRITICAL)
+                else:
+                    QtGui.QMessageBox.warning(None, "DdError",  value)
 
     def __str__(self):
         return repr(self.value)

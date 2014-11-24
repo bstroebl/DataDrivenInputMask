@@ -1700,10 +1700,10 @@ class DdLineEdit(DdInputWidget):
                             thisValue = unicode(thisValue)
                         elif operator == "LIKE" or operator == "ILIKE":
                             thisValue = thisValue.replace("*", "%") #get rid of user's wildcard
-                            
+
                             if thisValue.find("%") == -1:
                                 thisValue = "%" + thisValue + "%" # add wildcard
-                                
+
                             thisValue = "\'" + unicode(thisValue) + "\'"
                         else:
                             thisValue = "\'" + unicode(thisValue) + "\'"
@@ -1718,10 +1718,10 @@ class DdLineEdit(DdInputWidget):
                                 thisValue = unicode(thisValue)
                             elif operator == "LIKE" or operator == "ILIKE":
                                 thisValue = thisValue.replace("*", "%") #get rid of user's wildcard
-                            
+
                                 if thisValue.find("%") == -1:
                                     thisValue = "%" + thisValue + "%" # add wildcard
-                                    
+
                                 thisValue = "\'" + unicode(thisValue) + "\'"
                             else:
                                 thisValue = "\'" + unicode(thisValue) + "\'"
@@ -2719,7 +2719,7 @@ class DdN2mWidget(DdInputWidget):
 
                         if not self.forEdit:
                             DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
-                                                                       QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name())
+                               QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name(),  showInLog = True)
 
     def applySubsetString(self,  reset = True):
         if self.tableLayer != None:
