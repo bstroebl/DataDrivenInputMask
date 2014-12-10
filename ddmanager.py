@@ -160,7 +160,12 @@ class DdManager(object):
                 if inputMask or searchMask:
                     # check for config tables
                     ddConfigTable = DdTable(schemaName = "public",  tableName = "dd_table")
-                    readConfigTables = self.isAccessible(db,  ddConfigTable,  showError = False)
+                    readConfigTables = self.existsInDb(ddConfigTable, db)
+
+                    if not readConfigTables:
+                        readConfigTables = self.createConfigTables(db)
+                    if readConfigTables:
+                        readConfigTables = self.isAccessible(db,  ddConfigTable,  showError = False)
 
                     if not readConfigTables:
                         if self.showConfigInfo:
