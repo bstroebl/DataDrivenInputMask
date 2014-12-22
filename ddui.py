@@ -121,69 +121,73 @@ class DataDrivenUi(object):
         db,  createAction,  helpText):
         '''read configuration from db'''
 
-        # read values for this table from config tables
-        query = QtSql.QSqlQuery(db)
-        sQuery = "SELECT COALESCE(\"table_help\", \'\'), \
-            \"table_action\", \
-            COALESCE(\"tab_alias\", \'\'), \
-            COALESCE(\"tab_tooltip\", \'\'), \
-            \"field_name\", \
-            COALESCE(\"field_alias\", \'\'), \
-            \"field_skip\", \
-            \"field_search\", \
-            \"field_min\", \
-            \"field_max\" \
-        FROM \"public\".\"dd_table\" t \
-            LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
-            LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
-        WHERE \"table_schema\" = :schema AND \"table_name\" = :table\
-        ORDER BY \"tab_order\", \"field_order\""
-        query.prepare(sQuery)
-        query.bindValue(":schema",  ddTable.schemaName)
-        query.bindValue(":table",  ddTable.tableName)
-        query.exec_()
+        #check if config tables exist in db
+        configOid = ddtools.getOid(DdTable(schemaName = "public",  tableName = "dd_table"), db)
 
-        if query.isActive():
-            lastTab = None
-            firstDataSet = True
+        if configOid != None:
+            # read values for this table from config tables
+            query = QtSql.QSqlQuery(db)
+            sQuery = "SELECT COALESCE(\"table_help\", \'\'), \
+                \"table_action\", \
+                COALESCE(\"tab_alias\", \'\'), \
+                COALESCE(\"tab_tooltip\", \'\'), \
+                \"field_name\", \
+                COALESCE(\"field_alias\", \'\'), \
+                \"field_skip\", \
+                \"field_search\", \
+                \"field_min\", \
+                \"field_max\" \
+            FROM \"public\".\"dd_table\" t \
+                LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
+                LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
+            WHERE \"table_schema\" = :schema AND \"table_name\" = :table\
+            ORDER BY \"tab_order\", \"field_order\""
+            query.prepare(sQuery)
+            query.bindValue(":schema",  ddTable.schemaName)
+            query.bindValue(":table",  ddTable.tableName)
+            query.exec_()
 
-            while query.next():
-                if firstDataSet:
-                    helpText += query.value(0)
-                    firstDataSet = False
-                    createAction = query.value(1)
+            if query.isActive():
+                lastTab = None
+                firstDataSet = True
 
-                tabAlias = query.value(2)
-                tabTooltip = query.value(3)
-                fieldName = query.value(4)
-                fieldAlias = query.value(5)
-                fieldSkip = query.value(6)
-                fieldSearch =  query.value(7)
-                fieldMin = query.value(8)
-                fieldMax = query.value(9)
+                while query.next():
+                    if firstDataSet:
+                        helpText += query.value(0)
+                        firstDataSet = False
+                        createAction = query.value(1)
 
-                if tabAlias != lastTab and not fieldSkip:
-                    if tabAlias != "":
-                        lastTab = tabAlias
-                        fieldGroups[fieldName] = [tabAlias,  tabTooltip]
+                    tabAlias = query.value(2)
+                    tabTooltip = query.value(3)
+                    fieldName = query.value(4)
+                    fieldAlias = query.value(5)
+                    fieldSkip = query.value(6)
+                    fieldSearch =  query.value(7)
+                    fieldMin = query.value(8)
+                    fieldMax = query.value(9)
 
-                fieldOrder.append(fieldName)
+                    if tabAlias != lastTab and not fieldSkip:
+                        if tabAlias != "":
+                            lastTab = tabAlias
+                            fieldGroups[fieldName] = [tabAlias,  tabTooltip]
 
-                if fieldAlias != "":
-                    labels[fieldName] = fieldAlias
+                    fieldOrder.append(fieldName)
 
-                if fieldSkip:
-                    skip.append(fieldName)
+                    if fieldAlias != "":
+                        labels[fieldName] = fieldAlias
 
-                if not fieldSearch:
-                    noSearchFields.append(fieldName)
+                    if fieldSkip:
+                        skip.append(fieldName)
 
-                if fieldMin != None or fieldMax != None:
-                    minMax[fieldName] = [fieldMin,  fieldMax]
-        else:
-            DbError(query)
+                    if not fieldSearch:
+                        noSearchFields.append(fieldName)
 
-        query.finish()
+                    if fieldMin != None or fieldMax != None:
+                        minMax[fieldName] = [fieldMin,  fieldMax]
+            else:
+                DbError(query)
+
+            query.finish()
 
         return [skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText]
 
