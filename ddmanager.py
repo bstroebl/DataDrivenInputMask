@@ -423,17 +423,105 @@ class DdManager(object):
 
             self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize,  None]
 
-    def addInputWidget(self, layer,  inputWidget, ddFormWidgetIndex = None,  beforeWidget = None,  toUi = True,  toSearchUi = True):
+    def addInputWidget(self, layer, inputWidget, ddFormWidgetIndex = None,
+            beforeWidget = None, toUi = True, toSearchUi = True):
+        '''api method to add a DdWidget into the ui of a layer'''
         layerValues = self.__getLayerValues(layer)
         ui = layerValues[2]
         searchUi = layerValues[3]
 
         if ui != None and toUi:
-            ui.addInputWidget(inputWidget, ddFormWidgetIndex,  beforeWidget)
+            ui.addInputWidget(inputWidget, ddFormWidgetIndex, beforeWidget)
 
         if searchUi != None and toSearchUi:
-            searchUi.addInputWidget(inputWidget, ddFormWidgetIndex,  beforeWidget)
+            searchUi.addInputWidget(inputWidget, ddFormWidgetIndex, beforeWidget)
 
+    def addInputWidgetBefore(self, layer, inputWidget, beforeAttributeName,
+            toUi = True, toSearchUi = True):
+        '''api method to add a DdWidget into the ui of a layer before
+        the widget of attribute with beforeAttributeName. Will
+        be placed in the same form'''
+
+        foundWidget = self.__getInputWidget(layer, beforeAttributeName)
+        if foundWidget != None:
+            formIndex = foundWidget[1]
+            widgetIndex = foundWidget[2]
+        else:
+            formIndex = None
+            widgetIndex = None
+        self.addInputWidget(layer, inputWidget, formIndex, widgetIndex,
+            toUi, toSearchUi)
+
+    def addInputWidgetAfter(self, layer, inputWidget, afterAttributeName,
+            toUi = True, toSearchUi = True):
+        '''api method to add a DdWidget into the ui of a layer after
+        the widget of attribute with afterAttributeName. Will
+        be placed in the same form'''
+
+        foundWidget = self.__getInputWidget(layer, afterAttributeName)
+        if foundWidget != None:
+            formIndex = foundWidget[1]
+            widgetIndex = foundWidget[2] +1
+        else:
+            formIndex = None
+            widgetIndex = None
+        self.addInputWidget(layer, inputWidget, formIndex, widgetIndex,
+            toUi, toSearchUi)
+
+    def removeInputWidget(self, layer, attributeName, fromUi = True,
+        fromSearchUi = True):
+        '''api method to remove the DdWidget for a certain attribute'''
+
+        layerValues = self.__getLayerValues(layer)
+        ui = layerValues[2]
+        searchUi = layerValues[3]
+        foundWidget = self.__getInputWidget(layer, attributeName)
+
+        if foundWidget != None:
+            formIndex = foundWidget[1]
+            widgetIndex = foundWidget[2]
+
+            if ui != None and fromUi:
+                ui.forms[formIndex].inputWidgets.pop(widgetIndex)
+
+            if searchUi != None and fromSearchUi:
+                searchUi.forms[formIndex].inputWidgets.pop(widgetIndex)
+
+        return None
+
+    def getInputWidget(self, layer, attributeName):
+        '''api method returning the DdWidget for a certain attribute'''
+        foundWidget = self.__getInputWidget(layer, attributeName)
+
+        if foundWidget != None:
+            return foundWidget[0]
+        else:
+            return None
+
+    def replaceInputWidget(self, layer, attributeName, newWidget,
+        toUi = True, toSearchUi = True):
+        '''api method to replace a DdWidget in the ui of a layer
+        with another one'''
+
+        retValue = False
+        foundWidget = self.__getInputWidget(layer, attributeName)
+
+        if foundWidget != None:
+            formIndex = foundWidget[1]
+            widgetIndex = foundWidget[2]
+            layerValues = self.__getLayerValues(layer)
+            ui = layerValues[2]
+            searchUi = layerValues[3]
+
+            if ui != None and toUi:
+                ui.forms[formIndex].inputWidgets[widgetIndex] = newWidget
+                retValue = True
+
+            if searchUi != None and toSearchUi:
+                searchUi.forms[formIndex].inputWidgets[widgetIndex] = newWidget
+                retValue = True
+
+        return retValue
 
     def getDbForLayer(self,  layer):
         return self.__createDb(layer)
@@ -766,6 +854,29 @@ class DdManager(object):
         if db:
             db.close()
             db = None
+
+    def __getInputWidget(self, layer, attributeName):
+        layerValues = self.__getLayerValues(layer)
+        ui = layerValues[2]
+        searchUi = layerValues[3]
+
+        if ui != None:
+            theseForms = ui.forms
+        else:
+            if searchUi != None:
+                theseForms = searchUi.forms
+            else:
+                return None
+
+        for i in range(len(theseForms)):
+            theseInputWidgets = theseForms[i].inputWidgets
+
+            for j in range(len(theseInputWidgets)):
+                aDdWidget = theseInputWidgets[j]
+                if aDdWidget.attribute.name == attributeName:
+                    return [aDdWidget, i, j]
+
+        return None
 
     def changeConfigTables(self,  db):
         '''function to update the config tables if anything changes'''
