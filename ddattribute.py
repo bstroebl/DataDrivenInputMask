@@ -37,11 +37,11 @@ General rules:
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4 import QtGui,  QtCore
+from PyQt4 import QtGui, QtCore
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
-    def __init__(self,  oid = None,  schemaName = "None", tableName = "None",  comment = "",  title = None):
+    def __init__(self, oid = None, schemaName = "None", tableName = "None", comment = "", title = None):
         self.oid = oid
         self.schemaName = schemaName
         self.tableName = tableName
@@ -49,19 +49,21 @@ class DdTable(object):
         self.title = title
 
     def __str__(self):
-        return "<ddattribute.DdTable %s.%s>" % (self.schemaName,  self.tableName)
+        return "<ddattribute.DdTable %s.%s>" % (self.schemaName, self.tableName)
 
 class DdAttribute(object):
     '''abstract super class for all DdAttributes'''
 
-    def __init__(self,  table,  type,  notNull,  name,  comment ,  label,  min = None,  max = None):
+    def __init__(self, table, type, notNull, name, comment , label,
+            min = None, max = None, enableWidget = True):
         self.table = table
         self.type = type
         self.notNull = notNull
         self.name = name
         self.comment = comment
         self.label = label
-        self.setMinMax(min,  max)
+        self.setMinMax(min, max)
+        self.enableWidget = enableWidget
 
     def __str__(self):
         return "<ddattribute.DdAttribute %s>" % self.name
@@ -83,7 +85,7 @@ class DdAttribute(object):
 
         return labelString
 
-    def setMinMax(self,  min,  max):
+    def setMinMax(self, min, max):
         self.min = None
         self.max = None
 
@@ -126,13 +128,16 @@ class DdAttribute(object):
                 except:
                     self.max = None
 
-    def debug(self,  msg):
-        QtGui.QMessageBox.information(None, "Debug",  msg)
+    def debug(self, msg):
+        QtGui.QMessageBox.information(None, "Debug", msg)
 
 class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
-    def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label = None,  min = None,  max = None):
-        DdAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  label,  min,  max)
+    def __init__(self, table, type, notNull, name, comment, attNum, isPK, isFK,
+            default, hasDefault, length, label = None, min = None, max = None,
+        enableWidget = True):
+        DdAttribute.__init__(self, table, type, notNull, name, comment,
+            label, min, max, enableWidget)
         self.isPK = isPK
         self.isFK = isFK
         self.default = default
@@ -146,22 +151,26 @@ class DdLayerAttribute(DdAttribute):
 class DdDateLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for a date field in a QGIS layer
     if you want to specify today as min or max, simply pass "today"'''
-    def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label = None,  min = None,  max = None,  dateFormat = "yyyy-MM-dd"):
+    def __init__(self, table, type, notNull, name, comment, attNum, isPK,
+            isFK, default, hasDefault, length, label = None, min = None,
+            max = None, dateFormat = "yyyy-MM-dd", enableWidget = True):
         self.dateFormat = dateFormat # set here because DdAttribute calls setMinMax on __init__
-        DdLayerAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK , isFK,  default,  hasDefault,  length,  label,  min,  max)
+        DdLayerAttribute.__init__(self, table, type, notNull, name,
+            comment, attNum, isPK, isFK, default, hasDefault, length,
+            label, min, max, enableWidget)
 
     def __str__(self):
         return "<ddattribute.DdDateLayerAttribute %s>" % self.name
 
-    def setMinMax(self,  min,  max):
+    def setMinMax(self, min, max):
         '''reimplemented from DdAttribute'''
         self.min = self.formatDate(min)
         self.max = self.formatDate(max)
 
-    def formatDate(self,  thisDate):
+    def formatDate(self, thisDate):
         '''thisDate may be either a QDate or a string'''
         if thisDate != None:
-            if not isinstance(thisDate,  QtCore.QDate):
+            if not isinstance(thisDate, QtCore.QDate):
                 # we assume a string
                 if thisDate.find("today") != -1:
                     if thisDate.find("-") != -1:
@@ -177,7 +186,7 @@ class DdDateLayerAttribute(DdLayerAttribute):
 
                     returnDate = QtCore.QDate.currentDate().addDays(int(daysToAdd) * factor)
                 else:
-                    returnDate = QtCore.QDate.fromString(thisDate,  self.dateFormat)
+                    returnDate = QtCore.QDate.fromString(thisDate, self.dateFormat)
                     # returns a null date if string is not formatted as needed by dateFormat
 
             if returnDate.isNull():
@@ -189,8 +198,11 @@ class DdDateLayerAttribute(DdLayerAttribute):
 
 class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
-    def __init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK,  default ,  hasDefault,  queryForCbx,  label = None):
-        DdLayerAttribute.__init__(self,  table,  type,  notNull,  name,  comment,  attNum,  isPK,  True,  default,  hasDefault,  -1,  label)
+    def __init__(self, table, type, notNull, name, comment, attNum, isPK,
+            default , hasDefault, queryForCbx, label = None, enableWidget = True):
+        DdLayerAttribute.__init__(self, table, type, notNull, name, comment,
+            attNum, isPK, True, default, hasDefault, -1, label,
+            enableWidget = enableWidget)
         self.queryForCbx = queryForCbx
 
     def __str__(self):
@@ -199,18 +211,20 @@ class DdFkLayerAttribute(DdLayerAttribute):
 
 class DdManyToManyAttribute(DdAttribute):
     '''abstract class for any many2many attribute'''
-    def __init__(self,  relationTable,  type,  relationFeatureIdField,  comment,  label):
-        DdAttribute.__init__(self,  relationTable,  type,  False,  relationTable.tableName,  comment,  label)
+    def __init__(self, relationTable, type, relationFeatureIdField,
+            comment, label, enableWidget = True):
+        DdAttribute.__init__(self, relationTable, type, False,
+            relationTable.tableName, comment, label, enableWidget = enableWidget)
 
         self.relationFeatureIdField = relationFeatureIdField
         self.setSubsetString()
 
-    def buildSubsetString(self,  relationFeatureIdField):
+    def buildSubsetString(self, relationFeatureIdField):
         '''builld the subset string to be applied as filter on the layer'''
         subsetString = "\"" + relationFeatureIdField + "\" = "
         return subsetString
 
-    def setSubsetString(self,  subsetString = None):
+    def setSubsetString(self, subsetString = None):
         if not subsetString:
             subsetString = self.buildSubsetString(self.relationFeatureIdField)
 
@@ -218,9 +232,10 @@ class DdManyToManyAttribute(DdAttribute):
 
 class DdTableAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a relationTable'''
-    def __init__(self,  relationTable, comment ,  label,   \
-                 relationFeatureIdField,  attributes,  maxRows,  showParents,  pkAttName):
-        DdManyToManyAttribute.__init__(self,  relationTable,  "table",  relationFeatureIdField,  comment,  label)
+    def __init__(self, relationTable, comment, label, relationFeatureIdField,
+            attributes, maxRows, showParents, pkAttName, enableWidget = True):
+        DdManyToManyAttribute.__init__(self, relationTable, "table",
+            relationFeatureIdField, comment, label, enableWidget)
 
         self.attributes = attributes # an array with DdAttributes
         self.pkAttName = pkAttName
@@ -228,7 +243,7 @@ class DdTableAttribute(DdManyToManyAttribute):
         for anAtt in self.attributes:
 
             #if relationTable.tableName == "auslegungsStartDatum":
-                #QtGui.QMessageBox.information(None, "",  anAtt.name + " " + self.relationFeatureIdField)
+                #QtGui.QMessageBox.information(None, "", anAtt.name + " " + self.relationFeatureIdField)
             if anAtt.name == self.relationFeatureIdField:
                 self.attributes.remove(anAtt)
                 break
@@ -239,9 +254,12 @@ class DdTableAttribute(DdManyToManyAttribute):
 class DdN2mAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a n2m relation, subtype can be list or tree
     relationTable and relatedTable are DdTable objects'''
-    def __init__(self,  relationTable,  relatedTable,  subType,  comment ,  label,   \
-                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = []):
-        DdManyToManyAttribute.__init__(self,  relationTable,  "n2m",  relationFeatureIdField,  comment,  label)
+    def __init__(self, relationTable, relatedTable, subType, comment , label,
+            relationFeatureIdField, relationRelatedIdField, relatedIdField,
+            relatedDisplayField, fieldList = [], relatedForeignKeys = [],
+            enableWidget = True):
+        DdManyToManyAttribute.__init__(self, relationTable, "n2m",
+            relationFeatureIdField, comment, label, enableWidget)
 
         self.subType = subType
         self.relatedTable = relatedTable
@@ -258,8 +276,8 @@ class DdN2mAttribute(DdManyToManyAttribute):
     def __str__(self):
         return "<ddattribute.DdN2mAttribute %s>" % str(self.name)
 
-    def buildDisplayStatement(self,  relationSchema,  relationTable, relatedSchema,  relatedTable,  relationFeatureIdField, \
-                              relatedIdField,  relatedDisplayField,  relationRelatedIdField,  fieldList):
+    def buildDisplayStatement(self, relationSchema, relationTable, relatedSchema, relatedTable, relationFeatureIdField, \
+                              relatedIdField, relatedDisplayField, relationRelatedIdField, fieldList):
 
         displayStatement ="SELECT disp.\"" + relatedIdField + "\", disp.\"" + relatedDisplayField + "\","
         displayStatement += " CASE COALESCE(lnk.\"" + relationFeatureIdField + "\", 0) WHEN 0 THEN 0 ELSE 2 END as checked"
@@ -301,7 +319,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
         #QtGui.QMessageBox.information(None, "displayStatement", displayStatement)
         return displayStatement
 
-    def buildInsertStatement(self,  relationSchema,  relationTable,  relationFeatureIdField,  relationRelatedIdField,  fieldList):
+    def buildInsertStatement(self, relationSchema, relationTable, relationFeatureIdField, relationRelatedIdField, fieldList):
         # INSERT INTO "alchemy"."polygon_has_eigenschaft"("polygon_gid", "eigenschaft_id") VALUES (:featureId, :itemId)
         insertStatement = "INSERT INTO \"" + relationSchema + "\".\"" + relationTable + "\""
         insertStatement += "(\"" + relationFeatureIdField + "\", \"" + relationRelatedIdField + "\")"
@@ -309,52 +327,59 @@ class DdN2mAttribute(DdManyToManyAttribute):
 
         return insertStatement
 
-    def buildDeleteStatement(self,  relationSchema,  relationTable, relationFeatureIdField):
+    def buildDeleteStatement(self, relationSchema, relationTable, relationFeatureIdField):
         # DELETE FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId
         deleteStatement = "DELETE FROM \"" + relationSchema + "\".\"" + relationTable + "\""
         deleteStatement += " WHERE \"" + relationFeatureIdField + "\" = :featureId"
 
         return deleteStatement
 
-    def setDisplayStatement(self,  displayStatement = None):
+    def setDisplayStatement(self, displayStatement = None):
         if not displayStatement:
-            displayStatement = self.buildDisplayStatement(self.table.schemaName,  self.table.tableName, self.relatedTable.schemaName,  \
-                                                          self.relatedTable.tableName, self.relationFeatureIdField, self.relatedIdField,  self.relatedDisplayField,  \
-                                                          self.relationRelatedIdField,  self.fieldList)
+            displayStatement = self.buildDisplayStatement(self.table.schemaName, self.table.tableName, self.relatedTable.schemaName, \
+                                                          self.relatedTable.tableName, self.relationFeatureIdField, self.relatedIdField, self.relatedDisplayField, \
+                                                          self.relationRelatedIdField, self.fieldList)
 
         self.displayStatement = displayStatement
 
-    def setInsertStatement(self,  insertStatement = None):
+    def setInsertStatement(self, insertStatement = None):
         if not insertStatement:
-            insertStatement = self.buildInsertStatement(self.table.schemaName,  self.table.tableName, self.relationFeatureIdField, self.relationRelatedIdField,  self.fieldList)
+            insertStatement = self.buildInsertStatement(self.table.schemaName, self.table.tableName, self.relationFeatureIdField, self.relationRelatedIdField, self.fieldList)
 
         self.insertStatement = insertStatement
 
-    def setDeleteStatement(self,  deleteStatement = None):
+    def setDeleteStatement(self, deleteStatement = None):
         if not deleteStatement:
-            deleteStatement = self.buildDeleteStatement(self.table.schemaName,  self.table.tableName, self.relationFeatureIdField)
+            deleteStatement = self.buildDeleteStatement(self.table.schemaName, self.table.tableName, self.relationFeatureIdField)
 
         self.deleteStatement = deleteStatement
 
 class DdPushButtonAttribute(DdAttribute):
     '''a DdAttribute that draws a pushButton in the mask.
     the button must be implemented as subclass of dduserclass.DdPushButton'''
-    def __init__(self,  comment ,  label):
-        DdAttribute.__init__(self,  None,  "pushButton",  False,  "",  comment,  label)
+    def __init__(self, comment , label, enableWidget = True):
+        DdAttribute.__init__(self, None, "pushButton", False, "", comment,
+            label, enableWidget = enableWidget)
         pass
 
     def __str__(self):
         return "<ddattribute.DdPushButtonAttribute %s>" % self.name
 
-class DdCheckableTableAttribute(DdN2mAttribute,  DdTableAttribute):
-    def __init__(self,  relationTable,  relatedTable,  comment ,  label,   \
-                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  attributes,
-                 catalogTable = None,  relatedCatalogIdField = None,  catalogIdField = None,
-                 catalogDisplayField = None,  catalogLabel = None):
-        DdN2mAttribute.__init__(self,  relationTable,  relatedTable,  "default",  comment ,  label,   \
-                 relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList = [],  relatedForeignKeys = [])
-        DdTableAttribute.__init__(self,  relationTable, comment ,  label,   \
-                 relationFeatureIdField,  attributes,  maxRows = None,  showParents = False,  pkAttName = None)
+class DdCheckableTableAttribute(DdN2mAttribute, DdTableAttribute):
+    def __init__(self, relationTable, relatedTable, comment, label,
+            relationFeatureIdField, relationRelatedIdField,
+            relatedIdField, relatedDisplayField, attributes,
+            catalogTable = None, relatedCatalogIdField = None,
+            catalogIdField = None, catalogDisplayField = None,
+            catalogLabel = None, enableWidget = True):
+        DdN2mAttribute.__init__(self, relationTable, relatedTable,
+            "default", comment, label, relationFeatureIdField,
+            relationRelatedIdField, relatedIdField, relatedDisplayField,
+            fieldList = [], relatedForeignKeys = [],
+            enableWidget = enableWidget)
+        DdTableAttribute.__init__(self, relationTable, comment, label,
+            relationFeatureIdField, attributes, maxRows = None,
+            showParents = False, pkAttName = None)
 
         self.type = "checkableTable"
         self.catalogTable = catalogTable

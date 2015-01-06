@@ -117,8 +117,8 @@ class DataDrivenUi(object):
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
 
-    def configureLayer(self,  ddTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
-        db,  createAction,  helpText):
+    def configureLayer(self, ddTable, skip, labels, fieldOrder, fieldGroups,
+            minMax, noSearchFields, db, createAction, helpText, fieldDisable):
         '''read configuration from db'''
 
         #check if config tables exist in db
@@ -136,7 +136,8 @@ class DataDrivenUi(object):
                 \"field_skip\", \
                 \"field_search\", \
                 \"field_min\", \
-                \"field_max\" \
+                \"field_max\", \
+                \"field_enabled\" \
             FROM \"public\".\"dd_table\" t \
                 LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
                 LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
@@ -165,6 +166,7 @@ class DataDrivenUi(object):
                     fieldSearch =  query.value(7)
                     fieldMin = query.value(8)
                     fieldMax = query.value(9)
+                    fieldEnable = query.value(10)
 
                     if tabAlias != lastTab and not fieldSkip:
                         if tabAlias != "":
@@ -184,24 +186,33 @@ class DataDrivenUi(object):
 
                     if fieldMin != None or fieldMax != None:
                         minMax[fieldName] = [fieldMin,  fieldMax]
+
+                    if fieldEnable == False:
+                        if fieldDisable.count(fieldName) == 0:
+                            fieldDisable.append(fieldName)
             else:
                 DbError(query)
 
             query.finish()
 
-        return [skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText]
+        return [skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields,
+            createAction, helpText, fieldDisable]
 
-    def __createForms(self,  thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax, noSearchFields, \
-                      showParents,  showChildren,  readConfigTables,  createAction):
+    def __createForms(self, thisTable, db, skip, labels, fieldOrder,
+            fieldGroups, minMax, noSearchFields, showParents,
+            showChildren, readConfigTables, createAction, fieldDisable):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
         ddSearchForms = []
-        ddAttributes = self.getAttributes(thisTable, db,  labels,  minMax) # do not pass skip here otherwise pk fields might not be included
+        ddAttributes = self.getAttributes(
+            thisTable, db, labels, minMax, fieldDisable = fieldDisable)
+        # do not pass skip here otherwise pk fields might not be included
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
-                n2mAttributes = self.getN2mAttributes(db,  thisTable,  anAtt.name,  anAtt.num,  labels,  showChildren,  skip)
+                n2mAttributes = self.getN2mAttributes(db, thisTable, anAtt.name,
+                    anAtt.num, labels, showChildren, skip, fieldDisable)
                 ddAttributes = ddAttributes + n2mAttributes
 
         #check if we need a QToolBox
@@ -361,18 +372,23 @@ class DataDrivenUi(object):
 
     def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  \
         noSearchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True,  \
-        helpText = "",  createAction = True,  readConfigTables = False):
+        helpText = "",  createAction = True,  readConfigTables = False, fieldDisable = []):
         '''creates default uis for this table (DdTable instance)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
         see ddmanager.initLayer for other parameters
         '''
 
         if readConfigTables:
-            skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  createAction,  helpText = \
-                        self.configureLayer(thisTable,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  db,  createAction,  helpText)
+            skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields, \
+            createAction, helpText, fieldDisable = self.configureLayer( \
+                thisTable, skip, labels, fieldOrder, fieldGroups, minMax, \
+                noSearchFields, db, createAction, \
+                helpText, fieldDisable)
 
-        forms,  searchForms = self.__createForms(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  noSearchFields,  \
-                                                 showParents,  showChildren,  readConfigTables,  createAction)
+        forms, searchForms = self.__createForms(
+            thisTable, db, skip, labels, fieldOrder, fieldGroups,
+            minMax, noSearchFields, showParents, showChildren,
+            readConfigTables, createAction, fieldDisable)
 
         if  inputMask:
             ui = DdDialogWidget()
@@ -472,7 +488,8 @@ class DataDrivenUi(object):
 
         return parents
 
-    def getN2mAttributes(self,  db,  thisTable,  attName,  attNum,  labels,  showChildren,  skip = []):
+    def getN2mAttributes(self, db, thisTable, attName, attNum, labels,
+            showChildren, skip = [], fieldDisable = []):
         '''find those tables (n2mtable) where our pk is a fk'''
 
         n2mAttributes = []
@@ -635,19 +652,27 @@ class DataDrivenUi(object):
                 except KeyError:
                     attLabel = None
 
+                attEnableWidget = fieldDisable.count(attName) == 0
+
                 if subType == "table":
-                    configList =  self.configureLayer(ddRelationTable,  [],  {},  [],  {},  {},  [],  db,  True,  "")
+                    configList =  self.configureLayer(
+                        ddRelationTable, [], {}, [], {}, {}, [], db, True, "", [])
                     skipThese = configList[0]
                     rLabels = configList[1]
                     rMinMax = configList[4]
-                    attributes = self.getAttributes(ddRelationTable,  db,  rLabels,  rMinMax,  skipThese)
-                    ddAtt = DdTableAttribute(ddRelationTable,  relationComment,  attLabel, relationFeatureIdField,  attributes,  maxRows,  showParents,  attName)
+                    attributes = self.getAttributes(
+                        ddRelationTable, db, rLabels, rMinMax, skipThese)
+                    ddAtt = DdTableAttribute(
+                        ddRelationTable, relationComment, attLabel, relationFeatureIdField,
+                        attributes, maxRows, showParents, attName, attEnableWidget)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
 
-                    ddAtt = DdN2mAttribute(ddRelationTable,  ddRelatedTable,  \
-                                       subType,  relationComment,  attLabel,  \
-                                       relationFeatureIdField, relationRelatedIdField,  relatedIdField,  relatedDisplayField,  fieldList,  relatedForeignKeys)
+                    ddAtt = DdN2mAttribute(
+                        ddRelationTable, ddRelatedTable, subType, relationComment,
+                        attLabel, relationFeatureIdField, relationRelatedIdField,
+                        relatedIdField, relatedDisplayField, fieldList, relatedForeignKeys,
+                        attEnableWidget)
 
                 try:
                     skip.index(ddAtt.name)
@@ -664,7 +689,7 @@ class DataDrivenUi(object):
 
         return n2mAttributes
 
-    def getAttributes(self,  thisTable, db,  labels,  minMax,  skip = []):
+    def getAttributes(self, thisTable, db, labels, minMax, skip = [], fieldDisable = []):
         ''' query the DB and create DdAttributes'''
 
         ddAttributes = []
@@ -709,6 +734,7 @@ class DataDrivenUi(object):
 
                     attConstraint = query.value(9)
                     constrainedAttNums = query.value(10)
+                    attEnableWidget = fieldDisable.count(attName) == 0
                     isPK = attConstraint == "p" # PrimaryKey
 
                     if isPK:
@@ -740,7 +766,10 @@ class DataDrivenUi(object):
                                 if not fkComment == "":
                                     attComment = attComment + "\n(" + fkComment + ")"
 
-                            ddAtt = DdFkLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK, attDefault,  attHasDefault,  fk[1],  attLabel)
+                            ddAtt = DdFkLayerAttribute(
+                                thisTable, attTyp, attNotNull, attName, attComment,
+                                attNum, isPK, attDefault, attHasDefault, fk[1], attLabel,
+                                attEnableWidget)
                             normalAtt = False
                         except KeyError:
                             # no fk defined
@@ -765,11 +794,15 @@ class DataDrivenUi(object):
                             thisMax = thisMinMax[1]
 
                         if attTyp == "date":
-                            ddAtt = DdDateLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK,
-                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel, thisMin,  thisMax)
+                            ddAtt = DdDateLayerAttribute(
+                                thisTable, attTyp, attNotNull, attName, attComment, attNum,
+                                isPK, False, attDefault, attHasDefault, attLength, attLabel,
+                                thisMin, thisMax, enableWidget = attEnableWidget)
                         else:
-                            ddAtt = DdLayerAttribute(thisTable,  attTyp,  attNotNull,  attName,  attComment,  attNum,  isPK,
-                                                     False,  attDefault,  attHasDefault,  attLength,  attLabel, thisMin,  thisMax)
+                            ddAtt = DdLayerAttribute(
+                                thisTable, attTyp, attNotNull, attName, attComment, attNum,
+                                isPK, False, attDefault, attHasDefault, attLength, attLabel,
+                                thisMin, thisMax, attEnableWidget)
 
                     ddAttributes.append(ddAtt)
 
@@ -1229,9 +1262,10 @@ class DdFormWidget(DdWidget):
                 anInputWidget.initialize(self.layer,  self.feature,  db)
 
                 if enableAll:
-                    anInputWidget.setEnabled(True)
+                    anInputWidget.enableAccordingToDdAttribute()
                 else: # enable only n2m widgets to make them scrollable
-                    anInputWidget.setEnabled(isinstance(anInputWidget,  DdN2mWidget))
+                    if isinstance(anInputWidget,  DdN2mWidget):
+                        anInputWidget.enableAccordingToDdAttribute()
 
             if not self.feature:
                 self.parent.setEnabled(False)
@@ -1358,6 +1392,7 @@ class DdInputWidget(DdWidget):
 
     def setEnabled(self,  enable):
         '''enable the inputWidget'''
+
         if self.inputWidget != None:
             self.inputWidget.setEnabled(enable)
 
@@ -1399,6 +1434,9 @@ class DdInputWidget(DdWidget):
 
         else:
             DbError(query)
+
+    def enableAccordingToDdAttribute(self):
+        self.setEnabled(self.attribute.enableWidget)
 
 class DdLineEdit(DdInputWidget):
     '''abstract class for all Input Widgets that can be represented in one line,
@@ -1867,7 +1905,11 @@ class DdLineEdit(DdInputWidget):
     #slots
     def chkStateChanged(self,  newState):
         '''slot: disables the input widget if the null checkbox is checked and vice versa'''
-        self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+        if self.searchMode:
+            self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+        else:
+            self.inputWidget.setEnabled(
+                newState == QtCore.Qt.Unchecked and self.attribute.enableWidget)
 
         if self.betweenWidget != None:
             if self.betweenWidget.isVisible():

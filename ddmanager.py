@@ -109,7 +109,7 @@ class DdManager(object):
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
-        inputUi = None,  searchUi = None,  helpText = ""):
+        inputUi = None,  searchUi = None,  helpText = "", fieldDisable = []):
         '''api method initLayer: initialize this layer with a data-driven input mask.
         In case there is configuration for this layer in the database read this
         configuration and apply what is provided there.
@@ -133,7 +133,8 @@ class DdManager(object):
         - searchMask [Boolean]: create a data-search mask
         - inputUi [ddui.DdDialogWidget]: apply this inputUi
         - searchUi [ddui.DdDialogWidget]: apply this as search ui
-        - helpText [string] help text for this mask, may be html formatted'''
+        - helpText [string] help text for this mask, may be html formatted
+        - fieldDisable [array[string]]: field names whose DdInputWidget shall be disabled in the inputMask'''
 
         thisSize = None # stores the size of the DdDialog
         root = ET.Element('DdSearch')
@@ -176,9 +177,10 @@ class DdManager(object):
 
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
-                    autoInputUi,  autoSearchUi = ddui.createUi(thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
-                                                  noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText,  createAction,  \
-                                                  readConfigTables = readConfigTables)
+                    autoInputUi,  autoSearchUi = ddui.createUi(
+                        thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
+                        noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText,  createAction,  \
+                        readConfigTables = readConfigTables, fieldDisable = fieldDisable)
 
                     if inputUi == None:
                         # use the automatically created mask if none has been provided
@@ -522,6 +524,18 @@ class DdManager(object):
                 retValue = True
 
         return retValue
+
+    def enableInputWidget(self, layer, attributeName, doEnable):
+        '''api method to enable a DdWidget, i.e. set its Ddattribute
+        to enableWidget'''
+
+        inputWidget = self.getInputWidget(layer, attributeName)
+
+        if inputWidget == None:
+            return False
+        else:
+            inputWidget.attribute.enableWidget = doEnable
+
 
     def getDbForLayer(self,  layer):
         return self.__createDb(layer)
@@ -931,6 +945,67 @@ class DdManager(object):
             else:
                 return False
 
+        changeToVersion090 = False
+
+        sQuery = "SELECT \"field_enabled\" FROM \"public\".\"dd_field\";"
+
+        query = QtSql.QSqlQuery(db)
+        query.exec_(sQuery)
+
+        if not query.isActive():
+            changeToVersion090 = True
+
+        query.finish()
+
+        if changeToVersion090:
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" \
+                ADD COLUMN field_enabled boolean;"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "UPDATE \"public\".\"dd_field\" \
+                SET field_enabled = true;"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" \
+                ALTER COLUMN field_enabled SET NOT NULL;"
+
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" \
+                ALTER COLUMN field_enabled SET DEFAULT true;"
+
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "COMMENT ON COLUMN \"public\".\"dd_field\".\"field_enabled\" \
+                IS \'Enable or disable this field in the input mask\';"
+
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
         return True
 
     def createConfigTables(self,  db):
@@ -982,6 +1057,7 @@ class DdManager(object):
             \"field_order\" INTEGER NOT NULL DEFAULT 0,\
             \"field_min\" VARCHAR(32) NULL,\
             \"field_max\" VARCHAR(32) NULL,\
+            \"field_enabled\" BOOLEAN NOT NULL DEFAULT \'t\',\
             PRIMARY KEY (\"id\"),\
             CONSTRAINT \"fk_dd_field_dd_tab\"\
                 FOREIGN KEY (\"dd_tab_id\")\
@@ -999,6 +1075,7 @@ class DdManager(object):
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_order\" IS \'order of the fields in the mask\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the min date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_enabled\" IS \'Enable or disable this field in the input mask\';\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"
