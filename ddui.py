@@ -3139,6 +3139,9 @@ class DdN2mTableWidget(DdN2mWidget):
                                                 aValue = values[lookupValue]
                                             except KeyError:
                                                 aValue = textValue
+
+                                            if not isinstance(aValue, unicode):
+                                                aValue = str(aValue)
                                         else:
                                             aValue = textValue
 
