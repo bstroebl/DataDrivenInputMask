@@ -77,7 +77,7 @@ class DataDrivenInputMask:
         """Add menu and menu items."""
 
         self.action = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Initialize Layer",
-                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
         self.action.setObjectName("DdInitializeLayer")
         # connect the action to the run method
@@ -85,24 +85,24 @@ class DataDrivenInputMask:
 
         # Add toolbar button and menu item
         self.menuLabel = QtGui.QApplication.translate("DdLabel", "&Data-driven Input Mask",
-                                                                 None, QtGui.QApplication.UnicodeUTF8)
+            None, QtGui.QApplication.UnicodeUTF8)
 
         self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
-                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
         self.actionSel.setObjectName("DdShowInputForm")
         # connect the action to the run method
         self.actionSel.triggered.connect(self.showInputForm)
 
         self.actionSearch = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Search Form",
-                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
         self.actionSearch.setObjectName("DdShowSearchForm")
         # connect the action to the run method
         self.actionSearch.triggered.connect(self.showSearchForm)
 
         self.actionConfigure = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Configure Mask",
-                                                                 None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
         self.actionConfigure.setObjectName("DdConfigureMask")
         # connect the action to the run method
@@ -190,15 +190,34 @@ class DataDrivenInputMask:
                 fieldDisable = []) # set the defaults here because somehow some of the values persist
 
     def showInputForm(self):
-        """SLOT: Show the mask for the first selected feature in the active layer"""
+        """SLOT: Show the mask for the selected features in the active layer"""
         layer = self.iface.activeLayer()
 
         if self.isSuitableLayer(layer):
             sel = layer.selectedFeatures()
 
             if len(sel) > 0:
-                feature = sel[0]
-                self.app.ddManager.showFeatureForm(layer,  feature)
+                counter = 0
+                doAskUser = True
+
+                for feature in sel:
+                    if counter > 0 and doAskUser:
+                        reply = QtGui.QMessageBox.question(None,
+                            str(len(sel)) + " " + \
+                            QtGui.QApplication.translate("DdInfo",
+                            "features selected"),
+                            str(len(sel) - counter) + " " + \
+                            QtGui.QApplication.translate("DdInfo",
+                            "features to go. Show next?"),
+                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.Cancel)
+
+                        if reply == QtGui.QMessageBox.Cancel:
+                            break
+                        elif reply == QtGui.QMessageBox.YesToAll:
+                            doAskUser = False
+
+                    self.app.ddManager.showFeatureForm(layer, feature)
+                    counter += 1
             else:
                 DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
                     QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
