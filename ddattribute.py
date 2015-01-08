@@ -302,7 +302,11 @@ class DdN2mAttribute(DdManyToManyAttribute):
                 displayStatement += ", \'" + displayFieldName + ": \' || fk_" + aKey + ".value"
 
         displayStatement += " FROM \"" + relatedSchema + "\".\"" + relatedTable + "\" disp"
-        displayStatement += " LEFT JOIN (SELECT * FROM \"" + relationSchema + "\".\"" + relationTable + "\""
+
+        if self.enableWidget:
+            displayStatement += " LEFT"
+
+        displayStatement += " JOIN (SELECT * FROM \"" + relationSchema + "\".\"" + relationTable + "\""
         displayStatement += " WHERE \"" + relationFeatureIdField + "\" = :featureId) lnk"
         displayStatement += " ON disp.\"" + relatedIdField + "\" = lnk.\"" + relationRelatedIdField + "\""
 
