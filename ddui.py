@@ -137,7 +137,7 @@ class DataDrivenUi(object):
                 \"field_search\", \
                 \"field_min\", \
                 \"field_max\", \
-                \"field_enabled\" \
+                COALESCE(\"field_enabled\",true)::varchar \
             FROM \"public\".\"dd_table\" t \
                 LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
                 LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
@@ -187,7 +187,7 @@ class DataDrivenUi(object):
                     if fieldMin != None or fieldMax != None:
                         minMax[fieldName] = [fieldMin,  fieldMax]
 
-                    if fieldEnable == False:
+                    if fieldEnable == "false":
                         if fieldDisable.count(fieldName) == 0:
                             fieldDisable.append(fieldName)
             else:
@@ -347,8 +347,8 @@ class DataDrivenUi(object):
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
                 if readConfigTables:
-                    pSkip,  pLabels,  pFieldOrder,  pFieldGroups,  pMinMax,  pNoSearchFields,  pCreateAction,  pHelpText = \
-                        self.configureLayer(aParent,  [],  {},  [],  {},  {},  [],  db,  createAction,  "")
+                    pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax, pNoSearchFields, pCreateAction, pHelpText, pFieldDisable = \
+                        self.configureLayer(aParent, [], {}, [], {}, {}, [], db, createAction, "", [])
 
                     if pSkip == []:
                         pSkip = skip
@@ -362,9 +362,13 @@ class DataDrivenUi(object):
                         pMinMax = minMax
                     if pNoSearchFields == []:
                         pNoSearchFields = noSearchFields
+                    if pFieldDisable == []:
+                        pFieldDisable = fieldDisable
 
-                parentForms,  parentSearchForms = self.__createForms(aParent,  db,  pSkip,  pLabels,  pFieldOrder,  pFieldGroups,  \
-                                                                     pMinMax,  pNoSearchFields, showParents,  False,  readConfigTables,  pCreateAction)
+                parentForms, parentSearchForms = self.__createForms(aParent, db,
+                    pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax,
+                    pNoSearchFields, showParents, False, readConfigTables,
+                    pCreateAction, pFieldDisable)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
@@ -652,7 +656,7 @@ class DataDrivenUi(object):
                 except KeyError:
                     attLabel = None
 
-                attEnableWidget = fieldDisable.count(attName) == 0
+                attEnableWidget = fieldDisable.count(ddRelationTable.tableName) == 0
 
                 if subType == "table":
                     configList =  self.configureLayer(

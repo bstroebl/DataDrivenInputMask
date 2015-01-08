@@ -183,9 +183,11 @@ class DataDrivenInputMask:
         layer = self.iface.activeLayer()
 
         if self.isSuitableLayer(layer):
-            self.app.ddManager.initLayer(layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
-        showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
-        inputUi = None,  searchUi = None,  helpText = "") # set the defaults here because somehow some of the values persist
+            self.app.ddManager.initLayer(layer, skip = [], labels = {},
+                fieldOrder = [], fieldGroups = {}, minMax = {}, noSearchFields = [],
+                showParents = True, createAction = True, db = None, inputMask = True,
+                searchMask = True, inputUi = None, searchUi = None, helpText = "",
+                fieldDisable = []) # set the defaults here because somehow some of the values persist
 
     def showInputForm(self):
         """SLOT: Show the mask for the first selected feature in the active layer"""
@@ -199,7 +201,7 @@ class DataDrivenInputMask:
                 self.app.ddManager.showFeatureForm(layer,  feature)
             else:
                 DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
+                    QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
 
     def showSearchForm(self):
         """SLOT: Show the search form for the active layer"""
