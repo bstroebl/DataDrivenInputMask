@@ -1007,6 +1007,20 @@ class DdDialogWidget(DdWidget):
         self.mainTab = QtGui.QTabWidget(self.scrollAreaWidgetContents)
         self.mainTab.setObjectName("mainTab")
 
+        # remove forms without widgets (e.g. if the form only has one widget
+        # and this widget is no search widget but an input widget the form
+        # is not shown in the search dialog
+        formsToKeep = []
+
+        while len(self.forms) > 0:
+            aForm = self.forms.pop()
+
+            if len(aForm.inputWidgets) > 0:
+                formsToKeep.append(aForm)
+
+        self.forms = formsToKeep
+        self.forms.reverse()
+
         for i in range(len(self.forms)):
             aTab = QtGui.QWidget(self.mainTab)
             aTab.setObjectName("tab" + str(i))
