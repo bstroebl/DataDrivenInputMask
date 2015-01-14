@@ -25,10 +25,18 @@ Class that steers the DataDrivenUI
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore,  QtGui,  QtSql
+from PyQt4 import QtCore, QtGui
+from dderror import DdError,  DbError
+
+try:
+    from PyQt4 import QtSql
+except:
+    DdError(QtGui.QApplication.translate(
+        "DdError", "QtSql cannot be located on your system. Please install and try again.",
+        None, QtGui.QApplication.UnicodeUTF8), fatal = True)
 from qgis.core import *
 from qgis.gui import *
-from dderror import DdError,  DbError
+
 from ddui import DataDrivenUi
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
