@@ -310,19 +310,34 @@ class DataDrivenUi(object):
                     ddInputWidget = DdComboBox(anAttribute)
                 else:
                     if anAttribute.isTypeFloat():
-                        ddInputWidget = DdLineEditDouble(anAttribute)
+                        if anAttribute.isArray:
+                            ddInputWidget = DdArrayTableWidgetDouble(anAttribute)
+                        else:
+                            ddInputWidget = DdLineEditDouble(anAttribute)
                     elif anAttribute.isTypeInt():
-                        ddInputWidget = DdLineEditInt(anAttribute)
+                        if anAttribute.isArray:
+                            ddInputWidget = DdArrayTableWidgetInt(anAttribute)
+                        else:
+                            ddInputWidget = DdLineEditInt(anAttribute)
                     else:
                         if anAttribute.type == "bool":
-                            ddInputWidget = DdCheckBox(anAttribute)
-                        elif anAttribute.type == "date":
-                            ddInputWidget = DdDateEdit(anAttribute)
-                        else:
-                            if anAttribute.type == "varchar" and anAttribute.length > 256:
-                                ddInputWidget = DdTextEdit(anAttribute)
+                            if anAttribute.isArray:
+                                ddInputWidget = DdArrayTableWidgetBool(anAttribute)
                             else:
-                                ddInputWidget = DdLineEdit(anAttribute)
+                                ddInputWidget = DdCheckBox(anAttribute)
+                        elif anAttribute.type == "date":
+                            if anAttribute.isArray:
+                                ddInputWidget = DdArrayTableWidgetDate(anAttribute)
+                            else:
+                                ddInputWidget = DdDateEdit(anAttribute)
+                        else:
+                            if anAttribute.isArray:
+                                ddInputWidget = DdArrayTableWidget(anAttribute)
+                            else:
+                                if anAttribute.type == "varchar" and anAttribute.length > 256:
+                                    ddInputWidget = DdTextEdit(anAttribute)
+                                else:
+                                    ddInputWidget = DdLineEdit(anAttribute)
 
             if ddFormWidget == None:
                 # fallback in case fieldOrder and fieldGroups do not match
@@ -732,52 +747,60 @@ class DataDrivenUi(object):
                     attTyp = query.value(6)
                     attComment = query.value(7)
                     attDefault = query.value(8)
+                    attConstraint = query.value(9)
+                    constrainedAttNums = query.value(10)
+                    attCategory = query.value(11)
+                    arrayDelim = query.value(12)
+
+                    attTyp = attTyp.replace("_", "") # if array type is e.g. _varchar
 
                     if not self.isSupportedType(attTyp):
                         continue
 
-                    attConstraint = query.value(9)
-                    constrainedAttNums = query.value(10)
                     attEnableWidget = fieldDisable.count(attName) == 0
                     isPK = attConstraint == "p" # PrimaryKey
+                    isArray = attCategory == "A"
 
-                    if isPK:
-                        constrainedAttNums = constrainedAttNums.replace("{",  "").replace("}",  "").split(",")
-                    else:
-                        constrainedAttNums = []
-
-                    if isPK and len(constrainedAttNums) == 1:
-                        # if table has a single PK we do not care if it is a FK, too because we
-                        # do not treat a parent in a 1:1 relation as lookup table
+                    if isArray:
                         normalAtt = True
                     else:
-                        try: # is this attribute a FK
-                            fk = foreignKeys[attName]
+                        if isPK:
+                            constrainedAttNums = constrainedAttNums.replace("{",  "").replace("}",  "").split(",")
+                        else:
+                            constrainedAttNums = []
 
-                            try:
-                                attLabel = labels[str(attName)]
-                            except KeyError:
-                                attLabel = attName + " (" + fk[2] + ")"
-
-                            try:
-                                fkComment = fk[3]
-                            except IndexError:
-                                fkComment = ""
-
-                            if attComment == "":
-                                attComment = fkComment
-                            else:
-                                if not fkComment == "":
-                                    attComment = attComment + "\n(" + fkComment + ")"
-
-                            ddAtt = DdFkLayerAttribute(
-                                thisTable, attTyp, attNotNull, attName, attComment,
-                                attNum, isPK, attDefault, attHasDefault, fk[1], attLabel,
-                                attEnableWidget)
-                            normalAtt = False
-                        except KeyError:
-                            # no fk defined
+                        if isPK and len(constrainedAttNums) == 1:
+                            # if table has a single PK we do not care if it is a FK, too because we
+                            # do not treat a parent in a 1:1 relation as lookup table
                             normalAtt = True
+                        else:
+                            try: # is this attribute a FK
+                                fk = foreignKeys[attName]
+
+                                try:
+                                    attLabel = labels[str(attName)]
+                                except KeyError:
+                                    attLabel = attName + " (" + fk[2] + ")"
+
+                                try:
+                                    fkComment = fk[3]
+                                except IndexError:
+                                    fkComment = ""
+
+                                if attComment == "":
+                                    attComment = fkComment
+                                else:
+                                    if not fkComment == "":
+                                        attComment = attComment + "\n(" + fkComment + ")"
+
+                                ddAtt = DdFkLayerAttribute(
+                                    thisTable, attTyp, attNotNull, attName, attComment,
+                                    attNum, isPK, attDefault, attHasDefault, fk[1], attLabel,
+                                    attEnableWidget)
+                                normalAtt = False
+                            except KeyError:
+                                # no fk defined
+                                normalAtt = True
 
                     if normalAtt:
                         try:
@@ -801,12 +824,13 @@ class DataDrivenUi(object):
                             ddAtt = DdDateLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                thisMin, thisMax, enableWidget = attEnableWidget)
+                                thisMin, thisMax, enableWidget = attEnableWidget,
+                                isArray = isArray, arrayDelim = arrayDelim)
                         else:
                             ddAtt = DdLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                thisMin, thisMax, attEnableWidget)
+                                thisMin, thisMax, attEnableWidget, isArray, arrayDelim)
 
                     ddAttributes.append(ddAtt)
 
@@ -914,7 +938,9 @@ class DataDrivenUi(object):
         COALESCE(d.description, '') as comment, \
         COALESCE(ad.adsrc, '') as default, \
         COALESCE(con.contype, '') as contype, \
-        COALESCE(con.conkey, ARRAY[]::smallint[]) as constrained_columns \
+        COALESCE(con.conkey, ARRAY[]::smallint[]) as constrained_columns, \
+        t.typcategory, \
+        t.typdelim \
         FROM pg_attribute att \
         JOIN pg_type t ON att.atttypid = t.oid \
         LEFT JOIN pg_description d ON att.attrelid = d.objoid AND att.attnum = d.objsubid \
@@ -1416,6 +1442,7 @@ class DdInputWidget(DdWidget):
 
     def registerChange(self , thisValue):
         '''slot to be called when user changes the input'''
+
         self.hasChanges = True
 
     def getLabel(self):
@@ -1667,7 +1694,7 @@ class DdLineEdit(DdInputWidget):
                 self.manageChk(thisValue)
                 self.hasChanges = (feature.id() < 0) # register this change only for new feature
 
-    def validate(self,  thisValue,  feature,  showMsg = True):
+    def validate(self, thisValue, layer, feature, showMsg = True):
         '''checks if value is within min/max range (if defined) and returns the value;
         subclasses can manipulate thisValue in order to make it valid input'''
         accepted = True
@@ -1678,8 +1705,12 @@ class DdLineEdit(DdInputWidget):
                 if self.attribute.min != None:
                     if thisValue < self.attribute.min:
                         if showMsg:
-                            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too small! Minimum is ",
-                                None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.min))
+                            QtGui.QMessageBox.warning(
+                                None, self.label.text(),
+                                QtGui.QApplication.translate(
+                                    "DdWarning", "Field value is too small! Minimum is ",
+                                    None, QtGui.QApplication.UnicodeUTF8
+                                ) + self.toString(self.attribute.min))
                             msgShown = True
                         accepted = False
 
@@ -1687,8 +1718,12 @@ class DdLineEdit(DdInputWidget):
                     if self.attribute.max != None:
                         if thisValue > self.attribute.max:
                             if showMsg:
-                                QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field value is too large! Maximum is ",
-                                    None, QtGui.QApplication.UnicodeUTF8) + self.toString(self.attribute.max))
+                                QtGui.QMessageBox.warning(
+                                    None, self.label.text(),
+                                    QtGui.QApplication.translate(
+                                        "DdWarning", "Field value is too large! Maximum is ",
+                                        None, QtGui.QApplication.UnicodeUTF8
+                                    ) + self.toString(self.attribute.max))
                                 msgShown = True
                             accepted = False
             else:
@@ -1702,19 +1737,24 @@ class DdLineEdit(DdInputWidget):
         thisValue = self.getValue()
 
         if self.attribute.notNull and thisValue == None:
-            QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Field must not be empty!", None,
-                                                           QtGui.QApplication.UnicodeUTF8) )
+            QtGui.QMessageBox.warning(None,
+                self.label.text(), QtGui.QApplication.translate(
+                    "DdWarning", "Field must not be empty!", None,
+                    QtGui.QApplication.UnicodeUTF8) )
             return False
         else:
             if self.getFeatureValue(layer,  feature) == thisValue:
                 # not changing a value is always allowed
                 return True
             else:
-                accepted,  msgShown = self.validate(thisValue,  feature)
+                accepted, msgShown = self.validate(thisValue, layer, feature)
 
                 if not accepted and not msgShown:
-                    QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input is not valid! Field type is %s", None,
-                                                           QtGui.QApplication.UnicodeUTF8)  % str(self.attribute.type) )
+                    QtGui.QMessageBox.warning(None,
+                        self.label.text(), QtGui.QApplication.translate(
+                            "DdWarning", "Input is not valid! Field type is %s", None,
+                            QtGui.QApplication.UnicodeUTF8
+                        )  % str(self.attribute.type) )
 
                 return accepted
 
@@ -1726,8 +1766,10 @@ class DdLineEdit(DdInputWidget):
             fieldIndex = self.attribute.num
 
         if fieldIndex == -1:
-            DdError(QtGui.QApplication.translate("DdError", "Field not found in layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name() + "." + self.attribute.name)
+            DdError(QtGui.QApplication.translate(
+                    "DdError", "Field not found in layer: ", None,
+                    QtGui.QApplication.UnicodeUTF8
+                ) + layer.name() + "." + self.attribute.name)
         return fieldIndex
 
     def save(self,  layer,  feature,  db):
@@ -1735,7 +1777,7 @@ class DdLineEdit(DdInputWidget):
         fieldIndex = self.getFieldIndex(layer)
 
         if self.hasChanges:
-            layer.changeAttributeValue(feature.id(),  fieldIndex,  thisValue)
+            layer.changeAttributeValue(feature.id(), fieldIndex, thisValue)
 
         return self.hasChanges
 
@@ -2061,7 +2103,7 @@ class DdLineEditInt(DdLineEdit):
 
         return self.hasChanges
 
-    def validate(self,  thisValue, feature,  showMsg = True):
+    def validate(self, thisValue, layer, feature, showMsg = True):
         accepted = True
         msgShown = False
 
@@ -2096,40 +2138,13 @@ class DdLineEditInt(DdLineEdit):
 
             return [accepted,  msgShown]
 
-    def setValidator(self,  min = None,  max = None):
+    def setValidator(self, min = None, max = None):
         '''sets an appropriate QValidator for the QLineEdit
         if this DdInputWidget's attribute has min/max values validator is set to them
         A Python2 int covers PostgreSQL's int2, int4 and int8
         Upon initialization setValidator is called with the current value as min and max'''
 
-        thisMin = self.attribute.min
-        # integer attributes always have a min and max corresponding to the min/max values of the pg data type
-
-        if min != None:
-            if isinstance(min,  int):
-                if min < thisMin:
-                    thisMin = min
-                    # make sure current value is allowed although attribute's min might be different
-
-        thisMax = self.attribute.max
-
-        if max != None:
-            if isinstance(max,  int):
-                if max > thisMax:
-                    thisMax = max
-                    # make sure current value is allowed although attribute's max might be different
-
-        validator = QtGui.QIntValidator(self.inputWidget)
-        loc = QtCore.QLocale.system()
-        loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
-        validator.setLocale(loc)
-
-        if isinstance(thisMin,  int):
-            validator.setBottom(thisMin)
-
-        if isinstance(thisMax,  int):
-            validator.setTop(thisMax)
-
+        validator = ddtools.getIntValidator(self.inputWidget, self.attribute, min, max)
         self.inputWidget.setValidator(validator)
         self.betweenWidget.setValidator(validator)
 
@@ -2220,53 +2235,11 @@ class DdLineEditDouble(DdLineEdit):
         '''sets an appropriate QValidator for the QLineEdit
         if this DdInputWidget's attribute has min/max values validator is set to them'''
 
-        validator = QtGui.QDoubleValidator(self.inputWidget)
-        loc = QtCore.QLocale.system()
-
-        # if locale and database decimal separator differ and a db default has been inserted into
-        # a new feature we run into trouble if not making sure that min and max are floats
-
-        if self.attribute.min != None:
-            thisMin = self.attribute.min
-
-            if min != None:
-                success = True
-
-                try:
-                    min = float(min)
-                except ValueError:
-                    min,  succcess = loc.toFloat(min)
-
-                if success:
-                    if min < thisMin:
-                        thisMin = min
-
-            validator.setBottom(thisMin)
-
-        if self.attribute.max != None:
-            thisMax = self.attribute.max
-
-            if max != None:
-                success = True
-
-                try:
-                    max = float(max)
-                except ValueError:
-                    max,  succcess = loc.toFloat(max)
-
-                if success:
-                    if max > thisMax:
-                        thisMax = max
-
-            validator.setTop(thisMax)
-
-        validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
-        loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
-        validator.setLocale(loc)
+        validator = ddtools.getDoubleValidator(self.inputWidget, self.attribute, min, max)
         self.inputWidget.setValidator(validator)
         self.betweenWidget.setValidator(validator)
 
-    def validate(self,  thisValue, feature,  showMsg = True):
+    def validate(self, thisValue, layer, feature, showMsg = True):
         accepted = True
         msgShown = False
 
@@ -3510,3 +3483,980 @@ class DdN2mTableWidget(DdN2mWidget):
 
             if self.attribute.maxRows:
                 self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+
+class DdArrayTableWidget(DdLineEdit):
+    '''a table widget to show/edit values of an array field'''
+    def __init__(self, attribute):
+        DdLineEdit.__init__(self,  attribute)
+
+    def __str__(self):
+        return "<ddui.DdArrayTableWidget %s>" % str(self.attribute.name)
+
+    def setSizeMax(self,  widget):
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(widget.sizePolicy().hasHeightForWidth())
+        widget.setSizePolicy(sizePolicy)
+
+    def getFeatureValue(self,  layer,  feature):
+        '''returns an array[str] representing the value in this field for this feature;
+        if the value is null, None is returned,
+        if it is a new feature the default is returned.'''
+
+        if feature == None:
+            return None
+
+        fieldIndex = self.getFieldIndex(layer)
+        thisValue = feature[fieldIndex]
+        retValue = None
+
+        if thisValue != None:
+            if self.attribute.isTypeChar():
+                thisValue = thisValue.replace("\"", "")
+                # QGIS adds " if string contains spaces
+                thisValue = thisValue.replace("NULL", "\'\'")
+                thisValue = thisValue.replace("{\'", "").replace("\'}", "")
+                thisValue = thisValue.split("\'" + self.attribute.arrayDelim + "\'")
+            else:
+                thisValue = thisValue.replace("{", "").replace("}", "")
+                thisValue = thisValue.split(self.attribute.arrayDelim)
+
+            retValue = []
+
+            for aValue in thisValue:
+                retValue.append(self.fromString(aValue))
+
+        if feature.id() < 0 and thisValue == None: # new feature
+            if not self.searchMode: # no return value for search feature
+                if self.attribute.hasDefault:
+                    retValue = self.getDefault()
+
+        return retValue
+
+    def setValue(self, thisValue):
+        '''sets thisValue into the input widget'''
+
+        self.inputWidget.setRowCount(0)
+
+        if thisValue != None:
+            for aValue in thisValue:
+                self.appendRow(aValue)
+
+    def extractValues(self):
+        '''
+        extract the values from the cells;
+        implementation for strings
+        '''
+
+        thisValue = []
+
+        for aRow in range(self.inputWidget.rowCount()):
+            nullChk = self.inputWidget.cellWidget(
+                aRow, self.inputWidget.columnCount() - 1)
+
+            if (not self.searchMode) and nullChk.isChecked():
+                thisValue.append(None)
+            else:
+                thisColumn = self.valueColumnIndex
+                thisCellWidget = self.inputWidget.cellWidget(aRow,
+                    thisColumn)
+
+                if thisCellWidget != None:
+                    aValue = self.extractCellWidgetValue(thisCellWidget)
+                    thisValue.append(aValue)
+                else:
+                    aValue = self.inputWidget.item(aRow, thisColumn).text()
+                    thisValue.append(self.fromString(aValue))
+
+        if thisValue == []:
+            thisValue = None
+
+        return thisValue
+
+    def extractCellWidgetValue(self, thisCellWidget):
+        lineEdit = thisCellWidget
+        return self.fromString(lineEdit.text())
+
+    def getValue(self):
+        if self.chk.isChecked():
+            thisValue = None
+        else:
+            thisValue = self.extractValues()
+
+        return thisValue
+
+    def getDefault(self):
+        '''function to strip quotation marks and data type from default string'''
+
+        thisValue = self.attribute.default
+        thisValue = thisValue.replace("ARRAY[", "")
+        thisValue = thisValue[0:len(thisValue)-1] # drop closing ]
+
+        for aType in ["::text", "::character varying"]:
+            if thisValue.find(aType) != -1:
+                thisType = aType
+
+        thisValue = thisValue.replace(thisType, "") # strip type def
+        returnValue = []
+
+        for aValue in thisValue.split(self.attribute.arrayDelim):
+            aValue = aValue.strip()
+
+            if self.attribute.isTypeChar:
+                aValue = aValue.replace("'", "")
+
+            returnValue.append(aValue)
+
+        return returnValue
+
+    def setNull(self, setnull):
+        '''Set this inputWidget to NULL'''
+
+        thisValue = None
+
+        if (not setnull) and (not self.searchMode) and self.attribute.hasDefault:
+            thisValue = self.getDefault()
+
+        self.setValue(thisValue)
+
+    def save(self, layer, feature, db):
+        if self.hasChanges:
+            fieldIndex = self.getFieldIndex(layer)
+            thisValue = self.getValue()
+
+            if thisValue == None:
+                saveValue = None
+            else:
+                saveValue = "{"
+
+                for aValue in thisValue:
+                    if aValue == None:
+                        aValue = "NULL"
+                        # save nulls in order to preserve the number of elements in array
+                    else:
+                        aValue = self.toSqlString(aValue)
+
+                    if saveValue != "{":
+                        saveValue += self.attribute.arrayDelim
+
+                    saveValue += aValue
+
+                saveValue += "}"
+
+                if saveValue == "{}":
+                    saveValue = None
+
+            layer.changeAttributeValue(feature.id(), fieldIndex, saveValue)
+
+        return self.hasChanges
+
+    def createInputWidget(self,  parent):
+        inputWidget = QtGui.QTableWidget(parent)
+        inputWidget.setColumnCount(2)
+        self.valueColumnIndex = 0
+        inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        inputWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        #inputWidget.horizontalHeader().setVisible(False)
+        inputWidget.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
+        inputWidget.setSortingEnabled(True)
+        inputWidget.cellChanged.connect(self.cellChanged)
+        #inputWidget.cellDoubleClicked.connect(self.cellDoubleClicked)
+        inputWidget.itemSelectionChanged.connect(self.selectionChanged)
+        inputWidget.cellClicked.connect(self.cellClicked)
+        inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
+        return [inputWidget,  None]
+
+    def initialize(self, layer, feature, db):
+        if feature == None:
+            self.manageChk(None)
+        else:
+            logicHeader = QtGui.QApplication.translate(
+                "DdInfo", "logical", None,
+                QtGui.QApplication.UnicodeUTF8)
+            operatorHeader = QtGui.QApplication.translate(
+                "DdInfo", "operator", None,
+                QtGui.QApplication.UnicodeUTF8)
+            valueHeader = QtGui.QApplication.translate(
+                "DdInfo", "value", None,
+                QtGui.QApplication.UnicodeUTF8)
+            nullHeader = QtGui.QApplication.translate("DdInfo",
+                "Null", None, QtGui.QApplication.UnicodeUTF8)
+
+            if feature.id() == -3333: # searchFeature
+                self.searchMode = True
+                self.inputWidget.setColumnCount(4)
+                self.inputWidget.hideColumn(3)
+                self.inputWidget.setHorizontalHeaderLabels([
+                    logicHeader, valueHeader, operatorHeader])
+                self.chk.setChecked(True)
+                self.chk.setVisible(True)
+                self.chk.setText(QtGui.QApplication.translate(
+                    "DdInfo", "Ignore", None,
+                    QtGui.QApplication.UnicodeUTF8))
+                self.chk.setToolTip(QtGui.QApplication.translate(
+                    "DdInfo", "Check if you want this field to be ignored in the search.",
+                    None, QtGui.QApplication.UnicodeUTF8))
+                self.valueColumnIndex = 1
+            else:
+                self.searchMode = False
+                self.inputWidget.setHorizontalHeaderLabels(
+                    [valueHeader, nullHeader])
+                thisValue = self.getFeatureValue(layer, feature)
+                self.setValue(thisValue)
+                #self.setValidator(min = thisValue, max = thisValue)
+                # make sure the validator does not kick out an already existing value
+                self.manageChk(thisValue)
+                self.hasChanges = (feature.id() < 0) # register this change only for new feature
+
+    def validate(self, thisValue, layer, feature, showMsg = True):
+        '''
+        checks if values are within min/max range (if defined)
+        '''
+        accepted = True
+        msgShown = False
+        featureValue = self.getFeatureValue(layer, feature)
+
+        if self.hasChanges:
+            if thisValue != None:
+                for i in range(len(thisValue)):
+                    aValue = thisValue[i]
+
+                    try:
+                        fValue = featureValue[i]
+                    except:
+                        fValue = None
+
+                    if aValue != None and aValue != fValue:
+                        if self.attribute.min != None:
+                            if aValue < self.attribute.min:
+                                if showMsg:
+                                    QtGui.QMessageBox.warning(
+                                        None, self.getLabel(),
+                                        QtGui.QApplication.translate(
+                                            "DdWarning", "Value ",
+                                            None, QtGui.QApplication.UnicodeUTF8
+                                        ) + self.toString(aValue) +
+                                        QtGui.QApplication.translate(
+                                            "DdWarning", " is too small! Minimum is ",
+                                            None, QtGui.QApplication.UnicodeUTF8
+                                            ) + self.toString(self.attribute.min))
+                                    msgShown = True
+                                accepted = False
+                                break
+                        if self.attribute.max != None:
+                            if aValue > self.attribute.max:
+                                if showMsg:
+                                    QtGui.QMessageBox.warning(
+                                        None, self.getLabel(),
+                                       QtGui.QApplication.translate(
+                                            "DdWarning", "Value ",
+                                            None, QtGui.QApplication.UnicodeUTF8
+                                        ) + self.toString(aValue) +
+                                        QtGui.QApplication.translate(
+                                            "DdWarning", " is too large! Maximum is ",
+                                            None, QtGui.QApplication.UnicodeUTF8
+                                        ) + self.toString(self.attribute.max))
+                                    msgShown = True
+                                accepted = False
+                                break
+            else:
+                if not self.chk.isChecked() and self.attribute.hasDefault:
+                    thisValue = self.getDefault()
+                    self.setValue(thisValue)
+
+        return [accepted, msgShown]
+
+    def setSearchCombo(self, thisRow, link = None, operator = None):
+        '''sets combo boxes for searching to columns 0 and 1'''
+
+        combo = QtGui.QComboBox()
+        searchItems = ["=",  "!="]
+
+        if self.attribute.isTypeChar():
+            searchItems += ["LIKE",  "ILIKE"]
+        else:
+            if self.attribute.type != "bool":
+                searchItems += [">",  "<",  ">=",  "<="]
+
+        li = []
+
+        for a in ["ANY", "ALL"]:
+            for s in searchItems:
+                li.append (s + " " + a)
+
+        if not self.attribute.notNull:
+            li.append("IS NULL")
+            li.append ("IS NOT NULL")
+
+        combo.addItems(li)
+
+        if operator != None:
+            idx = li.index(operator)
+            combo.setCurrentIndex(idx)
+
+        self.inputWidget.setCellWidget(thisRow, 2, combo)
+
+        if thisRow > 0:
+            li2 = ["AND", "OR"]
+            combo2 = QtGui.QComboBox()
+            combo2.addItems(li2)
+
+            if link != None:
+                idx2 = li2.index(link)
+                combo2.setCurrentIndex(idx2)
+
+            self.inputWidget.setCellWidget(thisRow, 0, combo2)
+
+    def getDefaultItemValue(self):
+        '''returns the default value to be added for new items'''
+        return ""
+
+    def setCellWidget(self, thisRow, aValue):
+        '''replace the QTableWidget item with an appropriate QWidget'''
+        lineEdit = QtGui.QLineEdit(self.inputWidget)
+
+        if aValue == None:
+            lineEdit.setText(self.getDefaultItemValue())
+        else:
+            lineEdit.setText(self.toString(aValue))
+
+        lineEdit.textChanged.connect(self.registerChange)
+        lineEdit.editingFinished.connect(self.focusLost)
+        self.inputWidget.setCellWidget(thisRow,
+            self.valueColumnIndex, lineEdit)
+
+    def setRowValue(self, thisRow, aValue, checkIfNon = True):
+        '''
+        sets this row's value to thisValue;
+        default implementation for strings
+        '''
+
+        if aValue == None:
+            item = QtGui.QTableWidgetItem("")
+        else:
+            item = QtGui.QTableWidgetItem(self.toString(aValue))
+
+        self.inputWidget.setItem(thisRow,
+            self.valueColumnIndex, item)
+
+        nullChk = QtGui.QCheckBox()
+        nullChk.setChecked(aValue == None and checkIfNon)
+        nullChk.stateChanged.connect(self.nullChkStateChanged)
+        self.inputWidget.setCellWidget(thisRow,
+            self.inputWidget.columnCount() - 1, nullChk)
+
+    def fillRow(self, thisRow, aValue, link = None,
+        operator = None, checkIfNone = True):
+        '''fill thisRow with aValue'''
+
+        if self.searchMode:
+            self.setSearchCombo(thisRow, link, operator)
+
+        self.setRowValue(thisRow, aValue, checkIfNone)
+        self.inputWidget.resizeColumnToContents(
+            self.valueColumnIndex)
+
+    def appendRow(self, aValue, link = None, operator = None, checkIfNone = True):
+        '''add a new row to the QTableWidget'''
+
+        thisRow = self.inputWidget.rowCount() # identical with index of row to be appended as row indices are 0 based
+        self.inputWidget.setRowCount(thisRow + 1) # append a row
+        self.fillRow(thisRow, aValue, link, operator, checkIfNone)
+        return thisRow
+
+    def insertRow(self, thisRow, aValue, link = None, operator = None):
+        '''add a new row to the QTableWidget'''
+
+        self.inputWidget.insertRow(thisRow) # append a row
+        self.fillRow(thisRow, aValue, link, operator)
+        return thisRow
+
+    def setupUi(self, parent, db):
+        frame = QtGui.QFrame(parent)
+        frame.setFrameShape(QtGui.QFrame.StyledPanel)
+        frame.setFrameShadow(QtGui.QFrame.Raised)
+        frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
+        label = self.createLabel(frame)
+        inputWidgets = self.createInputWidget(frame)
+        self.inputWidget = inputWidgets[0]
+        self.setSizeMax(frame)
+        self.inputWidget.setToolTip(self.attribute.comment)
+        verticalLayout = QtGui.QVBoxLayout(frame)
+        verticalLayout.setObjectName(
+            "vlayout" + parent.objectName() + self.attribute.name)
+        horizontalLayout = QtGui.QHBoxLayout( )
+        horizontalLayout.setObjectName(
+            "hlayout" + parent.objectName() + self.attribute.name)
+        horizontalLayout.addWidget(label)
+        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding,
+            QtGui.QSizePolicy.Minimum)
+        horizontalLayout.addItem(spacerItem)
+        self.addButton = QtGui.QPushButton(
+            QtGui.QApplication.translate("DdInput", "Add", None,
+            QtGui.QApplication.UnicodeUTF8), frame)
+        self.removeButton = QtGui.QPushButton(
+            QtGui.QApplication.translate("DdInput", "Remove", None,
+            QtGui.QApplication.UnicodeUTF8) ,  frame)
+        self.addButton.clicked.connect(self.add)
+        self.addButton.setEnabled(self.attribute.enableWidget)
+        self.removeButton.clicked.connect(self.remove)
+        self.removeButton.setEnabled(False)
+        horizontalLayout.addWidget(self.addButton)
+        horizontalLayout.addWidget(self.removeButton)
+        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo",
+            "Null", None, QtGui.QApplication.UnicodeUTF8), parent)
+        self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
+        self.chk.setToolTip(QtGui.QApplication.translate(
+            "DdInfo", "Check if you want to save an empty (or null) value.", None,
+            QtGui.QApplication.UnicodeUTF8))
+        self.chk.stateChanged.connect(self.chkStateChanged)
+        self.chk.setVisible(not self.attribute.notNull)
+        horizontalLayout.addWidget(self.chk)
+        verticalLayout.addLayout(horizontalLayout)
+        verticalLayout.addWidget(self.inputWidget)
+        parent.layout().addRow(frame)
+
+    def toSqlString(self, aValue):
+        '''
+        convert aValue to a string representation that
+        can be used in a SQL statement
+        default implementation for string
+        '''
+
+        retValue = "'" + self.toString(aValue) + "'"
+        return retValue
+
+    def fromString(self, aValue):
+        '''
+        convert aValue from its string representation
+        to a value of the appropriate class
+        default implementation for string
+        '''
+
+        if aValue == "": # empty string considered NULL
+            return None
+        else:
+            return aValue
+
+    def search(self,  layer):
+        '''create search sql-string'''
+
+        searchSql = ""
+
+        if not self.chk.isChecked():
+            thisValue = self.getValue()
+
+            for aRow in range(len(thisValue)):
+
+                operator = self.inputWidget.cellWidget(aRow, 2).currentText()
+
+                if aRow > 0:
+                    link = self.inputWidget.cellWidget(aRow, 0).currentText()
+                    searchSql += " " + link + " "
+
+                if operator == "IS NULL" or operator == "IS NOT NULL":
+                    searchSql += " \"" + self.attribute.name + "\" " + operator
+                else:
+                    aValue = thisValue[aRow]
+                    searchSql += self.toSqlString(aValue) + \
+                        operator + " (\"" + self.attribute.name + "\")"
+
+        if searchSql != "":
+            searchSql = "(" + searchSql + ")"
+
+        return searchSql
+
+    def createSearch(self, parentElement):
+        '''create the search XML'''
+        fieldElement = None
+
+        if not self.chk.isChecked():
+            thisValue = self.getValue()
+            fieldElement = ET.SubElement(parentElement,  "field")
+            fieldElement.set("fieldName", self.attribute.name)
+            fieldElement.set("type", self.attribute.type)
+            fieldElement.set("widgetType", "DdArrayTableWidget")
+            arrayElement = ET.SubElement(fieldElement, "array")
+
+            for aRow in range(len(thisValue)):
+                aValue = thisValue[aRow]
+                valueElement = ET.SubElement(arrayElement, "entry")
+                operator = self.inputWidget.cellWidget(aRow, 2).currentText()
+                linkElement = ET.SubElement(valueElement, "link")
+
+                if operator != "IS NULL" and operator != "IS NOT NULL":
+                    valueElement.set("value", self.toString(aValue))
+
+                if aRow > 0:
+                    link = self.inputWidget.cellWidget(aRow, 0).currentText()
+                    linkElement.text = link
+
+                operatorElement = ET.SubElement(valueElement, "operator")
+                operatorElement.text = operator
+
+        return fieldElement
+
+    def applySearch(self, parentElement):
+        notFound = True
+
+        for fieldElement in parentElement.findall("field"):
+            if fieldElement.get("fieldName") == self.attribute.name:
+                arrayElement = fieldElement.find("array")
+
+                if arrayElement != None:
+                    self.chk.setChecked(False)
+                    self.inputWidget.removeRow(0) # checking adds a row
+                    notFound = False
+
+                    for valueElement in arrayElement.findall("entry"):
+                        operator = valueElement.find("operator").text
+
+                        if operator == "IS NULL" or operator == "IS NOT NULL":
+                            aValue = None
+                        else:
+                            aValue = self.fromString(valueElement.get("value"))
+
+                        link = valueElement.find("link").text
+
+                        if link == "":
+                            link = None
+
+                        self.appendRow(aValue, link, operator)
+
+                break
+
+        if notFound:
+            self.chk.setChecked(True)
+
+    #SLOTs
+    def nullChkStateChanged(self, newState):
+        self.hasChanges = True
+        nullChk = QgsApplication.instance().focusWidget()
+        thisRow = self.inputWidget.rowAt(nullChk.pos().y())
+        self.inputWidget.removeRow(thisRow)
+
+        if newState == QtCore.Qt.Checked:
+            self.insertRow(thisRow, None)
+        else:
+            self.insertRow(thisRow, self.getDefaultItemValue())
+
+    def focusLost(self, thisRow = None):
+        '''implementation in child classes'''
+
+        if thisRow == None:
+            lineEdit = QgsApplication.instance().focusWidget()
+            thisRow = self.inputWidget.rowAt(lineEdit.pos().y())
+
+            if thisRow == None: # we left this DdWidget
+                return None
+
+        if thisRow == self.inputWidget.currentRow():
+            return None # do not do anything if we stay in the row
+
+        thisColumn = self.valueColumnIndex
+        lineEdit = self.inputWidget.cellWidget(thisRow, thisColumn)
+
+        if lineEdit != None:
+            thisValue = self.fromString(lineEdit.text())
+            operator = None
+            link = None
+
+            if self.searchMode:
+                operator = self.inputWidget.cellWidget(thisRow, 2).currentText()
+
+                if thisRow > 0:
+                    link = self.inputWidget.cellWidget(thisRow, 0).currentText()
+
+            self.inputWidget.removeRow(thisRow)
+            self.insertRow(thisRow, thisValue, link, operator)
+
+    def cellClicked(self, thisRow, thisColumn):
+        if thisColumn != self.valueColumnIndex:
+            thisColumn = self.valueColumnIndex
+            # dataColumn
+
+        thisItem = self.inputWidget.item(thisRow, thisColumn)
+
+        if thisItem != None:
+            thisValue = thisItem.text()
+
+            if thisValue == "":
+                thisValue = None
+            else:
+                thisValue = self.fromString(thisValue)
+
+            self.setRowValue(thisRow, None, checkIfNon = False)
+            self.setCellWidget(thisRow, thisValue)
+
+    def cellChanged(self, thisRow, thisColumn):
+        self.registerChange(None)
+
+    def chkStateChanged(self, newState):
+        '''slot: disables the input widget if the null checkbox is checked and vice versa'''
+
+        self.setNull(newState == QtCore.Qt.Checked)
+
+        if self.searchMode:
+            self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
+            self.addButton.setEnabled(newState == QtCore.Qt.Unchecked)
+
+            if newState == QtCore.Qt.Unchecked:
+                self.appendRow(None)
+        else:
+            if self.attribute.enableWidget:
+                self.inputWidget.setEnabled(
+                    newState == QtCore.Qt.Unchecked)
+                self.addButton.setEnabled(
+                    newState == QtCore.Qt.Unchecked)
+
+                if newState == QtCore.Qt.Unchecked and \
+                        self.inputWidget.rowCount() == 0:
+                    self.appendRow(None, checkIfNone = False)
+
+        self.hasChanges = True
+
+    def selectionChanged(self):
+        '''slot to be called when the QTableWidget's selection has changed'''
+        self.removeButton.setEnabled(len(self.inputWidget.selectedItems()) > 0)
+
+    def add(self):
+        '''slot to be called when the user clicks on the add button'''
+        self.appendRow(self.getDefaultItemValue())
+        self.hasChanges = True
+
+    def remove(self):
+        '''slot to be called when the user clicks on the remove button'''
+        thisRow = self.inputWidget.currentRow()
+        self.inputWidget.removeRow(thisRow)
+
+        if self.searchMode:
+            if thisRow == 0:
+                if self.inputWidget.rowCount() > 0:
+                    # we need to get rid of the combo box in the first column
+                    # therefore we refill the tableWidget completely
+                    thisValue = self.getValue()
+                    operators = []
+                    links = []
+
+                    for aRow in range(len(thisValue)):
+                        operators.append(self.inputWidget.cellWidget(aRow, 1).currentText())
+                        links.append(self.inputWidget.cellWidget(aRow, 0).currentText())
+
+                    self.inputWidget.clear()
+                    self.inputWidget.setRowCount(0)
+
+                    for aRow in range(len(thisValue)):
+                        aValue = thisValue[aRow]
+                        operator = operators[aRow]
+                        link = links[aRow]
+                        self.appendRow(aValue, link, operator)
+
+            self.addButton.setEnabled(True)
+            self.root = ET.Element('DdSearch')
+        else:
+            self.hasChanges = True
+
+class DdArrayTableWidgetInt(DdArrayTableWidget):
+    '''a table widget to show/edit values of an integer array field'''
+    def __init__(self, attribute):
+        DdArrayTableWidget.__init__(self, attribute)
+
+    def __str__(self):
+        return "<ddui.DdArrayTableWidgetInt %s>" % str(self.attribute.name)
+
+    def toString(self,  thisValue):
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
+    def toSqlString(self, aValue):
+        retValue = str(aValue)
+        return retValue
+
+    def fromString(self, aValue):
+        try:
+            newValue = int(aValue)
+        except:
+            loc = QtCore.QLocale.system()
+            newValue, valid = loc.toInt(aValue)
+
+            if not valid:
+                newValue, valid = loc.toLongLong(aValue)
+
+                if not valid:
+                    newValue = None
+
+        return newValue
+
+    def getDefaultItemValue(self):
+        if self.attribute.min != None:
+            return self.attribute.min
+        else:
+            return 0
+
+    def setCellWidget(self, thisRow, aValue):
+        lineEdit = QtGui.QLineEdit(self.inputWidget)
+
+        if aValue == None:
+            lineEdit.setText(self.toString(self.getDefaultItemValue()))
+        else:
+            lineEdit.setText(self.toString(aValue))
+
+        if not self.searchMode:
+            validator = ddtools.getIntValidator(lineEdit,
+                self.attribute, aValue, aValue)
+                # pass aValue as min and max so existing values are
+                # allowed no matter of attribute's min and max
+            lineEdit.setValidator(validator)
+
+        lineEdit.textChanged.connect(self.registerChange)
+        lineEdit.editingFinished.connect(self.focusLost)
+        self.inputWidget.setCellWidget(thisRow,
+            self.valueColumnIndex, lineEdit)
+
+class DdArrayTableWidgetDouble(DdArrayTableWidget):
+    '''a table widget to show/edit values of an integer array field'''
+    def __init__(self, attribute):
+        DdArrayTableWidget.__init__(self, attribute)
+
+    def __str__(self):
+        return "<ddui.DdArrayTableWidgetDouble %s>" % str(self.attribute.name)
+
+    def getDefaultItemValue(self):
+        if self.attribute.min != None:
+            return self.attribute.min
+        else:
+            return 0
+
+    def setCellWidget(self, thisRow, aValue):
+        lineEdit = QtGui.QLineEdit(self.inputWidget)
+
+        if aValue == None:
+            lineEdit.setText(self.toString(self.getDefaultItemValue()))
+        else:
+            lineEdit.setText(self.toString(aValue))
+
+        if not self.searchMode:
+            validator = ddtools.getDoubleValidator(lineEdit,
+                self.attribute, aValue, aValue)
+                # pass aValue as min and max so existing values are
+                # allowed no matter of attribute's min and max
+            lineEdit.setValidator(validator)
+
+        lineEdit.textChanged.connect(self.registerChange)
+        lineEdit.editingFinished.connect(self.focusLost)
+        self.inputWidget.setCellWidget(thisRow,
+            self.valueColumnIndex, lineEdit)
+
+    def toString(self, thisValue):
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
+    def toSqlString(self, aValue):
+        retValue = str(aValue)
+        return retValue
+
+    def fromString(self, aValue):
+        try:
+            newValue = float(aValue)
+        except:
+            loc = QtCore.QLocale.system()
+            newValue, valid = loc.toDouble(aValue)
+
+            if not valid:
+                newValue = None
+
+        return newValue
+
+class DdArrayTableWidgetBool(DdArrayTableWidget):
+    '''a table widget to show/edit values of a boolean array field'''
+    def __init__(self, attribute):
+        DdArrayTableWidget.__init__(self, attribute)
+
+    def __str__(self):
+        return "<ddui.DdArrayTableWidgetBool %s>" % str(self.attribute.name)
+
+    def extractCellWidgetValue(self, thisCellWidget):
+        chk = thisCellWidget
+        return chk.isChecked()
+
+    def getDefaultItemValue(self):
+        return False
+
+    def setCellWidget(self, thisRow, aValue):
+        chk = QtGui.QCheckBox(self.inputWidget)
+
+        if aValue == None:
+            chk.setChecked(self.getDefaultItemValue())
+        else:
+            chk.setChecked(aValue)
+
+        chk.stateChanged.connect(self.registerChange)
+        chk.released.connect(self.focusLost)
+        self.inputWidget.setCellWidget(thisRow,
+            self.valueColumnIndex, chk)
+
+    def focusLost(self, thisRow = None):
+        if thisRow == None:
+            chk = QgsApplication.instance().focusWidget()
+            thisRow = self.inputWidget.rowAt(chk.pos().y())
+
+            if thisRow == None: # we left this DdWidget
+                return None
+
+        if thisRow == self.inputWidget.currentRow():
+            return None
+
+        thisColumn = self.valueColumnIndex
+        chk = self.inputWidget.cellWidget(thisRow,thisColumn)
+        thisValue = chk.isChecked()
+        operator = None
+        link = None
+
+        if self.searchMode:
+            operator = self.inputWidget.cellWidget(aRow, 2).currentText()
+
+            if thisRow > 0:
+                link = self.inputWidget.cellWidget(aRow, 0).currentText()
+
+        self.inputWidget.removeRow(thisRow)
+        self.insertRow(thisRow, thisValue, link, operator)
+
+    def toSqlString(self, aValue):
+        if aValue:
+            retValue = "true"
+        else:
+            retValue = "false"
+
+        return retValue
+
+    def fromString(self, aValue):
+        if aValue == "True" or aValue == "true" or aValue == "t":
+            newValue = True
+        elif aValue == "False" or aValue == "false" or aValue == "f":
+            newValue = False
+        else:
+            newValue = None
+
+        return newValue
+
+class DdArrayTableWidgetDate(DdArrayTableWidget):
+    '''a table widget to show/edit values of a date array field'''
+    def __init__(self, attribute):
+        DdArrayTableWidget.__init__(self, attribute)
+
+    def __str__(self):
+        return "<ddui.DdArrayTableWidgetBool %s>" % str(self.attribute.name)
+
+    def extractCellWidgetValue(self, thisCellWidget):
+        dateEdit = thisCellWidget
+        return dateEdit.date()
+
+    def getDefaultItemValue(self):
+        if self.attribute.min != None:
+            return self.attribute.min
+        else:
+            return QtCore.QDate.currentDate()
+
+    def setCellWidget(self, thisRow, aValue):
+        date = QtGui.QDateEdit(self.inputWidget)
+        date.setCalendarPopup(True)
+        loc = QtCore.QLocale.system()
+        date.setDisplayFormat(loc.dateFormat())
+
+        if not self.searchMode:
+            if self.attribute.min != None:
+                thisMin = self.attribute.min
+
+                if aValue != None:
+                    if aValue < self.attribute.min:
+                        thisMin = min
+
+                date.setMinimumDate(thisMin)
+
+            if self.attribute.max != None:
+                thisMax = self.attribute.max
+
+                if aValue != None:
+                    if aValue > self.attribute.max:
+                        thisMax = max
+
+                date.setMaximumDate(thisMax)
+
+        if aValue == None:
+            date.setDate(self.getDefaultItemValue())
+        else:
+            date.setDate(aValue)
+
+        date.dateChanged.connect(self.registerChange)
+        date.editingFinished.connect(self.focusLost)
+        self.inputWidget.setCellWidget(thisRow,
+            self.valueColumnIndex, date)
+
+    def focusLost(self, thisRow = None):
+        if thisRow == None:
+            date = QgsApplication.instance().focusWidget()
+            thisRow = self.inputWidget.rowAt(date.pos().y())
+
+            if thisRow == None: # we left this DdWidget
+                return None
+
+        if thisRow == self.inputWidget.currentRow():
+            return None
+
+        thisColumn = self.valueColumnIndex
+        date = self.inputWidget.cellWidget(thisRow, thisColumn)
+        thisValue = date.date()
+        operator = None
+        link = None
+
+        if self.searchMode:
+            operator = self.inputWidget.cellWidget(aRow, 2).currentText()
+
+            if thisRow > 0:
+                link = self.inputWidget.cellWidget(aRow, 0).currentText()
+
+        self.inputWidget.removeRow(thisRow)
+        self.insertRow(thisRow, thisValue, link, operator)
+
+    def toString(self, thisValue):
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
+    def toSqlString(self, aValue):
+        retValue = aValue.toString("yyyy-MM-dd")
+        retValue = "\'" + retValue + "\'"
+        return retValue
+
+    def fromString(self, aValue):
+        newValue = QtCore.QDate.fromString(aValue,'yyyy-MM-dd')
+
+        if newValue.isNull():
+            loc = QtCore.QLocale.system()
+            newValue = loc.toDate(aValue)
+
+            if newValue.isNull():
+                newValue = None
+
+        return newValue
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

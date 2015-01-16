@@ -135,7 +135,7 @@ class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK, isFK,
             default, hasDefault, length, label = None, min = None, max = None,
-        enableWidget = True):
+            enableWidget = True, isArray = False, arrayDelim = ""):
         DdAttribute.__init__(self, table, type, notNull, name, comment,
             label, min, max, enableWidget)
         self.isPK = isPK
@@ -144,6 +144,8 @@ class DdLayerAttribute(DdAttribute):
         self.hasDefault = hasDefault
         self.length = length
         self.num = attNum # number of the attribute in the table pg_attribute.attNum
+        self.isArray = isArray
+        self.arrayDelim = arrayDelim
 
     def __str__(self):
         return "<ddattribute.DdLayerAttribute %s>" % self.name
@@ -153,11 +155,12 @@ class DdDateLayerAttribute(DdLayerAttribute):
     if you want to specify today as min or max, simply pass "today"'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK,
             isFK, default, hasDefault, length, label = None, min = None,
-            max = None, dateFormat = "yyyy-MM-dd", enableWidget = True):
+            max = None, dateFormat = "yyyy-MM-dd", enableWidget = True,
+            isArray = False, arrayDelim = ""):
         self.dateFormat = dateFormat # set here because DdAttribute calls setMinMax on __init__
         DdLayerAttribute.__init__(self, table, type, notNull, name,
             comment, attNum, isPK, isFK, default, hasDefault, length,
-            label, min, max, enableWidget)
+            label, min, max, enableWidget, isArray, arrayDelim)
 
     def __str__(self):
         return "<ddattribute.DdDateLayerAttribute %s>" % self.name

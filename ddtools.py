@@ -25,7 +25,7 @@ collection of routines needed throughout the plugin
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtSql
+from PyQt4 import QtSql, QtCore, QtGui
 from qgis.core import *
 from qgis.gui import *
 from dderror import DdError,  DbError
@@ -56,4 +56,93 @@ def getOid(thisTable,  db):
         DbError(query)
 
     return oid
+
+def getIntValidator(parent, attribute, min = None, max = None):
+    '''
+    make an Integer validator for this DdAttribute's min and max values
+    '''
+
+    thisMin = attribute.min
+    # integer attributes always have a min and max corresponding to the min/max values of the pg data type
+
+    if min != None:
+        if isinstance(min,  int):
+            if min < thisMin:
+                thisMin = min
+                # make sure current value is allowed although attribute's min might be different
+
+    thisMax = attribute.max
+
+    if max != None:
+        if isinstance(max,  int):
+            if max > thisMax:
+                thisMax = max
+                # make sure current value is allowed although attribute's max might be different
+
+    validator = QtGui.QIntValidator(parent)
+    loc = QtCore.QLocale.system()
+    loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
+    validator.setLocale(loc)
+
+    if isinstance(thisMin,  int):
+        validator.setBottom(thisMin)
+
+    if isinstance(thisMax,  int):
+        validator.setTop(thisMax)
+
+    return validator
+
+def getDoubleValidator(parent, attribute, min = None, max = None):
+    '''
+    make a double validator for this DdAttribute's mi and max values
+    '''
+    validator = QtGui.QDoubleValidator(parent)
+    loc = QtCore.QLocale.system()
+
+    # if locale and database decimal separator differ and a db default has been inserted into
+    # a new feature we run into trouble if not making sure that min and max are floats
+
+    if attribute.min != None:
+        thisMin = attribute.min
+
+        if min != None:
+            success = True
+
+            try:
+                min = float(min)
+            except ValueError:
+                min,  succcess = loc.toFloat(min)
+
+            if success:
+                if min < thisMin:
+                    thisMin = min
+
+        validator.setBottom(thisMin)
+
+    if attribute.max != None:
+        thisMax = attribute.max
+
+        if max != None:
+            success = True
+
+            try:
+                max = float(max)
+            except ValueError:
+                max,  succcess = loc.toFloat(max)
+
+            if success:
+                if max > thisMax:
+                    thisMax = max
+
+        validator.setTop(thisMax)
+
+    validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+    loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
+    validator.setLocale(loc)
+    return validator
+
+
+
+
+
 

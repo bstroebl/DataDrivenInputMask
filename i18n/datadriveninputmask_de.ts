@@ -12,32 +12,32 @@
 <context>
     <name>DdError</name>
     <message>
-        <location filename="../ddmanager.py" line="818"/>
+        <location filename="../ddmanager.py" line="826"/>
         <source>Could not connect to PostgreSQL database:</source>
         <translation>Konnte mich nicht mit folgender PostgreSQL-Datenbank verbinden:</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="326"/>
+        <location filename="../ddmanager.py" line="334"/>
         <source>Could not discard changes for layer:</source>
         <translation>Konnte Änderungen in folgendem Layer nicht verwerfen:</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="226"/>
+        <location filename="../ddmanager.py" line="234"/>
         <source>Layer is not a vector layer: </source>
         <translation>Dieser Layer ist kein Vektorlayer: </translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="231"/>
+        <location filename="../ddmanager.py" line="239"/>
         <source>Layer is not a PostgreSQL layer: </source>
         <translation>Dieser Layer ist kein PostgreSQL-Layer: </translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="250"/>
+        <location filename="../ddmanager.py" line="258"/>
         <source>Layer is not a PostgreSQL table: </source>
         <translation>Dieser Layer ist keine PostgreSQL-Tabelle: </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1727"/>
+        <location filename="../ddui.py" line="1781"/>
         <source>Field not found in layer: </source>
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
@@ -52,7 +52,7 @@
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="644"/>
+        <location filename="../ddmanager.py" line="652"/>
         <source>Cannot not load table: </source>
         <translation>Kann folgende Tablle nicht laden: </translation>
     </message>
@@ -65,6 +65,11 @@
         <location filename="../dduserclass.py" line="459"/>
         <source>Could not add feature to layer:</source>
         <translation>Hinzufügen von Feature gescheitert zu Layer:</translation>
+    </message>
+    <message>
+        <location filename="../ddmanager.py" line="34"/>
+        <source>QtSql cannot be located on your system. Please install and try again.</source>
+        <translation>QtSql kann auf Ihrem Rechner nicht gefunden werden. Bitte installieren Sie es und probieren Sie es dann nochmals.</translation>
     </message>
 </context>
 <context>
@@ -85,7 +90,7 @@
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="2797"/>
+        <location filename="../ddui.py" line="2784"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
@@ -105,12 +110,12 @@
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1653"/>
+        <location filename="../ddui.py" line="3729"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1655"/>
+        <location filename="../ddui.py" line="3732"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
     </message>
@@ -120,22 +125,22 @@
         <translation>Hilfe</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="173"/>
+        <location filename="../ddmanager.py" line="181"/>
         <source>Config tables either not found or not accessible, loading default mask</source>
         <translation>Konfigurationstabellen nicht gefunden oder nicht zugänglich, lade Defaultmaske</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="1088"/>
+        <location filename="../ddmanager.py" line="1096"/>
         <source>Config tables created! SELECT has been granted to &quot;public&quot;.</source>
         <translation>Konfigurationstabellen erzeugt! SELECT-Rechte für &quot;public&quot; wurden gesetzt.</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="315"/>
+        <location filename="../ddmanager.py" line="323"/>
         <source>Unsaved changes</source>
         <translation>Ungesicherte Änderungen</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="315"/>
+        <location filename="../ddmanager.py" line="323"/>
         <source>Do you want to save the changes to layer </source>
         <translation>Möchten Sie die Änderungen speichern </translation>
     </message>
@@ -149,16 +154,31 @@
         <source>features to go. Show next?</source>
         <translation>Features übrig. Nächstes anzeigen?</translation>
     </message>
+    <message>
+        <location filename="../ddui.py" line="3709"/>
+        <source>logical</source>
+        <translation>logisch</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="3712"/>
+        <source>operator</source>
+        <translation>Operator</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="3715"/>
+        <source>value</source>
+        <translation>Wert</translation>
+    </message>
 </context>
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="../ddui.py" line="3350"/>
+        <location filename="../ddui.py" line="3931"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3352"/>
+        <location filename="../ddui.py" line="3934"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
@@ -209,59 +229,74 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="../ddui.py" line="2310"/>
+        <location filename="../ddui.py" line="2297"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="2315"/>
+        <location filename="../ddui.py" line="2302"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1703"/>
+        <location filename="../ddui.py" line="1752"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1188"/>
+        <location filename="../ddui.py" line="1228"/>
         <source>Layer cannot be put in editing mode:</source>
         <translation>Für den folgenden Layer konnte der Bearbeitungsstatus nicht umgeschaltet werden: </translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="842"/>
+        <location filename="../ddmanager.py" line="850"/>
         <source>Username missing</source>
         <translation>Kein Benutzername</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="842"/>
+        <location filename="../ddmanager.py" line="850"/>
         <source>Enter username for </source>
         <translation>Benutzername für </translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="851"/>
+        <location filename="../ddmanager.py" line="859"/>
         <source>Password missing</source>
         <translation>Kein Passwort</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="851"/>
+        <location filename="../ddmanager.py" line="859"/>
         <source>Enter password for </source>
         <translation>Passwort für </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1679"/>
+        <location filename="../ddui.py" line="1720"/>
         <source>Field value is too small! Minimum is </source>
         <translation>Der Feldwert ist zu klein! Mindesteingabe ist </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1688"/>
+        <location filename="../ddui.py" line="1733"/>
         <source>Field value is too large! Maximum is </source>
         <translation>Der Feldwert ist zu groß! Höchsteingabe ist </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1714"/>
+        <location filename="../ddui.py" line="1765"/>
         <source>Input is not valid! Field type is %s</source>
         <translation>Die Eingabe ist ungültig! Der Feldtyp ist %s</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="3785"/>
+        <source>Value </source>
+        <translation>Wert </translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="3769"/>
+        <source> is too small! Minimum is </source>
+        <translation> ist zu klein! Mindesteingabe ist </translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="3785"/>
+        <source> is too large! Maximum is </source>
+        <translation> ist zu groß! Höchsteingabe ist </translation>
     </message>
 </context>
 </TS>
