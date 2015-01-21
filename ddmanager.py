@@ -264,6 +264,11 @@ class DdManager(object):
     def addAction(self,  layer,  actionName = u'showDdForm'):
         '''api method to add an action to the layer with a self defined name'''
 
+
+        if actionName == u'showDdForm':
+            actionName = QtGui.QApplication.translate("DdLabel", "Show Input Form",
+                None, QtGui.QApplication.UnicodeUTF8)
+
         createAction = True
         #check if the action is already attached
         for i in range(layer.actions().size()):
@@ -275,22 +280,25 @@ class DdManager(object):
 
         if createAction:
             layer.actions().addAction(1,  actionName, # actionType 1: Python
-                                 "app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);")
+                "app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);")
 
-    def removeAction(self,  layer,  actionName):
+        # remove showDdForm - Action if still there
+        self.removeAction(layer, u'showDdForm')
+
+    def removeAction(self, layer, actionName):
         '''api method to remove an action from the layer'''
 
-        wereActions = []
+        actionToRemove = -9999
+
         for i in range(layer.actions().size()):
             act = layer.actions().at(i)
 
-            if act.name() != actionName:
-                wereActions.append(act)
+            if act.name() == actionName:
+                actionToRemove = i
+                break
 
-        layer.actions().clearActions()
-
-        for act in wereActions:
-            layer.actions().addAction(act.type(),  act.name(), act.action())
+        if actionToRemove >= 0:
+            layer.actions().removeAction(actionToRemove)
 
     def showFeatureForm(self,  layer,  feature,  showParents = True, title = None,  askForSave = True):
         '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
