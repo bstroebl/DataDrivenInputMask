@@ -212,6 +212,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         DdN2mWidget.__init__(self,  attribute)
         self.catalogCbx = None
         self.catalogLayer = None
+        self.catalogIndex = 0
 
     def __str__(self):
         return "<dduserclass.DdN2mCheckableTableWidget %s>" % str(self.attribute.label)
@@ -263,7 +264,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
             if self.hasCatalog():
                 self.catalogLayer = self.loadAdditionalLayer(db,  self.attribute.catalogTable)
-                self.fillCatalog()
+                self.fillCatalog(self.catalogIndex)
             else:
                 self.fill()
 
@@ -285,8 +286,11 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         return values
 
-    def fillCatalog(self):
-        '''fill the QComboBox with the catalog values'''
+    def fillCatalog(self, initialIndex = 0):
+        '''
+        fill the QComboBox with the catalog values
+        use catalogId as initial value
+        '''
         self.catalogCbx.clear()
         idField = self.catalogLayer.fieldNameIndex(self.attribute.catalogIdField)
         displayField = self.catalogLayer.fieldNameIndex(self.attribute.catalogDisplayField)
@@ -306,7 +310,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         # add the empty item
         self.catalogCbx.insertItem(0, QtGui.QApplication.translate("DdLabel", "Show all", None,
                                                        QtGui.QApplication.UnicodeUTF8) ,  None)
-        self.catalogCbx.setCurrentIndex(0)
+        self.catalogCbx.setCurrentIndex(initialIndex)
 
     def fill(self,  catalogId = None):
         self.inputWidget.setRowCount(0)
@@ -437,6 +441,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
     @QtCore.pyqtSlot(int)
     def catalogChanged(self,  thisIndex):
         catalogId = self.catalogCbx.itemData(thisIndex)
+        self.catalogIndex = thisIndex
         self.fill(catalogId)
 
     def doubleClick(self,  thisRow,  thisColumn):
