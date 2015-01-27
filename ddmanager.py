@@ -158,7 +158,7 @@ class DdManager(object):
                                                            QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
             return False
         else:
-            if not db:
+            if db == None:
                 db = self.__createDb(layer)
 
             thisTable = self.makeDdTable(layer,  db)
@@ -240,16 +240,20 @@ class DdManager(object):
                                                                QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
                 return None
             else:
-                if not db:
-                    db = self.__createDb(layer)
-
                 layerSrc = self.__analyzeSource(layer)
                 relation = layerSrc["table"].split('"."')
                 schema = relation[0].replace('"', '')
                 table = relation[1].replace('"', '')
                 thisTable = DdTable(schemaName = schema,  tableName = table,  title = layer.name())
-                thisTable.oid = self.__getOid(thisTable,  db)
-                comment = self.__getComment(thisTable,  db)
+
+                if db == None:
+                    db = self.__createDb(layer)
+
+                    if db == None:
+                        return None
+
+                thisTable.oid = self.__getOid(thisTable, db)
+                comment = self.__getComment(thisTable, db)
 
                 if comment:
                     thisTable.comment = comment
@@ -784,9 +788,17 @@ class DdManager(object):
 
         for anElement in srcList:
             aPair = anElement.replace("'",  "").split("=")
+            value = ""
 
-            if 2 == len(aPair):
-                result[aPair[0]] = aPair[1]
+            for i in range(len(aPair)):
+                if i == 0:
+                    key = aPair[i]
+                elif i == 1:
+                    value = aPair[i]
+                else: # if value element contains "=", e.g. in passwords
+                    value += "=" + aPair[i]
+
+                result[key] = value
 
         return result
 
@@ -804,7 +816,8 @@ class DdManager(object):
             return None
 
 
-    def __connectDb(self,  qSqlDatabaseName,  host,  database,  port,  username,  passwd):
+    def __connectDb(self, qSqlDatabaseName, host,
+            database, port, username, passwd, sslmode = None):
         '''connect to the PostgreSQL DB'''
         db = QtSql.QSqlDatabase.addDatabase ("QPSQL",  qSqlDatabaseName)
         db.setHostName(host)
@@ -812,6 +825,10 @@ class DdManager(object):
         db.setDatabaseName(database)
         db.setUserName(username)
         db.setPassword(passwd)
+
+        if sslmode == "require":
+            db.setConnectOptions("requiressl=1")
+
         ok = db.open()
 
         if not ok:
@@ -871,12 +888,18 @@ class DdManager(object):
             if not ok:
                 return None
 
+        try:
+            sslmode = layerSrc["sslmode"]
+        except KeyError:
+            sslmode = None
+
         if host == None:
             db = self.__connectServiceDb(layer.id(),  service, user, password)
         else:
             db = self.__connectDb(layer.id(), host ,  dbname,
                 int(layerSrc["port"]),  user,
-                password)
+                password, sslmode)
+
         return db
 
     def __disconnectDb(self,  db):
