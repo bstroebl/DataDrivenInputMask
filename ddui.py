@@ -1097,10 +1097,10 @@ class DdDialogWidget(DdWidget):
                 try:
                     ddFormWidget = self.forms[ddFormWidgetIndex]
                 except IndexError:
-                    ddFormWidget = self.forms(len(self.forms) - 1)
+                    ddFormWidget = self.forms[len(self.forms) - 1]
 
             else:
-                ddFormWidget = self.forms(len(self.forms) - 1)
+                ddFormWidget = self.forms[len(self.forms) - 1]
 
             ddFormWidget.addInputWidget(inputWidget,  beforeWidget)
 
