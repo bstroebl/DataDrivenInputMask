@@ -330,6 +330,9 @@ class DataDrivenUi(object):
                                 ddInputWidget = DdArrayTableWidgetDate(anAttribute)
                             else:
                                 ddInputWidget = DdDateEdit(anAttribute)
+                        elif anAttribute.type == "geometry":
+                            ddInputWidget = DdLineEditGeometry(anAttribute)
+                            addToSearch = False
                         else:
                             if anAttribute.isArray:
                                 ddInputWidget = DdArrayTableWidget(anAttribute)
@@ -714,7 +717,6 @@ class DataDrivenUi(object):
         ddAttributes = []
         query = QtSql.QSqlQuery(db)
         sQuery = self.__attributeQuery("att.attnum")
-
         query.prepare(sQuery)
         query.bindValue(":oid", thisTable.oid)
         query.exec_()
@@ -826,6 +828,9 @@ class DataDrivenUi(object):
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
                                 thisMin, thisMax, enableWidget = attEnableWidget,
                                 isArray = isArray, arrayDelim = arrayDelim)
+                        elif attTyp == "geometry":
+                            ddAtt = DdGeometryAttribute(
+                                thisTable, attTyp, attName, attComment, attNum)
                         else:
                             ddAtt = DdLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
@@ -841,7 +846,9 @@ class DataDrivenUi(object):
         return ddAttributes
 
     def isSupportedType(self,  typ):
-        supportedAttributeTypes = ["int2", "int4",  "int8",  "char",  "varchar",  "float4", "float8",  "text",  "bool",  "date"]
+        supportedAttributeTypes = ["int2", "int4", "int8",
+            "char", "varchar", "float4", "float8", "text",
+            "bool", "date", "geometry"]
         supported = False
 
         for aTyp in supportedAttributeTypes:
@@ -4440,12 +4447,54 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
 
         return newValue
 
+class DdLineEditGeometry(DdLineEditInt):
 
+    def __init__(self, attribute):
+        DdLineEditInt.__init__(self, attribute)
 
+    def __str__(self):
+        return "<ddui.DdLineEditGeometry %s>" % str(self.attribute.name)
 
+    def getFeatureValue(self, layer, feature):
+        if feature == None:
+            return None
 
+        geom = feature.geometry()
+        area = geom.area()
 
+        if area > 0:
+            self.label.setText(QtGui.QApplication.translate(
+                "DdInfo", "area", None, QtGui.QApplication.UnicodeUTF8))
+            return int(round(area))
+        else:
+            length = int(geom.length())
 
+            if length > 0:
+                self.label.setText(QtGui.QApplication.translate(
+                    "DdInfo", "length", None, QtGui.QApplication.UnicodeUTF8))
+                return round(length)
+            else:
+                self.inputWidget.setVisible(False)
+                self.label.setVisible(False)
+                return None
+
+    def getValue(self, noSerial = False):
+        return None
+
+    def checkDefault(self, feature):
+        return [True, None]
+
+    def checkInput(self, layer, feature):
+        return True
+
+    def save(self,  layer,  feature,  db):
+        return True
+
+    def validate(self, thisValue, layer, feature, showMsg = True):
+        return True
+
+    def setValidator(self, min = None, max = None):
+        pass
 
 
 

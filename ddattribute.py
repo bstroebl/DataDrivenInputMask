@@ -150,6 +150,15 @@ class DdLayerAttribute(DdAttribute):
     def __str__(self):
         return "<ddattribute.DdLayerAttribute %s>" % self.name
 
+class DdGeometryAttribute(DdLayerAttribute):
+    '''a DdAttribute for a geometry field in a QGIS layer'''
+    def __init__(self, table, type, name, comment, attNum):
+        DdLayerAttribute.__init__(self, table, type, True, name, comment,
+            attNum, False, False, None, False, 0, enableWidget = False)
+
+    def __str__(self):
+        return "<ddattribute.DdGeometryAttribute %s>" % self.name
+
 class DdDateLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for a date field in a QGIS layer
     if you want to specify today as min or max, simply pass "today"'''
