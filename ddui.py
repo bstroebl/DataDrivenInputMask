@@ -4478,9 +4478,6 @@ class DdLineEditGeometry(DdLineEditInt):
                 self.label.setVisible(False)
                 return None
 
-    def getValue(self, noSerial = False):
-        return None
-
     def checkDefault(self, feature):
         return [True, None]
 
@@ -4493,8 +4490,6 @@ class DdLineEditGeometry(DdLineEditInt):
     def validate(self, thisValue, layer, feature, showMsg = True):
         return True
 
-    def setValidator(self, min = None, max = None):
-        pass
 
 
 
