@@ -3427,7 +3427,9 @@ class DdN2mTableWidget(DdN2mWidget):
     def selectionChanged(self):
         '''slot to be called when the QTableWidget's selection has changed'''
         if self.forEdit:
-            self.removeButton.setEnabled(len(self.inputWidget.selectedItems()) > 0)
+            self.removeButton.setEnabled(
+                len(self.inputWidget.selectedItems()) > 0 and \
+                self.attribute.enableWidget)
 
     def doubleClick(self,  thisRow,  thisColumn):
         '''slot to be called when the user double clicks on the QTableWidget'''
@@ -3441,18 +3443,19 @@ class DdN2mTableWidget(DdN2mWidget):
                 self.inputWidget.removeRow(thisRow)
                 self.fill()
         else:
-            featureItem = self.inputWidget.item(thisRow,  0)
-            thisFeature = featureItem.feature
-            result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents)
+            if self.attribute.enableWidget:
+                featureItem = self.inputWidget.item(thisRow,  0)
+                thisFeature = featureItem.feature
+                result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents)
 
-            if result == 1: # user clicked OK
-                # make sure user did not change parentFeatureId
-                #self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
-                # refresh thisFeature with the new values
-                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
+                if result == 1: # user clicked OK
+                    # make sure user did not change parentFeatureId
+                    #self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
+                    # refresh thisFeature with the new values
+                    self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
 
-                self.fillRow(thisRow,  thisFeature)
-                self.hasChanges = True
+                    self.fillRow(thisRow,  thisFeature)
+                    self.hasChanges = True
 
     def add(self):
         '''slot to be called when the user clicks on the add button'''
@@ -3490,6 +3493,13 @@ class DdN2mTableWidget(DdN2mWidget):
 
             if self.attribute.maxRows:
                 self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+
+    def enableAccordingToDdAttribute(self):
+        if self.attribute.enableWidget:
+            self.setEnabled(self.attribute.enableWidget)
+        else:
+            self.inputWidget.setEnabled(True)
+            self.addButton.setEnabled(False)
 
 class DdArrayTableWidget(DdLineEdit):
     '''a table widget to show/edit values of an array field'''
