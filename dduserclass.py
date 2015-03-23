@@ -585,7 +585,9 @@ class DdRelatedComboBox(DdComboBox):
 
     def prepareCompleter(self, listenId = None):
         '''user can type in comboBox, appropriate values are displayed'''
-        if listenId != None:
+        if listenId == None:
+            DdComboBox.prepareCompleter(self)
+        else:
             completerList = []
 
             for keyValue, valueArray in self.values.iteritems():
@@ -602,7 +604,9 @@ class DdRelatedComboBox(DdComboBox):
         if self.values != {}:
             self.inputWidget.clear()
 
-            if listenId != None:
+            if listenId == None:
+                DdComboBox.fill(self)
+            else:
                 for keyValue, valueArray in self.values.iteritems():
                     if valueArray[1] == listenId:
                         sValue = valueArray[0]
@@ -615,4 +619,5 @@ class DdRelatedComboBox(DdComboBox):
                 model.setParent(proxy)
                 model.sort(0)
                 self.prepareCompleter(listenId)
+
 

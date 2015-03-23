@@ -2340,7 +2340,7 @@ class DdComboBox(DdLineEdit):
                     sValue = str(sValue)
 
                 keyValue = query.value(1)
-                self.values[keyValue] = sValue
+                self.values[keyValue] = [sValue]
             query.finish()
             return True
         else:
@@ -2352,7 +2352,8 @@ class DdComboBox(DdLineEdit):
         if self.values != {}:
             self.inputWidget.clear()
 
-            for keyValue,  sValue in self.values.iteritems():
+            for keyValue, valueArray in self.values.iteritems():
+                sValue = valueArray[0]
                 self.inputWidget.addItem(sValue, keyValue)
 
             #sort the comboBox
@@ -2364,7 +2365,13 @@ class DdComboBox(DdLineEdit):
 
     def prepareCompleter(self):
         '''user can type in comboBox, appropriate values are displayed'''
-        self.completer = QtGui.QCompleter(self.values.values())
+
+        completerList = []
+
+        for keyValue, valueArray in self.values.iteritems():
+            completerList.append(valueArray[0])
+
+        self.completer = QtGui.QCompleter(completerList)
         #values method of dict class
         self.completer.setCaseSensitivity(0)
         self.inputWidget.setCompleter(self.completer)
