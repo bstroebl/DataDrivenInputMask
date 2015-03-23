@@ -220,6 +220,12 @@ class DdFkLayerAttribute(DdLayerAttribute):
     def __str__(self):
         return "<ddattribute.DdFkLayerAttribute %s>" % self.name
 
+    def getQueryForCbx(self):
+        return self.queryForCbx
+
+    def setQueryForCbx(self, newQuery):
+        self.queryForCbx = newQuery
+
 
 class DdManyToManyAttribute(DdAttribute):
     '''abstract class for any many2many attribute'''

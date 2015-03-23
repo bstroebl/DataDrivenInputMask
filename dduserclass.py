@@ -27,10 +27,10 @@ to be used in subclasses of DataDrivenUi
 """
 
 
-from ddui import DdInputWidget,  DdN2mWidget,  DdLineEdit
+from ddui import DdInputWidget, DdN2mWidget, DdLineEdit, DdComboBox
 from dderror import DdError
 from qgis.core import *
-from PyQt4 import QtCore,  QtGui
+from PyQt4 import QtCore, QtGui, QtSql
 from dddialog import DdDialog,  DdSearchDialog
 
 class DdPushButton(DdInputWidget):
@@ -513,3 +513,106 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                     self.fillRow(thisRow, [relatedId,  values], thisValue)
                 else:
                     self.doubleClick(thisRow,  thisColumn)
+
+class DdRelatedComboBox(DdComboBox):
+    '''
+    A ComboBox that is refreshed when another ComboBox has
+    a currentIndexChanged event, i.e. the user chooses another
+    value.
+    listenToCombo: a DdComboBox
+    '''
+
+    def __init__(self, attribute, listenToCombo):
+        DdComboBox.__init__(self, attribute)
+        self.listenToCombo = listenToCombo
+
+    def __str__(self):
+        return "<dduserclass.DdRelatedComboBox %s>" % str(self.attribute.label)
+
+    def listenToComboChanged(self, newIndex):
+        newValue = self.listenToCombo.getValue()
+        self.fill(newValue)
+
+    def initialize(self, layer, feature, db):
+
+        if feature == None:
+            self.searchCbx.setVisible(False)
+            self.manageChk(None)
+        else:
+            if feature.id() == -3333: # searchFeature
+                self.searchMode = True
+                self.chk.setChecked(True)
+                self.chk.setVisible(True)
+                self.chk.setText(QtGui.QApplication.translate("DdInfo",
+                    "Ignore", None, QtGui.QApplication.UnicodeUTF8))
+                self.chk.setToolTip(QtGui.QApplication.translate("DdInfo",
+                    "Check if you want this field to be ignored in the search.", None,
+                    QtGui.QApplication.UnicodeUTF8))
+                self.searchCbx.setVisible(True)
+            else:
+                self.listenToCombo.inputWidget.currentIndexChanged.connect(self.listenToComboChanged)
+                self.listenToComboChanged(None)
+                self.searchMode = False
+                self.searchCbx.setVisible(False)
+                thisValue = self.getFeatureValue(layer, feature)
+                self.setValue(thisValue)
+                self.manageChk(thisValue)
+                self.hasChanges = (feature.id() < 0) # register this change only for new feature
+
+    def readValues(self, db):
+        '''read the values to be shown in the QComboBox from the db'''
+        self.values == {}
+        query = QtSql.QSqlQuery(db)
+        query.prepare(self.attribute.queryForCbx)
+        query.exec_()
+
+        if query.isActive():
+
+            while query.next(): # returns false when all records are done
+                sValue = query.value(0)
+
+                if not isinstance(sValue, unicode):
+                    sValue = str(sValue)
+
+                keyValue = query.value(1)
+                listenValue = query.value(2)
+                self.values[keyValue] = [sValue, listenValue]
+            query.finish()
+            return True
+        else:
+            DbError(query)
+            return False
+
+    def prepareCompleter(self, listenId = None):
+        '''user can type in comboBox, appropriate values are displayed'''
+        if listenId != None:
+            completerList = []
+
+            for keyValue, valueArray in self.values.iteritems():
+                if valueArray[1] == listenId:
+                    completerList.append(valueArray[0])
+
+            self.completer = QtGui.QCompleter(completerList)
+            #values method of dict class
+            self.completer.setCaseSensitivity(0)
+            self.inputWidget.setCompleter(self.completer)
+
+    def fill(self, listenId = None):
+        '''fill the QComboBox with the values'''
+        if self.values != {}:
+            self.inputWidget.clear()
+
+            if listenId != None:
+                for keyValue, valueArray in self.values.iteritems():
+                    if valueArray[1] == listenId:
+                        sValue = valueArray[0]
+                        self.inputWidget.addItem(sValue, keyValue)
+
+                #sort the comboBox
+                model = self.inputWidget.model()
+                proxy = QtGui.QSortFilterProxyModel(self.inputWidget)
+                proxy.setSourceModel(model)
+                model.setParent(proxy)
+                model.sort(0)
+                self.prepareCompleter(listenId)
+
