@@ -37,7 +37,7 @@ except:
 from qgis.core import *
 from qgis.gui import *
 
-from ddui import DataDrivenUi
+from ddui import DataDrivenUi, DdFormWidget
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
 import ddtools
@@ -444,6 +444,23 @@ class DdManager(object):
                 showParents = layerValues[4]
 
             self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize,  None]
+
+    def addFormWidget(self, layer, label, toolTip = None, toUi = True, toSearchUi = True):
+        layerValues = self.__getLayerValues(layer)
+        thisTable = layerValues[0]
+        aTable = DdTable(thisTable.oid, thisTable.schemaName,
+            thisTable.tableName, toolTip, label)
+        ui = layerValues[2]
+        searchUi = layerValues[3]
+
+
+        if toUi:
+            newUiForm = DdFormWidget(aTable)
+            ui.addFormWidget(newUiForm)
+
+        if toSearchUi:
+            newSearchUiForm = DdFormWidget(aTable)
+            searchUi.addFormWidget(newSearchUiForm)
 
     def addInputWidget(self, layer, inputWidget, ddFormWidgetIndex = None,
             beforeWidget = None, toUi = True, toSearchUi = True):
