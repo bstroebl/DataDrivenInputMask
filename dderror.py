@@ -40,7 +40,9 @@ class DdError(object):
                 QgsMessageLog.logMessage("DdError: " + value,  level=QgsMessageLog.CRITICAL)
             else:
                 if iface:
-                    iface.messageBar().pushMessage("DdError",  value, level=QgsMessageBar.CRITICAL)
+                    iface.messageBar().pushMessage("DdError",
+                        value, level=QgsMessageBar.CRITICAL,
+                        duration = 10)
                 else:
                     QtGui.QMessageBox.warning(None, "DdError",  value)
 
