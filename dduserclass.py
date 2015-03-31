@@ -32,6 +32,7 @@ from dderror import DdError
 from qgis.core import *
 from PyQt4 import QtCore, QtGui, QtSql
 from dddialog import DdDialog,  DdSearchDialog
+from ddattribute import DdDateLayerAttribute
 
 class DdPushButton(DdInputWidget):
     '''abstract class needs subclassing'''
@@ -40,7 +41,7 @@ class DdPushButton(DdInputWidget):
         DdInputWidget.__init__(self,  attribute)
 
     def __str__(self):
-        return "<dduserclass.DdPushButton %s>" % str(self.attribute.label)
+        return "<dduserclass.DdPushButton %s>" % str(self.attribute.name)
 
     def setupUi(self,  parent,  db):
         self.label = self.getLabel()
@@ -209,13 +210,13 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
     only from related features being in this catalog'''
 
     def __init__(self,  attribute):
-        DdN2mWidget.__init__(self,  attribute)
+        DdN2mWidget.__init__(self, attribute)
         self.catalogCbx = None
         self.catalogLayer = None
         self.catalogIndex = 0
 
     def __str__(self):
-        return "<dduserclass.DdN2mCheckableTableWidget %s>" % str(self.attribute.label)
+        return "<dduserclass.DdN2mCheckableTableWidget %s>" % str(self.attribute.name)
 
     def hasCatalog(self):
         return (self.attribute.catalogTable != None and self.attribute.relatedCatalogIdField != None and
@@ -272,17 +273,30 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         defaultValues = []
 
         for anAttr in self.attribute.attributes:
-            if anAttr.hasDefault:
+            if anAttr.hasDefault and not isinstance(anAttr, DdDateLayerAttribute):
                 defaultValues.append(anAttr.default)
             else:
                 defaultValues.append("NULL")
 
         return defaultValues
 
-    def getFeatureValues(self,  thisFeature):
+    def getFeatureValues(self, thisFeature):
         values = []
-        for anAttr in self.attribute.attributes:
-            values.append(thisFeature[self.tableLayer.fieldNameIndex(anAttr.name)])
+
+        for i in range(len(self.attribute.attributes)):
+            anAtt = self.attribute.attributes[i]
+            aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
+
+            if isinstance(aValue, QtCore.QPyNullVariant):
+                aValue = 'NULL'
+            else:
+                if isinstance(anAtt, DdDateLayerAttribute):
+                    loc = QtCore.QLocale.system()
+                    aValue = loc.toString(aValue)
+                else:
+                    aValue = unicode(aValue)
+
+            values.append(aValue)
 
         return values
 
@@ -435,7 +449,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                     self.parentDialog = pParent
                     break
         else:
-            DdN2mWidget.setupUi(self,  parent,  db)
+            DdN2mWidget.setupUi(self, parent, db)
 
     # Slots
     @QtCore.pyqtSlot(int)
@@ -460,8 +474,9 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                 thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] = relatedId
 
                 if not self.tableLayer.addFeature(thisFeature):
-                    DdError(QtGui.QApplication.translate("DdError", "Could not add feature to layer:", None,
-                                           QtGui.QApplication.UnicodeUTF8) + " " + aLayer.name())
+                    DdError(QtGui.QApplication.translate("DdError",
+                        "Could not add feature to layer:", None,
+                        QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
                     return None
 
             result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  \
