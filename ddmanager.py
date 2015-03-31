@@ -231,13 +231,21 @@ class DdManager(object):
     def makeDdTable(self,  layer,  db = None):
         '''make a DdTable object from the passed in layer, returns None, if layer is not suitable'''
         if 0 != layer.type():   # not a vector layer
-            DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
+            DdError(
+                QtGui.QApplication.translate("DdError",
+                    "Layer is not a vector layer: ", None,
+                    QtGui.QApplication.UnicodeUTF8
+                ) + layer.name(), iface = self.iface,
+                showInLog = True)
             return None
         else:
             if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
-                DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
+                DdError(
+                    QtGui.QApplication.translate("DdError",
+                        "Layer is not a PostgreSQL layer: ", None,
+                        QtGui.QApplication.UnicodeUTF8
+                    ) + layer.name(), iface = self.iface,
+                    showInLog = True)
                 return None
             else:
                 layerSrc = self.__analyzeSource(layer)
@@ -259,8 +267,12 @@ class DdManager(object):
                     thisTable.comment = comment
 
                 if not self.__isTable(thisTable,  db):
-                    DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL table: ", None,
-                                                                       QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
+                    DdError(
+                        QtGui.QApplication.translate("DdError",
+                            "Layer is not a PostgreSQL table: ", None,
+                            QtGui.QApplication.UnicodeUTF8
+                        ) + layer.name(), iface = self.iface,
+                        showInLog = True)
                     return None
                 else:
                     return thisTable
