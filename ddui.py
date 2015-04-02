@@ -1607,6 +1607,9 @@ class DdLineEdit(DdInputWidget):
         self.label = self.createLabel(parent)
         hLayout = QtGui.QHBoxLayout(parent)
         self.searchCbx = QtGui.QComboBox(parent)
+        self.searchEventFilter = DdEventFilter(self.searchCbx)
+        self.searchCbx.installEventFilter(self.searchEventFilter)
+        self.searchEventFilter.doubleClicked.connect(self.onDoubleClick)
         searchItems = ["=",  "!="]
 
         if not self.attribute.isFK:
