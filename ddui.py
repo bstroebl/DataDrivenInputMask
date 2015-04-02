@@ -3353,7 +3353,8 @@ class DdN2mTableWidget(DdN2mWidget):
                         for anAttribute in self.attribute.attributes:
                             if anAttribute.name == fieldName:
                                 if searchSql == "":
-                                    searchSql = self.attribute.pkAttName + " IN (SELECT "  + self.attribute.relationFeatureIdField
+                                    searchSql = self.attribute.pkAttName + " IN (SELECT \""  + \
+                                        self.attribute.relationFeatureIdField + "\""
                                     searchSql += " FROM \"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\" WHERE "
                                 else:
                                     searchSql += " AND "
