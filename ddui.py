@@ -1604,6 +1604,7 @@ class DdLineEdit(DdInputWidget):
 
     def setupUi(self,  parent,  db):
         '''setup the label and add the inputWidget to parents formLayout'''
+
         self.label = self.createLabel(parent)
         hLayout = QtGui.QHBoxLayout(parent)
         self.searchCbx = QtGui.QComboBox(parent)
@@ -3172,7 +3173,9 @@ class DdN2mTableWidget(DdN2mWidget):
                                     operator = operatorElement.text
                                     valueElement = fieldElement.find("value")
 
-                                    if valueElement != None:
+                                    if valueElement != None and \
+                                            operator != "IS NULL" and \
+                                            operator == "IS NOT NULL":
                                         textValue = valueElement.text
 
                                         if anAttr.isFK:
