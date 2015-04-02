@@ -1997,7 +1997,13 @@ class DdLineEdit(DdInputWidget):
 
     def onDoubleClick(self):
         '''slot called when event filter on self.inputWidget throws doubleClick signal'''
-        if self.chk.isChecked() and self.attribute.enableWidget:
+        doActivate = self.chk.isChecked() # activate only if currently deactivated
+
+        if not self.searchMode:
+            doActivate = self.attribute.enableWidget
+            # activate only if enableWidget flag is True (not if in searchMode)
+
+        if doActivate:
             self.chk.setChecked(False)
             self.inputWidget.setFocus()
 
