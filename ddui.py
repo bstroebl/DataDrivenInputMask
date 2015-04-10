@@ -3291,13 +3291,15 @@ class DdN2mTableWidget(DdN2mWidget):
                 if isinstance(aValue,  QtCore.QPyNullVariant):
                     aValue = 'NULL'
                 else:
-                    if isinstance(anAtt,  DdDateLayerAttribute):
-                        loc = QtCore.QLocale.system()
-                        aValue = loc.toString(aValue)
+                    if isinstance(anAtt, DdDateLayerAttribute):
+                        item = QtGui.QTableWidgetItem()
+                        item.setData(QtCore.Qt.DisplayRole, aValue)
                     else:
-                        aValue = unicode(aValue)
-
-            item = QtGui.QTableWidgetItem(aValue)
+                        if anAtt.isTypeInt() or anAtt.isTypeFloat():
+                            item = QtGui.QTableWidgetItem()
+                            item.setData(QtCore.Qt.DisplayRole, aValue)
+                        else:
+                            item = QtGui.QTableWidgetItem(unicode(aValue))
 
             if i == 0:
                 item.feature = thisFeature
