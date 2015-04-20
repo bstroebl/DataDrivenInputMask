@@ -289,12 +289,6 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
             if isinstance(aValue, QtCore.QPyNullVariant):
                 aValue = 'NULL'
-            else:
-                if isinstance(anAtt, DdDateLayerAttribute):
-                    loc = QtCore.QLocale.system()
-                    aValue = loc.toString(aValue)
-                else:
-                    aValue = unicode(aValue)
 
             values.append(aValue)
 
@@ -328,8 +322,8 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
     def fill(self,  catalogId = None):
         self.inputWidget.setRowCount(0)
-        relatedValues = []
-        checkedRelatedValues = []
+        relatedValues = {}
+        checkedRelatedValues = {}
         valueDict = {}
         defaultValues = self.getDefaultValues()
         subsetString = ""
@@ -344,38 +338,40 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         self.applySubsetString(False)
 
-        for relatedFeature in self.relatedLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+        for relatedFeature in self.relatedLayer.getFeatures(
+                QgsFeatureRequest().setFlags(
+                QgsFeatureRequest.NoGeometry)):
             relatedId = relatedFeature.id()
-            relatedValue = relatedFeature[self.relatedLayer.fieldNameIndex(self.attribute.relatedDisplayField)]
+            relatedValue = relatedFeature[self.relatedLayer.fieldNameIndex(
+                self.attribute.relatedDisplayField)]
             isChecked = False
 
-            for thisFeature in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-                if relatedId == thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)]:
+            for thisFeature in self.tableLayer.getFeatures(
+                    QgsFeatureRequest().setFlags(
+                    QgsFeatureRequest.NoGeometry)):
+                if relatedId == thisFeature[self.tableLayer.fieldNameIndex(
+                        self.attribute.relationRelatedIdField)]:
                     isChecked = True
-                    values = self.getFeatureValues(thisFeature)
                     break
 
             if isChecked:
-                checkedRelatedValues.append(relatedValue)
-                valueDict[relatedValue] = [relatedId,  values,  thisFeature]
+                checkedRelatedValues[relatedId] = relatedValue
+                values = self.getFeatureValues(thisFeature)
+                valueDict[relatedId] = [relatedId,  values,  thisFeature]
             else:
-                relatedValues.append(relatedValue)
-                #defaultValues[] = relatedId
-                valueDict[relatedValue] = [relatedId, defaultValues]
+                relatedValues[relatedId] = relatedValue
+                valueDict[relatedId] = [relatedId, defaultValues]
 
         self.applySubsetString(True)
 
         if self.relatedLayer.setSubsetString(oldSubsetString):
             self.relatedLayer.reload()
 
-        checkedRelatedValues.sort()
-        relatedValues.sort()
+        for key, val in checkedRelatedValues.items():
+            self.appendRow(valueDict[key], val)
 
-        for val in checkedRelatedValues:
-            self.appendRow(valueDict[val], val)
-
-        for val in relatedValues:
-            self.appendRow(valueDict[val], val)
+        for key, val in relatedValues.items():
+            self.appendRow(valueDict[key], val)
 
     def fillRow(self, thisRow, passedValues, thisValue):
         '''fill thisRow with values
@@ -400,10 +396,18 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             aValue = values[i]
 
             if i == self.relationRelatedIdIndex:
-                item = QtGui.QTableWidgetItem(thisValue)
+                if isinstance(thisValue, int) or isinstance(thisValue, float) or isinstance(thisValue, QtCore.QDate):
+                    item = QtGui.QTableWidgetItem()
+                    item.setData(QtCore.Qt.DisplayRole, thisValue)
+                else:
+                    item = QtGui.QTableWidgetItem(thisValue)
                 item.id = relatedId
             else:
-                item = QtGui.QTableWidgetItem(unicode(aValue))
+                if isinstance(aValue, int) or isinstance(aValue, float) or isinstance(aValue, QtCore.QDate):
+                    item = QtGui.QTableWidgetItem()
+                    item.setData(QtCore.Qt.DisplayRole, aValue)
+                else:
+                    item = QtGui.QTableWidgetItem(unicode(aValue))
 
             self.inputWidget.setItem(thisRow, i+1, item)
 
