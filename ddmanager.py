@@ -228,6 +228,35 @@ class DdManager(object):
                     self.ddLayers[layer.id()] = [thisTable,  db,  inputUi,  searchUi,  showParents,  thisSize,  root]
                     return True
 
+    def createDdTable(self, db, schemaName, tableName,
+            withOid = True, withComment = True):
+        '''create a DdTable object from the passed in variables'''
+
+        thisTable = DdTable(schemaName = schemaName, tableName = tableName)
+
+        if db == None:
+            return None
+
+        if withOid:
+            thisTable.oid = self.__getOid(thisTable, db)
+
+        if withComment:
+            comment = self.__getComment(thisTable, db)
+
+            if comment:
+                thisTable.comment = comment
+
+        if not self.__isTable(thisTable,  db):
+            DdError(
+                QtGui.QApplication.translate("DdError",
+                    "Layer is not a PostgreSQL table: ", None,
+                    QtGui.QApplication.UnicodeUTF8
+                ) + layer.name(), iface = self.iface,
+                showInLog = True)
+            return None
+        else:
+            return thisTable
+
     def makeDdTable(self,  layer,  db = None):
         '''make a DdTable object from the passed in layer, returns None, if layer is not suitable'''
         if 0 != layer.type():   # not a vector layer
