@@ -3275,7 +3275,12 @@ class DdN2mTableWidget(DdN2mWidget):
 
         for i in range(len(self.attribute.attributes)):
             anAtt = self.attribute.attributes[i]
-            aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
+
+            try:
+                aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
+            except:
+                DdError("Field " + anAtt.name + " not found!")
+                continue
 
             if self.searchMode:
                 if isinstance(aValue,  QtCore.QPyNullVariant):
