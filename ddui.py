@@ -684,9 +684,15 @@ class DataDrivenUi(object):
                     rMinMax = configList[4]
                     attributes = self.getAttributes(
                         ddRelationTable, db, rLabels, rMinMax, skipThese)
+
+                    attrsToKeep = []
+                    for aRelAtt in attributes:
+                        if aRelAtt.type != "geometry":
+                            attrsToKeep.append(aRelAtt)
+
                     ddAtt = DdTableAttribute(
                         ddRelationTable, relationComment, attLabel, relationFeatureIdField,
-                        attributes, maxRows, showParents, attName, attEnableWidget)
+                        attrsToKeep, maxRows, showParents, attName, attEnableWidget)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
 
