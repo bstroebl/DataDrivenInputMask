@@ -33,7 +33,8 @@ import os
 # create the dialog
 class DdDialog(QtGui.QDialog):
     '''Each mask is a DdDialog instance, thus a child of QDialog'''
-    def __init__(self,  ddManager,  ui,  layer,  feature,  db,  parent = None,  title = None):
+    def __init__(self, ddManager, ui, layer, feature, db, multiEdit,
+            parent = None, title = None):
         QtGui.QDialog.__init__(self,  parent)
         # Set up the user interface from Designer.
         self.ddManager = ddManager
@@ -41,6 +42,12 @@ class DdDialog(QtGui.QDialog):
         self.layer = layer
         self.feature = feature
         self.db = db
+
+        if multiEdit:
+            self.mode = 2
+        else:
+            self.mode = 0
+
         self.forEdit = self.layer.isEditable()
         self.ui.setupUi(self,  self.db)
         okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
@@ -54,17 +61,21 @@ class DdDialog(QtGui.QDialog):
             title = self.layer.name()
             title += " - "
 
-            if self.feature.id() < 0:
-                title += QtGui.QApplication.translate("DdInfo", "New Feature",
-                         None, QtGui.QApplication.UnicodeUTF8)
+            if self.mode == 2:
+                title += QtGui.QApplication.translate("DdInfo", "%s selected features",
+                    None, QtGui.QApplication.UnicodeUTF8) % str(self.layer.selectedFeatureCount())
             else:
-                title += QtGui.QApplication.translate("DdInfo", "Feature",
+                if self.feature.id() < 0:
+                    title += QtGui.QApplication.translate("DdInfo", "New Feature",
+                        None, QtGui.QApplication.UnicodeUTF8)
+                else:
+                    title += QtGui.QApplication.translate("DdInfo", "Feature",
                         None, QtGui.QApplication.UnicodeUTF8) + " " + str(self.feature.id())
 
         self.setWindowTitle(title)
 
     def initialize(self):
-        self.ui.initialize(self.layer,  self.feature,  self.db)
+        self.ui.initialize(self.layer, self.feature, self.db, self.mode)
 
     def accept(self):
         if self.ui.checkInput(self.layer,  self.feature):
@@ -110,6 +121,7 @@ class DdSearchDialog(QtGui.QDialog):
         self.ui = ui
         self.layer = layer
         self.db = db
+        self.mode = 1
         self.feature = QgsFeature(-3333)
         fields = self.layer.pendingFields()
         self.feature.initAttributes(fields.count())
@@ -144,7 +156,7 @@ class DdSearchDialog(QtGui.QDialog):
         self.setWindowTitle(title)
 
     def initialize(self):
-        self.ui.initialize(self.layer,  self.feature,  self.db)
+        self.ui.initialize(self.layer, self.feature, self.db, self.mode)
 
     def clicked(self,  thisButton):
         if thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok):

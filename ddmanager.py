@@ -345,13 +345,17 @@ class DdManager(object):
         if actionToRemove >= 0:
             layer.actions().removeAction(actionToRemove)
 
-    def showFeatureForm(self,  layer,  feature,  showParents = True, title = None,  askForSave = True):
-        '''api method showFeatureForm: show the data-driven input mask for a layer and a feature
+    def showFeatureForm(self, layer, feature, showParents = True,
+            title = None, askForSave = True, multiEdit = False):
+        '''
+        api method showFeatureForm: show the data-driven input mask for a layer and a feature
         if the data provider allows editing the layer is turned into editing mode
-        if the user clicks OK all changes to teh feature are committed (no undo!)
+        if the user clicks OK all changes to the feature are committed (no undo!)
         if askForSave is true and the layer has pending changes the user is asked if the changes
         shall be commited before the mask is opened
-        returns 1 if user clicked OK, 0 if CANCEL'''
+        if multiEdit is True then the changes are applied to all selected Features in the layer
+        returns 1 if user clicked OK, 0 if CANCEL
+        '''
 
         layerValues = self.__getLayerValues(layer,  inputMask = True,  searchMask = False)
 
@@ -402,12 +406,17 @@ class DdManager(object):
                     layer.startEditing()
 
             if result == 1:
-                highlightGeom = self.highlightFeature(layer,  feature)
+                if multiEdit:
+                    highlightGeom = None
+                else:
+                    highlightGeom = self.highlightFeature(layer, feature)
+
                 db = layerValues[1]
                 ui = layerValues[2]
                 thisSize = layerValues[5]
 
-                dlg = DdDialog(self,  ui,  layer,  feature,  db,  title = title)
+                dlg = DdDialog(self, ui, layer, feature, db, multiEdit,
+                    title = title)
                 dlg.show()
 
                 if thisSize != None:

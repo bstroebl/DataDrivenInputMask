@@ -987,7 +987,7 @@ class DdWidget(object):
         must be implemented in child classes'''
         raise NotImplementedError("Should have implemented setupUi")
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
         '''initialize this widget for feature in layer
         must be implemented in child classes'''
         raise NotImplementedError("Should have implemented initialize")
@@ -1117,9 +1117,9 @@ class DdDialogWidget(DdWidget):
 
             ddFormWidget.addInputWidget(inputWidget,  beforeWidget)
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
         for aForm in self.forms:
-            aForm.initialize(layer,  feature,  db)
+            aForm.initialize(layer, feature, db, mode)
 
     def checkInput(self,  layer,  feature):
         inputOk = True
@@ -1263,13 +1263,14 @@ class DdFormWidget(DdWidget):
         else:
             self.inputWidgets.insert(beforeWidget,  ddInputWidget)
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
         self.oldSubsetString = self.layer.subsetString()
         enableAll = False
 
-        if feature.id() == -3333: # search feature
+        if self.mode == 1: # search feature
             for anInputWidget in self.inputWidgets:
-                anInputWidget.initialize(self.layer,  feature,  db)
+                anInputWidget.initialize(self.layer, feature, db, self.mode)
         else:
             if layer.id() == self.layer.id():
                 self.feature = feature
@@ -1316,7 +1317,7 @@ class DdFormWidget(DdWidget):
                                 self.layer.removeSelection()
 
             for anInputWidget in self.inputWidgets:
-                anInputWidget.initialize(self.layer,  self.feature,  db)
+                anInputWidget.initialize(self.layer, self.feature, db, self.mode)
 
                 if enableAll:
                     anInputWidget.enableAccordingToDdAttribute()
@@ -1442,7 +1443,6 @@ class DdInputWidget(DdWidget):
         self.attribute = ddAttribute
         self.hasChanges = False
         self.inputWidget = None
-        self.searchMode = False
 
     def __str__(self):
         return "<ddui.DdInputWidget %s>" % str(self.attribute.name)
@@ -1504,6 +1504,7 @@ class DdLineEdit(DdInputWidget):
     def __init__(self,  attribute):
         DdInputWidget.__init__(self,  attribute)
         self.chk = None
+        self.mode = 0 # 0 = single feature edit, 1 = search, 2 = multi edit
 
     def __str__(self):
         return "<ddui.DdOneLineInputWidget %s>" % str(self.attribute.name)
@@ -1529,11 +1530,14 @@ class DdLineEdit(DdInputWidget):
         if feature == None:
             return None
 
+        if self.mode == 2 and not self.attribute.notNull:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
         if feature.id() < 0 and thisValue == None: # new feature
-            if self.searchMode: # no return value for search feature
+            if self.mode == 1: # no return value for search feature
                 if self.attribute.hasDefault:
                     thisValue = self.getDefault()
 
@@ -1686,14 +1690,15 @@ class DdLineEdit(DdInputWidget):
         if self.betweenWidget != None:
             self.setBetweenValue(thisValue)
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
+
+        self.mode = mode
 
         if feature == None:
             self.searchCbx.setVisible(False)
             self.manageChk(None)
         else:
-            if feature.id() == -3333: # searchFeature
-                self.searchMode = True
+            if self.mode == 1: # searchFeature
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
                 self.chk.setText(QtGui.QApplication.translate("DdInfo", "Ignore", None,
@@ -1702,7 +1707,6 @@ class DdLineEdit(DdInputWidget):
                                                                QtGui.QApplication.UnicodeUTF8))
                 self.searchCbx.setVisible(True)
             else:
-                self.searchMode = False
                 self.searchCbx.setVisible(False)
                 thisValue = self.getFeatureValue(layer,  feature)
                 self.setValue(thisValue)
@@ -1794,7 +1798,11 @@ class DdLineEdit(DdInputWidget):
         fieldIndex = self.getFieldIndex(layer)
 
         if self.hasChanges:
-            layer.changeAttributeValue(feature.id(), fieldIndex, thisValue)
+            if self.mode == 0:
+                layer.changeAttributeValue(feature.id(), fieldIndex, thisValue)
+            elif self.mode == 2:
+                for anId in layer.selectedFeaturesIds():
+                    layer.changeAttributeValue(anId, fieldIndex, thisValue)
 
         return self.hasChanges
 
@@ -1982,7 +1990,7 @@ class DdLineEdit(DdInputWidget):
     #slots
     def chkStateChanged(self,  newState):
         '''slot: disables the input widget if the null checkbox is checked and vice versa'''
-        if self.searchMode:
+        if self.mode == 1:
             self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
         else:
             self.inputWidget.setEnabled(
@@ -2005,7 +2013,7 @@ class DdLineEdit(DdInputWidget):
         '''slot called when event filter on self.inputWidget throws doubleClick signal'''
         doActivate = self.chk.isChecked() # activate only if currently deactivated
 
-        if not self.searchMode:
+        if self.mode != 1:
             doActivate = self.attribute.enableWidget
             # activate only if enableWidget flag is True (not if in searchMode)
 
@@ -2028,7 +2036,7 @@ class DdLineEditInt(DdLineEdit):
             thisValue = ""
         else:
             # convert int to a locale string representation
-            if not self.searchMode:
+            if self.mode != 1:
                 try:
                     thisInt = int(thisValue)
                     thisValue = self.toString(thisInt)
@@ -2046,12 +2054,15 @@ class DdLineEditInt(DdLineEdit):
         if feature == None:
             return None
 
+        if self.mode == 2 and not self.attribute.notNull:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
         if feature.id() < 0 and (thisValue == None or not isinstance(thisValue,  int)):
             # new feature and no value set or sequence value in its original form
-            if feature.id() != -3333: # no return value for search feature
+            if self.mode != 1: # no return value for search feature
                 if self.attribute.hasDefault:
                     thisValue = self.getDefault()
 
@@ -2066,7 +2077,7 @@ class DdLineEditInt(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                if self.searchMode:
+                if self.mode == 1:
                     loc = QtCore.QLocale.system()
                 else:
                     loc = self.inputWidget.validator().locale()
@@ -2076,7 +2087,7 @@ class DdLineEditInt(DdLineEdit):
                 if accepted:
                     thisValue = intValue
                 else:
-                    if not self.searchMode:
+                    if self.mode != 1:
                         if noSerial: # if thisValue is a serial we set it to None
                             thisValue = None
 
@@ -2088,7 +2099,7 @@ class DdLineEditInt(DdLineEdit):
             thisValue = None
         else:
             if self.attribute.hasDefault:
-                if self.searchMode:
+                if self.mode == 1:
                     thisValue = ""
                 else:
                     thisValue = self.getDefault()
@@ -2122,7 +2133,11 @@ class DdLineEditInt(DdLineEdit):
         fieldIndex = self.getFieldIndex(layer)
 
         if self.hasChanges:
-            layer.changeAttributeValue(feature.id(),  fieldIndex,  thisValue)
+            if self.mode == 0:
+                layer.changeAttributeValue(feature.id(), fieldIndex, thisValue)
+            elif self.mode == 2:
+                for anId in layer.selectedFeaturesIds():
+                    layer.changeAttributeValue(anId, fieldIndex, thisValue)
 
         return self.hasChanges
 
@@ -2219,7 +2234,7 @@ class DdLineEditDouble(DdLineEdit):
             if thisValue == "":
                 thisValue = None
             else:
-                if self.searchMode:
+                if self.mode == 1:
                     loc = QtCore.QLocale.system()
                 else:
                     loc = self.inputWidget.validator().locale()
@@ -2229,7 +2244,7 @@ class DdLineEditDouble(DdLineEdit):
                 if thisDouble[1]:
                     thisValue = thisDouble[0]
                 else:
-                    if not self.searchMode:
+                    if self.mode != 1:
                         thisValue = None
 
         return thisValue
@@ -2249,7 +2264,7 @@ class DdLineEditDouble(DdLineEdit):
                 if thisDouble[1]:
                     thisValue = thisDouble[0]
                 else:
-                    if not self.searchMode:
+                    if self.mode != 1:
                         thisValue = None
 
         return thisValue
@@ -2320,11 +2335,14 @@ class DdComboBox(DdLineEdit):
         if feature == None:
             return None
 
+        if self.mode == 2 and not self.attribute.notNull:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex] #returns None if empty
 
         if  feature.id() < 0 and thisValue == None: # new feature and no value set
-            if feature.id() != -3333: # no return value for search feature
+            if self.mode != 1: # no return value for search feature
                 if self.attribute.hasDefault:
                     if self.attribute.isTypeInt():
                         thisValue = int(self.getDefault())
@@ -2479,7 +2497,11 @@ class DdDateEdit(DdLineEdit):
 
     def getFeatureValue(self,  layer,  feature):
         '''returns a QDate representing the value in this field for this feature'''
+
         if feature == None:
+            return None
+
+        if self.mode == 2 and not self.attribute.notNull:
             return None
 
         fieldIndex = self.getFieldIndex(layer)
@@ -2489,7 +2511,7 @@ class DdDateEdit(DdLineEdit):
             thisValue = None
 
         if thisValue == None:
-            if feature.id() != -3333: # no return value for search feature
+            if self.mode != 1: # no return value for search feature
                 if feature.id() < 0 and self.attribute.hasDefault:
                     thisValue = self.getDefault().toDate()
                 else:
@@ -2603,6 +2625,9 @@ class DdCheckBox(DdLineEdit):
         if feature == None:
             return None
 
+        if self.mode == 2 and not self.attribute.notNull:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
 
@@ -2613,7 +2638,7 @@ class DdCheckBox(DdLineEdit):
                 thisValue = True
 
         if feature.id() < 0 and thisValue == None: # new feature and no value set
-            if feature.id() != -3333: # no return value for search feature
+            if self.mode != 1: # no return value for search feature
                 if self.attribute.hasDefault:
                     thisValue = bool(self.getDefault())
 
@@ -2715,7 +2740,7 @@ class DdN2mWidget(DdInputWidget):
         DdInputWidget.__init__(self,  attribute)
         self.tableLayer = None
         self.oldSubsetString = ""
-        self.featureId = None
+        self.featureId = []
         self.forEdit = False
 
     def setSizeMax(self,  widget):
@@ -2765,15 +2790,20 @@ class DdN2mWidget(DdInputWidget):
                                                 createAction = True,  db = None,  inputMask = True,   \
                                                 inputUi = None,  searchUi = None,  helpText = "") # reinitialize inputMask only
 
-        self.featureId = feature.id()
+        if self.mode == 2:
+            self.featureId = []
+
+            for anId in layer.selectedFeaturesIds():
+                self.featureId.append(anId)
+        else:
+            self.featureId = [feature.id()]
+
         self.oldSubsetString = self.tableLayer.subsetString()
 
-        if self.featureId == -3333: #search ui
-            self.searchMode = True
+        if self.mode == 1: #search ui
             self.forEdit = True
         else:
-            self.searchMode = False
-            self.forEdit = self.featureId > 0
+            self.forEdit = self.featureId[0] > 0
 
             if self.forEdit:
                 self.forEdit = layer.isEditable()
@@ -2796,8 +2826,18 @@ class DdN2mWidget(DdInputWidget):
                         return True
             else:
                 # reduce the features in self.tableLayer to those related to feature
-                subsetString = self.attribute.subsetString
-                subsetString += str(self.featureId)
+                subsetString = self.attribute.subsetString + "("
+
+                for i in range(len(self.featureId)):
+                    anId = self.featureId[i]
+
+                    if i == 0:
+                        subsetString += str(anId)
+                    else:
+                        subsetString += "," + str(anId)
+
+                subsetString += ")"
+
                 if self.tableLayer.setSubsetString(subsetString):
                     self.tableLayer.reload()
                     return True
@@ -2815,7 +2855,7 @@ class DdN2mWidget(DdInputWidget):
         fields = self.tableLayer.pendingFields()
         newFeature.initAttributes(fields.count())
 
-        if not self.searchMode:
+        if self.mode != 1:
             for i in range(fields.count()):
                 newFeature.setAttribute(i,provider.defaultValue(i))
 
@@ -2862,21 +2902,24 @@ class DdN2mListWidget(DdN2mWidget):
             itemId = thisItem.id
 
             if thisItem.checkState() == 2:
-                feat = self.createFeature()
-                feat.setAttribute(featureIdField,  self.featureId)
-                feat.setAttribute(relatedIdField,  itemId)
-                self.tableLayer.addFeature(feat,  False)
+                for anId in self.featureId:
+                    feat = self.createFeature()
+                    feat.setAttribute(featureIdField, anId)
+                    feat.setAttribute(relatedIdField, itemId)
+                    self.tableLayer.addFeature(feat, False)
             else:
                 self.applySubsetString(False)
                 self.tableLayer.selectAll()
 
                 for aFeature in self.tableLayer.selectedFeatures():
-                    if aFeature[featureIdField] == self.featureId:
-                        if aFeature[relatedIdField] == itemId:
-                            idToDelete = aFeature.id()
-                            self.tableLayer.deleteFeature(idToDelete)
-                            break
+                    for anId in self.featureId:
+                        if aFeature[featureIdField] == anId:
+                            if aFeature[relatedIdField] == itemId:
+                                idToDelete = aFeature.id()
+                                self.tableLayer.deleteFeature(idToDelete)
+
                 self.applySubsetString(True)
+
             self.hasChanges = True
         else: # do not show any changes
             self.inputWidget.itemChanged.disconnect(self.registerChange)
@@ -2894,11 +2937,18 @@ class DdN2mListWidget(DdN2mWidget):
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
+
         if feature != None:
             self.initializeLayer(layer,  feature,  db)
             query = QtSql.QSqlQuery(db)
-            query.prepare(self.attribute.displayStatement)
+            dispStatement = self.attribute.displayStatement
+
+            if self.mode == 2:
+                dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
+
+            query.prepare(dispStatement)
             query.bindValue(":featureId", feature.id())
             query.exec_()
 
@@ -2909,7 +2959,12 @@ class DdN2mListWidget(DdN2mWidget):
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
                     parent = unicode(query.value(1))
-                    checked = int(query.value(2))
+
+                    if self.mode == 2:
+                        checked = 0
+                    else:
+                        checked = int(query.value(2))
+
                     parentItem = QtGui.QListWidgetItem(parent)
                     parentItem.id = parentId
                     parentItem.setCheckState(checked)
@@ -2997,20 +3052,21 @@ class DdN2mTreeWidget(DdN2mWidget):
                 itemId = thisItem.id
 
                 if thisItem.checkState(0) == 2:
-                    feat = self.createFeature()
-                    feat.setAttribute(featureIdField,  self.featureId)
-                    feat.setAttribute(relatedIdField,  itemId)
-                    self.tableLayer.addFeature(feat,  False)
+                    for anId in self.featureId:
+                        feat = self.createFeature()
+                        feat.setAttribute(featureIdField, anId)
+                        feat.setAttribute(relatedIdField, itemId)
+                        self.tableLayer.addFeature(feat, False)
                 else:
                     self.applySubsetString(False)
                     self.tableLayer.selectAll()
 
                     for aFeature in self.tableLayer.selectedFeatures():
-                        if aFeature[featureIdField] == self.featureId:
-                            if aFeature[relatedIdField] == itemId:
-                                idToDelete = aFeature.id()
-                                self.tableLayer.deleteFeature(idToDelete)
-                                break
+                        for anId in self.featureId:
+                            if aFeature[featureIdField] == anId:
+                                if aFeature[relatedIdField] == itemId:
+                                    idToDelete = aFeature.id()
+                                    self.tableLayer.deleteFeature(idToDelete)
 
                     self.applySubsetString(True)
                 self.hasChanges = True
@@ -3033,12 +3089,19 @@ class DdN2mTreeWidget(DdN2mWidget):
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
+
         if feature != None:
             self.initializeLayer(layer,  feature,  db)
             query = QtSql.QSqlQuery(db)
-            query.prepare(self.attribute.displayStatement)
-            query.bindValue(":featureId", self.featureId)
+            dispStatement = self.attribute.displayStatement
+
+            if self.mode == 2:
+                dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
+
+            query.prepare(dispStatement)
+            query.bindValue(":featureId", feature.id())
             query.exec_()
 
             if query.isActive():
@@ -3048,7 +3111,12 @@ class DdN2mTreeWidget(DdN2mWidget):
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
                     parent = unicode(query.value(1))
-                    checked = int(query.value(2))
+
+                    if self.mode == 2:
+                        checked = 0
+                    else:
+                        checked = int(query.value(2))
+
                     parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
                     parentItem.id = parentId
                     parentItem.setCheckState(0,  checked)
@@ -3167,7 +3235,7 @@ class DdN2mTableWidget(DdN2mWidget):
     def fill(self):
         self.inputWidget.setRowCount(0)
 
-        if self.searchMode:
+        if self.mode == 1:
             ddTable = self.ddManager.makeDdTable(self.tableLayer)
             thisFeature = self.createFeature(-3333)
 
@@ -3226,6 +3294,8 @@ class DdN2mTableWidget(DdN2mWidget):
 
                     self.appendRow(thisFeature)
                     self.addButton.setEnabled(False)
+        elif self.mode == 2:
+            self.addButton.setEnabled(False)
         else:
             self.applySubsetString(False)
             # display the features in the QTableWidget
@@ -3241,13 +3311,12 @@ class DdN2mTableWidget(DdN2mWidget):
             # reset here in case the same table is connected twice
             self.applySubsetString(True)
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
+
         if feature != None:
-            if feature.id() == -3333:
+            if self.mode == 1:
                 self.root = ET.Element('DdSearch')
-                self.searchMode = True
-            else:
-                self.searchMode = False
 
             self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
 
@@ -3288,7 +3357,7 @@ class DdN2mTableWidget(DdN2mWidget):
                 DdError("Field " + anAtt.name + " not found!")
                 continue
 
-            if self.searchMode:
+            if self.mode == 1:
                 if isinstance(aValue,  QtCore.QPyNullVariant):
                     aValue = ""
             else:
@@ -3466,7 +3535,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def doubleClick(self,  thisRow,  thisColumn):
         '''slot to be called when the user double clicks on the QTableWidget'''
-        if self.searchMode:
+        if self.mode == 1:
             self.ddManager.setLastSearch(self.tableLayer,  self.root)
             result = self.ddManager.showSearchForm(self.tableLayer)
 
@@ -3475,33 +3544,38 @@ class DdN2mTableWidget(DdN2mWidget):
                 thisRow = self.inputWidget.currentRow()
                 self.inputWidget.removeRow(thisRow)
                 self.fill()
-        else:
+        if self.mode == 0:
             if self.attribute.enableWidget:
                 featureItem = self.inputWidget.item(thisRow,  0)
                 thisFeature = featureItem.feature
-                result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  showParents = self.attribute.showParents)
+                result = self.ddManager.showFeatureForm(self.tableLayer,
+                    thisFeature, showParents = self.attribute.showParents)
 
                 if result == 1: # user clicked OK
                     # make sure user did not change parentFeatureId
-                    #self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
+                    #self.tableLayer.changeAttributeValue(thisFeature.id(),
+                    #   self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField), self.featureId)
                     # refresh thisFeature with the new values
-                    self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
+                    self.tableLayer.getFeatures(
+                        QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(
+                        QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
 
                     self.fillRow(thisRow,  thisFeature)
                     self.hasChanges = True
 
     def add(self):
         '''slot to be called when the user clicks on the add button'''
-        if self.searchMode:
+        if self.mode == 1:
             result = self.ddManager.showSearchForm(self.tableLayer)
 
             if result == 1:
                 self.root = self.ddManager.ddLayers[self.tableLayer.id()][6]
                 self.fill()
-        else:
+        elif self.mode == 0:
             thisFeature = self.createFeature()
             # set the parentFeature's id
-            thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] =  self.featureId
+            relationFeatFldIdx = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
+            thisFeature[relationFeatFldIdx] = self.featureId[0]
 
             if self.tableLayer.addFeature(thisFeature):
                 result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  askForSave = False)
@@ -3513,12 +3587,12 @@ class DdN2mTableWidget(DdN2mWidget):
         '''slot to be called when the user clicks on the remove button'''
         thisRow = self.inputWidget.currentRow()
 
-        if self.searchMode:
+        if self.mode == 1:
             self.inputWidget.removeRow(thisRow)
             self.addButton.setEnabled(True)
             self.root = ET.Element('DdSearch')
-        else:
-            featureItem = self.inputWidget.takeItem(thisRow,  0)
+        elif self.mode == 0:
+            featureItem = self.inputWidget.takeItem(thisRow, 0)
             thisFeature = featureItem.feature
             self.tableLayer.deleteFeature(thisFeature.id())
             self.inputWidget.removeRow(thisRow)
@@ -3557,6 +3631,9 @@ class DdArrayTableWidget(DdLineEdit):
         if feature == None:
             return None
 
+        if self.mode == 2 and not self.attribute.notNull:
+            return None
+
         fieldIndex = self.getFieldIndex(layer)
         thisValue = feature[fieldIndex]
         retValue = None
@@ -3578,7 +3655,7 @@ class DdArrayTableWidget(DdLineEdit):
                 retValue.append(self.fromString(aValue))
 
         if feature.id() < 0 and thisValue == None: # new feature
-            if not self.searchMode: # no return value for search feature
+            if self.mode != 1: # no return value for search feature
                 if self.attribute.hasDefault:
                     retValue = self.getDefault()
 
@@ -3605,7 +3682,7 @@ class DdArrayTableWidget(DdLineEdit):
             nullChk = self.inputWidget.cellWidget(
                 aRow, self.inputWidget.columnCount() - 1)
 
-            if (not self.searchMode) and nullChk.isChecked():
+            if (self.mode != 1) and nullChk.isChecked():
                 thisValue.append(None)
             else:
                 thisColumn = self.valueColumnIndex
@@ -3665,7 +3742,7 @@ class DdArrayTableWidget(DdLineEdit):
 
         thisValue = None
 
-        if (not setnull) and (not self.searchMode) and self.attribute.hasDefault:
+        if (not setnull) and (self.mode != 1) and self.attribute.hasDefault:
             thisValue = self.getDefault()
 
         self.setValue(thisValue)
@@ -3697,7 +3774,11 @@ class DdArrayTableWidget(DdLineEdit):
                 if saveValue == "{}":
                     saveValue = None
 
-            layer.changeAttributeValue(feature.id(), fieldIndex, saveValue)
+            if self.mode == 0:
+                layer.changeAttributeValue(feature.id(), fieldIndex, saveValue)
+            elif self.mode == 2:
+                for anId in layer.selectedFeaturesIds():
+                    layer.changeAttributeValue(anId, fieldIndex, saveValue)
 
         return self.hasChanges
 
@@ -3717,7 +3798,9 @@ class DdArrayTableWidget(DdLineEdit):
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
         return [inputWidget,  None]
 
-    def initialize(self, layer, feature, db):
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
+
         if feature == None:
             self.manageChk(None)
         else:
@@ -3733,8 +3816,7 @@ class DdArrayTableWidget(DdLineEdit):
             nullHeader = QtGui.QApplication.translate("DdInfo",
                 "Null", None, QtGui.QApplication.UnicodeUTF8)
 
-            if feature.id() == -3333: # searchFeature
-                self.searchMode = True
+            if self.mode == 1: # searchFeature
                 self.inputWidget.setColumnCount(4)
                 self.inputWidget.hideColumn(3)
                 self.inputWidget.setHorizontalHeaderLabels([
@@ -3749,7 +3831,6 @@ class DdArrayTableWidget(DdLineEdit):
                     None, QtGui.QApplication.UnicodeUTF8))
                 self.valueColumnIndex = 1
             else:
-                self.searchMode = False
                 self.inputWidget.setHorizontalHeaderLabels(
                     [valueHeader, nullHeader])
                 thisValue = self.getFeatureValue(layer, feature)
@@ -3900,7 +3981,7 @@ class DdArrayTableWidget(DdLineEdit):
         operator = None, checkIfNone = True):
         '''fill thisRow with aValue'''
 
-        if self.searchMode:
+        if self.mode == 1:
             self.setSearchCombo(thisRow, link, operator)
 
         self.setRowValue(thisRow, aValue, checkIfNone)
@@ -4112,7 +4193,7 @@ class DdArrayTableWidget(DdLineEdit):
             operator = None
             link = None
 
-            if self.searchMode:
+            if self.mode == 1:
                 operator = self.inputWidget.cellWidget(thisRow, 2).currentText()
 
                 if thisRow > 0:
@@ -4147,7 +4228,7 @@ class DdArrayTableWidget(DdLineEdit):
 
         self.setNull(newState == QtCore.Qt.Checked)
 
-        if self.searchMode:
+        if self.mode == 1:
             self.inputWidget.setEnabled(newState == QtCore.Qt.Unchecked)
             self.addButton.setEnabled(newState == QtCore.Qt.Unchecked)
 
@@ -4180,7 +4261,7 @@ class DdArrayTableWidget(DdLineEdit):
         thisRow = self.inputWidget.currentRow()
         self.inputWidget.removeRow(thisRow)
 
-        if self.searchMode:
+        if self.mode == 1:
             if thisRow == 0:
                 if self.inputWidget.rowCount() > 0:
                     # we need to get rid of the combo box in the first column
@@ -4252,7 +4333,7 @@ class DdArrayTableWidgetInt(DdArrayTableWidget):
         else:
             lineEdit.setText(self.toString(aValue))
 
-        if not self.searchMode:
+        if self.mode != 1:
             validator = ddtools.getIntValidator(lineEdit,
                 self.attribute, aValue, aValue)
                 # pass aValue as min and max so existing values are
@@ -4286,7 +4367,7 @@ class DdArrayTableWidgetDouble(DdArrayTableWidget):
         else:
             lineEdit.setText(self.toString(aValue))
 
-        if not self.searchMode:
+        if self.mode != 1:
             validator = ddtools.getDoubleValidator(lineEdit,
                 self.attribute, aValue, aValue)
                 # pass aValue as min and max so existing values are
@@ -4363,7 +4444,7 @@ class DdArrayTableWidgetBool(DdArrayTableWidget):
         operator = None
         link = None
 
-        if self.searchMode:
+        if self.mode == 1:
             operator = self.inputWidget.cellWidget(aRow, 2).currentText()
 
             if thisRow > 0:
@@ -4414,7 +4495,7 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
         loc = QtCore.QLocale.system()
         date.setDisplayFormat(loc.dateFormat())
 
-        if not self.searchMode:
+        if self.mode != 1:
             if self.attribute.min != None:
                 thisMin = self.attribute.min
 
@@ -4460,7 +4541,7 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
         operator = None
         link = None
 
-        if self.searchMode:
+        if self.mode == 1:
             operator = self.inputWidget.cellWidget(aRow, 2).currentText()
 
             if thisRow > 0:
@@ -4499,7 +4580,7 @@ class DdLineEditGeometry(DdLineEditInt):
         return "<ddui.DdLineEditGeometry %s>" % str(self.attribute.name)
 
     def getFeatureValue(self, layer, feature):
-        if feature == None:
+        if feature == None or self.mode == 2:
             return None
 
         geom = feature.geometry()

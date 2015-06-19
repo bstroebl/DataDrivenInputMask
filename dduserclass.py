@@ -559,7 +559,7 @@ class DdRelatedComboBox(DdComboBox):
             self.manageChk(None)
         else:
             if feature.id() == -3333: # searchFeature
-                self.searchMode = True
+                self.mode = 1
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
                 self.chk.setText(QtGui.QApplication.translate("DdInfo",
@@ -571,7 +571,6 @@ class DdRelatedComboBox(DdComboBox):
             else:
                 self.listenToCombo.inputWidget.currentIndexChanged.connect(self.listenToComboChanged)
                 self.listenToComboChanged(None)
-                self.searchMode = False
                 self.searchCbx.setVisible(False)
                 thisValue = self.getFeatureValue(layer, feature)
                 self.setValue(thisValue)

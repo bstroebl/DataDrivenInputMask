@@ -239,7 +239,7 @@ class DdManyToManyAttribute(DdAttribute):
 
     def buildSubsetString(self, relationFeatureIdField):
         '''builld the subset string to be applied as filter on the layer'''
-        subsetString = "\"" + relationFeatureIdField + "\" = "
+        subsetString = "\"" + relationFeatureIdField + "\" IN "
         return subsetString
 
     def setSubsetString(self, subsetString = None):

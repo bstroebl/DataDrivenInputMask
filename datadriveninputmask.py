@@ -94,6 +94,13 @@ class DataDrivenInputMask:
         # connect the action to the run method
         self.actionSel.triggered.connect(self.showInputForm)
 
+        self.actionMulti = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Multi Input Form",
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        # set a name for the action
+        self.actionMulti.setObjectName("DdMultiInputForm")
+        # connect the action to the run method
+        self.actionMulti.triggered.connect(self.showMultiForm)
+
         self.actionSearch = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Search Form",
             None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
@@ -113,11 +120,13 @@ class DataDrivenInputMask:
         if hasattr(self.iface,  "addPluginToVectorMenu"):
             self.iface.addPluginToVectorMenu(self.menuLabel, self.action)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSel)
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSearch)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionConfigure)
         else:
             self.iface.addPluginToMenu(self.menuLabel, self.action)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
+            self.iface.addPluginToMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
             self.iface.addPluginToMenu(self.menuLabel, self.actionConfigure)
 
@@ -128,11 +137,13 @@ class DataDrivenInputMask:
         if hasattr(self.iface, "removePluginVectorMenu"):
             self.iface.removePluginVectorMenu(self.menuLabel, self.action)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionSel)
+            self.iface.removePluginVectorMenu(self.menuLabel, self.actionMulti)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionSearch)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionConfigure)
         else:
             self.iface.removePluginMenu(self.menuLabel, self.action)
             self.iface.removePluginMenu(self.menuLabel, self.actionSel)
+            self.iface.removePluginMenu(self.menuLabel, self.actionMulti)
             self.iface.removePluginMenu(self.menuLabel, self.actionSearch)
             self.iface.removePluginMenu(self.menuLabel, self.actionConfigure)
 
@@ -218,6 +229,20 @@ class DataDrivenInputMask:
 
                     self.app.ddManager.showFeatureForm(layer, feature)
                     counter += 1
+            else:
+                DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
+                    QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
+
+    def showMultiForm(self):
+        """SLOT: Show the mask for the first selected features in the active layer
+        Apply changes to all selected features in one go"""
+        layer = self.iface.activeLayer()
+
+        if self.isSuitableLayer(layer):
+            sel = layer.selectedFeatures()
+
+            if len(sel) > 0:
+                self.app.ddManager.showFeatureForm(layer, sel[0], multiEdit = True)
             else:
                 DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
                     QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
