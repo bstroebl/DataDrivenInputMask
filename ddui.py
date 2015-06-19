@@ -3187,7 +3187,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
                                     if valueElement != None and \
                                             operator != "IS NULL" and \
-                                            operator == "IS NOT NULL":
+                                            operator != "IS NOT NULL":
                                         textValue = valueElement.text
 
                                         if anAttr.isFK:
@@ -3301,16 +3301,16 @@ class DdN2mTableWidget(DdN2mWidget):
 
                 if isinstance(aValue,  QtCore.QPyNullVariant):
                     aValue = 'NULL'
+
+            if isinstance(anAtt, DdDateLayerAttribute):
+                item = QtGui.QTableWidgetItem()
+                item.setData(QtCore.Qt.DisplayRole, aValue)
+            else:
+                if anAtt.isTypeInt() or anAtt.isTypeFloat():
+                    item = QtGui.QTableWidgetItem()
+                    item.setData(QtCore.Qt.DisplayRole, aValue)
                 else:
-                    if isinstance(anAtt, DdDateLayerAttribute):
-                        item = QtGui.QTableWidgetItem()
-                        item.setData(QtCore.Qt.DisplayRole, aValue)
-                    else:
-                        if anAtt.isTypeInt() or anAtt.isTypeFloat():
-                            item = QtGui.QTableWidgetItem()
-                            item.setData(QtCore.Qt.DisplayRole, aValue)
-                        else:
-                            item = QtGui.QTableWidgetItem(unicode(aValue))
+                    item = QtGui.QTableWidgetItem(unicode(aValue))
 
             if i == 0:
                 item.feature = thisFeature
