@@ -1283,12 +1283,29 @@ class DdFormWidget(DdWidget):
                     self.feature = None # no combined keys
                 else:
                     layerPkIdx = layerPkList[0]
-                    pkValue = feature[layerPkIdx]
+                    pkValues = []
 
-                    if pkValue == None:
-                        self.feature = None
-                    else:
-                        pkValue = str(pkValue)
+                    if self.mode == 0:
+                        pkValue = feature[layerPkIdx]
+
+                        if pkValue == None:
+                            self.feature = None
+                        else:
+                            pkValues.append(str(pkValue))
+                    elif self.mode == 2:
+                        for aFeat in layer.selectedFeatures():
+                            pkValue = aFeat[layerPkIdx]
+
+                            if pkValue == None:
+                                self.feature = None
+                                pkValues = []
+                                break
+                            else:
+                                pkValue = str(pkValue)
+
+                            pkValues.append(pkValue)
+
+                    if len(pkValues) > 0:
                         thisPkList = self.layer.pendingPkAttributesList()
 
                         if len(thisPkList) != 1:
@@ -1296,25 +1313,37 @@ class DdFormWidget(DdWidget):
                         else:
                             #self.oldSubsetString = self.layer.subsetString()
                             thisPkField = self.layer.pendingFields().field(thisPkList[0])
+                            newSubsetString = "\"" + thisPkField.name() + "\" IN ("
 
-                            if thisPkField.typeName().find("char") != -1:
-                                pkValue = "\'" + pkValue + "\'" # quote value as string
+                            for i in range(len(pkValues)):
+                                pkValue = pkValues[i]
 
-                            newSubsetString = "\"" + thisPkField.name() + "\"=" + pkValue
+                                if thisPkField.typeName().find("char") != -1:
+                                    pkValue = "\'" + pkValue + "\'" # quote value as string
+
+                                if i == 0:
+                                    newSubsetString += pkValue
+                                else:
+                                    newSubsetString += "," + pkValue
+
+                            newSubsetString += ")"
                             self.layer.setSubsetString(newSubsetString)
                             self.layer.reload()
                             self.layer.selectAll()
 
-                            if self.layer.selectedFeatureCount() != 1:
-                                # there is no or several features matching our feature
-                                self.feature = None
+                            if self.mode == 0 and self.layer.selectedFeatureCount() != 1:
+                                    # there is no or several features matching our feature
+                                    self.feature = None
+                            elif self.mode == 2 and self.layer.selectedFeatureCount() == 0:
+                                    self.feature = None
                             else:
                                 self.feature = self.layer.selectedFeatures()[0]
 
                                 if layer.isEditable():
                                     enableAll = self.__setLayerEditable()
 
-                                self.layer.removeSelection()
+                                    if self.mode == 0:
+                                        self.layer.removeSelection()
 
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer, self.feature, db, self.mode)
