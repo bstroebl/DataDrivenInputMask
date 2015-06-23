@@ -306,7 +306,7 @@ class DdManager(object):
                 else:
                     return thisTable
 
-    def addAction(self,  layer,  actionName = u'showDdForm'):
+    def addAction(self, layer, actionName = u'showDdForm', ddManagerName = "ddManager"):
         '''api method to add an action to the layer with a self defined name'''
 
 
@@ -325,7 +325,7 @@ class DdManager(object):
 
         if createAction:
             layer.actions().addAction(1,  actionName, # actionType 1: Python
-                "app=QgsApplication.instance();ddManager=app.ddManager;ddManager.showDdForm([% $id %]);")
+                "app=QgsApplication.instance();ddManager=app." + ddManagerName + ";ddManager.showDdForm([% $id %]);")
 
         # remove showDdForm - Action if still there
         self.removeAction(layer, u'showDdForm')
