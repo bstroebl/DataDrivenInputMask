@@ -66,7 +66,7 @@ class DdPushButton(DdInputWidget):
     def clicked(self):
         QtGui.QMessageBox.information(None,  "",  self.label + " has been clicked")
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
         '''must be implemented in child class'''
         pass
 
@@ -251,7 +251,9 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
 
         return layer
 
-    def initialize(self,  layer,  feature,  db):
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
+
         if feature != None:
             self.initializeLayer(layer,  feature,  db,  doShowParents = False,  withMask = True,  skip = [self.attribute.relationRelatedIdField])
             self.relatedLayer = self.loadAdditionalLayer(db,  self.attribute.relatedTable)
@@ -552,14 +554,13 @@ class DdRelatedComboBox(DdComboBox):
         newValue = self.listenToCombo.getValue()
         self.fill(newValue)
 
-    def initialize(self, layer, feature, db):
-
+    def initialize(self, layer, feature, db, mode):
+        self.mode = mode
         if feature == None:
             self.searchCbx.setVisible(False)
             self.manageChk(None)
         else:
-            if feature.id() == -3333: # searchFeature
-                self.mode = 1
+            if self.mode == 1: # searchFeature
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
                 self.chk.setText(QtGui.QApplication.translate("DdInfo",
