@@ -4613,23 +4613,29 @@ class DdLineEditGeometry(DdLineEditInt):
             return None
 
         geom = feature.geometry()
-        area = geom.area()
 
-        if area > 0:
-            self.label.setText(QtGui.QApplication.translate(
-                "DdInfo", "area", None, QtGui.QApplication.UnicodeUTF8))
-            return int(round(area))
+        if geom == None: # possible if new feature from within another mask
+            self.inputWidget.setVisible(False)
+            self.label.setVisible(False)
+            return None
         else:
-            length = int(geom.length())
+            area = geom.area()
 
-            if length > 0:
+            if area > 0:
                 self.label.setText(QtGui.QApplication.translate(
-                    "DdInfo", "length", None, QtGui.QApplication.UnicodeUTF8))
-                return round(length)
+                    "DdInfo", "area", None, QtGui.QApplication.UnicodeUTF8))
+                return int(round(area))
             else:
-                self.inputWidget.setVisible(False)
-                self.label.setVisible(False)
-                return None
+                length = int(geom.length())
+
+                if length > 0:
+                    self.label.setText(QtGui.QApplication.translate(
+                        "DdInfo", "length", None, QtGui.QApplication.UnicodeUTF8))
+                    return round(length)
+                else:
+                    self.inputWidget.setVisible(False)
+                    self.label.setVisible(False)
+                    return None
 
     def checkDefault(self, feature):
         return [True, None]
