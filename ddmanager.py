@@ -309,26 +309,39 @@ class DdManager(object):
     def addAction(self, layer, actionName = u'showDdForm', ddManagerName = "ddManager"):
         '''api method to add an action to the layer with a self defined name'''
 
-
-        if actionName == u'showDdForm':
-            actionName = QtGui.QApplication.translate("DdLabel", "Show Input Form",
+        defaultName = QtGui.QApplication.translate("DdLabel", "Show Input Form",
                 None, QtGui.QApplication.UnicodeUTF8)
 
+        if actionName == u'showDdForm':
+            actionName = defaultName
+
         createAction = True
+        actionToRemove = ""
+
         #check if the action is already attached
         for i in range(layer.actions().size()):
             act = layer.actions().at(i)
 
-            if act.name() == actionName:
-                createAction = False
-                break
+            if act.action().find(";ddManager.showDdForm([% $id %]);") != -1:
+                thisName = act.name()
+
+                if thisName == actionName: # the action exists with the given name
+                    createAction = False
+                    break
+                else:
+                    if actionName == defaultName:
+                        # new action with default name is about to replace
+                        # action with "custom" name
+                        createAction = False
+                        break
+                    else: # action with default name exists and is to be replaced
+                        # with an action with "custom" name
+                        actionToRemove = thisName
 
         if createAction:
             layer.actions().addAction(1,  actionName, # actionType 1: Python
                 "app=QgsApplication.instance();ddManager=app." + ddManagerName + ";ddManager.showDdForm([% $id %]);")
-
-        # remove showDdForm - Action if still there
-        self.removeAction(layer, u'showDdForm')
+            self.removeAction(layer, actionToRemove)
 
     def removeAction(self, layer, actionName):
         '''api method to remove an action from the layer'''
