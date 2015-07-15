@@ -251,7 +251,7 @@ class DdManager(object):
                 QtGui.QApplication.translate("DdError",
                     "Layer is not a PostgreSQL table: ", None,
                     QtGui.QApplication.UnicodeUTF8
-                ) + layer.name(), iface = self.iface,
+                ) + schemaName + "." + tableName, iface = self.iface,
                 showInLog = True)
             return None
         else:
