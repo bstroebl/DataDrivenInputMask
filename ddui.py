@@ -4623,14 +4623,14 @@ class DdLineEditGeometry(DdLineEditInt):
 
             if area > 0:
                 self.label.setText(QtGui.QApplication.translate(
-                    "DdInfo", "area", None, QtGui.QApplication.UnicodeUTF8))
+                    "DdInfo", "GIS area", None, QtGui.QApplication.UnicodeUTF8))
                 return int(round(area))
             else:
                 length = int(geom.length())
 
                 if length > 0:
                     self.label.setText(QtGui.QApplication.translate(
-                        "DdInfo", "length", None, QtGui.QApplication.UnicodeUTF8))
+                        "DdInfo", "GIS length", None, QtGui.QApplication.UnicodeUTF8))
                     return round(length)
                 else:
                     self.inputWidget.setVisible(False)
