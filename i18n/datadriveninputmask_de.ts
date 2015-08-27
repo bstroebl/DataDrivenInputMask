@@ -12,12 +12,12 @@
 <context>
     <name>DdError</name>
     <message>
-        <location filename="../ddmanager.py" line="919"/>
+        <location filename="../ddmanager.py" line="933"/>
         <source>Could not connect to PostgreSQL database:</source>
         <translation>Konnte mich nicht mit folgender PostgreSQL-Datenbank verbinden:</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="391"/>
+        <location filename="../ddmanager.py" line="405"/>
         <source>Could not discard changes for layer:</source>
         <translation>Konnte Änderungen in folgendem Layer nicht verwerfen:</translation>
     </message>
@@ -47,12 +47,12 @@
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="513"/>
+        <location filename="../dduserclass.py" line="515"/>
         <source>Could not save changes for layer:</source>
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="731"/>
+        <location filename="../ddmanager.py" line="745"/>
         <source>Cannot not load table: </source>
         <translation>Kann folgende Tablle nicht laden: </translation>
     </message>
@@ -62,7 +62,7 @@
         <translation>Bitte aktivieren Sie einen Layer!</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="482"/>
+        <location filename="../dduserclass.py" line="484"/>
         <source>Could not add feature to layer:</source>
         <translation>Hinzufügen von Feature gescheitert zu Layer:</translation>
     </message>
@@ -110,12 +110,12 @@
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="566"/>
+        <location filename="../dduserclass.py" line="567"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="568"/>
+        <location filename="../dduserclass.py" line="569"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
     </message>
@@ -130,17 +130,17 @@
         <translation>Konfigurationstabellen nicht gefunden oder nicht zugänglich, lade Defaultmaske</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="1195"/>
+        <location filename="../ddmanager.py" line="1209"/>
         <source>Config tables created! SELECT has been granted to &quot;public&quot;.</source>
         <translation>Konfigurationstabellen erzeugt! SELECT-Rechte für &quot;public&quot; wurden gesetzt.</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="380"/>
+        <location filename="../ddmanager.py" line="394"/>
         <source>Unsaved changes</source>
         <translation>Ungesicherte Änderungen</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="380"/>
+        <location filename="../ddmanager.py" line="394"/>
         <source>Do you want to save the changes to layer </source>
         <translation>Möchten Sie die Änderungen speichern </translation>
     </message>
@@ -170,19 +170,19 @@
         <translation>Wert</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="4656"/>
-        <source>area</source>
-        <translation>Fläche</translation>
-    </message>
-    <message>
-        <location filename="../ddui.py" line="4663"/>
-        <source>length</source>
-        <translation>Länge</translation>
-    </message>
-    <message>
         <location filename="../dddialog.py" line="65"/>
         <source>%s selected features</source>
         <translation>%s ausgewählte Features</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="4662"/>
+        <source>GIS area</source>
+        <translation>GIS-Fläche</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="4669"/>
+        <source>GIS length</source>
+        <translation>GIS-Länge</translation>
     </message>
 </context>
 <context>
@@ -206,7 +206,7 @@
         <translation>Layer initalisieren</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="314"/>
+        <location filename="../ddmanager.py" line="312"/>
         <source>Show Input Form</source>
         <translation>Eingabemaske anzeigen</translation>
     </message>
@@ -226,7 +226,7 @@
         <translation>Konfiguriere Maske</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="319"/>
+        <location filename="../dduserclass.py" line="321"/>
         <source>Show all</source>
         <translation>Zeige alle</translation>
     </message>
@@ -269,22 +269,22 @@
         <translation>Für den folgenden Layer konnte der Bearbeitungsstatus nicht umgeschaltet werden: </translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="943"/>
+        <location filename="../ddmanager.py" line="957"/>
         <source>Username missing</source>
         <translation>Kein Benutzername</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="943"/>
+        <location filename="../ddmanager.py" line="957"/>
         <source>Enter username for </source>
         <translation>Benutzername für </translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="952"/>
+        <location filename="../ddmanager.py" line="966"/>
         <source>Password missing</source>
         <translation>Kein Passwort</translation>
     </message>
     <message>
-        <location filename="../ddmanager.py" line="952"/>
+        <location filename="../ddmanager.py" line="966"/>
         <source>Enter password for </source>
         <translation>Passwort für </translation>
     </message>
