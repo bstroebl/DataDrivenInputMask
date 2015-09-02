@@ -468,16 +468,22 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         if self.forEdit:
             chkItem = self.inputWidget.item(thisRow,  0)
             thisFeature = chkItem.feature
-            relatedItem = self.inputWidget.item(thisRow,  self.relationRelatedIdIndex + 1)
+            relatedItem = self.inputWidget.item(thisRow,
+                self.relationRelatedIdIndex + 1)
             relatedId = relatedItem.id
             thisValue = relatedItem.text()
             doAddFeature = False
+            relationFeatureIdFieldIdx = self.tableLayer.fieldNameIndex(
+                self.attribute.relationFeatureIdField)
+            relationRelatedIdFieldIdx = self.tableLayer.fieldNameIndex(
+                    self.attribute.relationRelatedIdField)
 
+            self.debug(str(self.featureId))
             if thisFeature == None:
                 doAddFeature = True
                 thisFeature = self.createFeature()
-                thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] = self.featureId
-                thisFeature[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] = relatedId
+                thisFeature[relationFeatureIdFieldIdx] = self.featureId
+                thisFeature[relationRelatedIdFieldIdx] = relatedId
 
                 if not self.tableLayer.addFeature(thisFeature):
                     DdError(QtGui.QApplication.translate("DdError",
@@ -485,29 +491,35 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                         QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
                     return None
 
-            result = self.parentDialog.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  \
-                showParents = self.attribute.showParents,  title = thisValue,  askForSave = (not doAddFeature))
+            result = self.parentDialog.ddManager.showFeatureForm(
+                self.tableLayer, thisFeature, showParents = self.attribute.showParents,
+                title = thisValue, askForSave = (not doAddFeature))
 
-        if result == 1: # user clicked OK
-            if doAddFeature:
-                chkItem.setCheckState(QtCore.Qt.Checked)
-                # find the feature again
-                for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-                    if aFeat[self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)] == self.featureId and \
-                        aFeat[self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)] == relatedId:
-                        thisFeature = aFeat
-                        break
-            # make sure user did not change parentFeatureId
-            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField),  self.featureId)
-            self.tableLayer.changeAttributeValue(thisFeature.id(),  self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField),  relatedId)
-            # refresh thisFeature with the new values
-            self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(thisFeature)
-            values = self.getFeatureValues(thisFeature)
-            self.fillRow(thisRow,  [relatedId,  values,  thisFeature],  thisValue)
-            self.saveChanges()
-        else:
-            if doAddFeature:
-                chkItem.setCheckState(QtCore.Qt.Unchecked)
+            if result == 1: # user clicked OK
+                if doAddFeature:
+                    chkItem.setCheckState(QtCore.Qt.Checked)
+                    # find the feature again
+                    for aFeat in self.tableLayer.getFeatures(
+                            QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+                        if aFeat[relationFeatureIdFieldIdx] == self.featureId and \
+                            aFeat[relationRelatedIdFieldIdx] == relatedId:
+                            thisFeature = aFeat
+                            break
+                # make sure user did not change parentFeatureId
+                self.tableLayer.changeAttributeValue(thisFeature.id(),
+                    relationFeatureIdFieldIdx, self.featureId)
+                self.tableLayer.changeAttributeValue(thisFeature.id(),
+                    relationRelatedIdFieldIdx, relatedId)
+                # refresh thisFeature with the new values
+                self.tableLayer.getFeatures(QgsFeatureRequest().setFilterFid(
+                    thisFeature.id()).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(
+                    thisFeature)
+                values = self.getFeatureValues(thisFeature)
+                self.fillRow(thisRow, [relatedId, values, thisFeature], thisValue)
+                self.saveChanges()
+            else:
+                if doAddFeature:
+                    chkItem.setCheckState(QtCore.Qt.Unchecked)
 
     def saveChanges(self):
         if not self.tableLayer.commitChanges():
