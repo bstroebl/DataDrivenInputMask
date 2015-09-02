@@ -1498,6 +1498,7 @@ class DdInputWidget(DdWidget):
         labelString = self.getLabel()
         label = QtGui.QLabel(labelString,  parent)
         label.setObjectName("lbl" + parent.objectName() + self.attribute.name)
+        label.setToolTip(self.attribute.comment)
         return label
 
     def getMaxValueFromTable(self,  schemaName,  tableName,  db):
