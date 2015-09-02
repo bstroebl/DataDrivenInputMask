@@ -465,7 +465,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         self.fill(catalogId)
 
     def doubleClick(self,  thisRow,  thisColumn):
-        if self.forEdit:
+        if self.forEdit and self.mode <= 1:
             chkItem = self.inputWidget.item(thisRow,  0)
             thisFeature = chkItem.feature
             relatedItem = self.inputWidget.item(thisRow,
@@ -478,11 +478,10 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             relationRelatedIdFieldIdx = self.tableLayer.fieldNameIndex(
                     self.attribute.relationRelatedIdField)
 
-            self.debug(str(self.featureId))
             if thisFeature == None:
                 doAddFeature = True
                 thisFeature = self.createFeature()
-                thisFeature[relationFeatureIdFieldIdx] = self.featureId
+                thisFeature[relationFeatureIdFieldIdx] = self.featureId[0]
                 thisFeature[relationRelatedIdFieldIdx] = relatedId
 
                 if not self.tableLayer.addFeature(thisFeature):
@@ -501,13 +500,13 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                     # find the feature again
                     for aFeat in self.tableLayer.getFeatures(
                             QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-                        if aFeat[relationFeatureIdFieldIdx] == self.featureId and \
+                        if aFeat[relationFeatureIdFieldIdx] == self.featureId[0] and \
                             aFeat[relationRelatedIdFieldIdx] == relatedId:
                             thisFeature = aFeat
                             break
                 # make sure user did not change parentFeatureId
                 self.tableLayer.changeAttributeValue(thisFeature.id(),
-                    relationFeatureIdFieldIdx, self.featureId)
+                    relationFeatureIdFieldIdx, self.featureId[0])
                 self.tableLayer.changeAttributeValue(thisFeature.id(),
                     relationRelatedIdFieldIdx, relatedId)
                 # refresh thisFeature with the new values
