@@ -2645,6 +2645,8 @@ class DdCheckBox(DdLineEdit):
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
+        self.inputWidgetYes = None
+        self.inputWidgetNo = None
 
     def __str__(self):
         return "<ddui.DdCheckBox %s>" % str(self.attribute.name)
@@ -2674,17 +2676,40 @@ class DdCheckBox(DdLineEdit):
 
         return thisValue
 
-    def createInputWidget(self,  parent):
-        inputWidget = QtGui.QCheckBox(parent)
-        inputWidget.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        inputWidget.stateChanged.connect(self.registerChange)
-        return [inputWidget,  None]
+    def createInputWidget(self, parent):
+        inputWidget = QtGui.QWidget(parent)
+        hLayout = QtGui.QHBoxLayout(inputWidget)
+        inputWidget.setObjectName("frm" + parent.objectName() + self.attribute.name)
+        self.inputWidgetYes = QtGui.QRadioButton(inputWidget)
+        self.inputWidgetYes.setObjectName("radYes" + parent.objectName() + self.attribute.name)
+        self.inputWidgetYes.toggled.connect(self.registerChange)
+        yesEventFilter = DdEventFilter(self.inputWidgetYes)
+        self.inputWidgetYes.installEventFilter(yesEventFilter)
+        yesEventFilter.doubleClicked.connect(self.onDoubleClick)
+        labelYes = QtGui.QLabel(QtGui.QApplication.translate(
+            "DdInput", "Yes", None, QtGui.QApplication.UnicodeUTF8),
+            inputWidget)
+        labelYes.setObjectName("lblYes" + parent.objectName() + self.attribute.name)
+        hLayout.addWidget(labelYes)
+        hLayout.addWidget(self.inputWidgetYes)
+        self.inputWidgetNo = QtGui.QRadioButton(inputWidget)
+        self.inputWidgetNo.setObjectName("radNo" + parent.objectName() + self.attribute.name)
+        self.inputWidgetNo.toggled.connect(self.registerChange)
+        noEventFilter = DdEventFilter(self.inputWidgetNo)
+        self.inputWidgetNo.installEventFilter(noEventFilter)
+        noEventFilter.doubleClicked.connect(self.onDoubleClick)
+        labelNo = QtGui.QLabel(QtGui.QApplication.translate(
+            "DdInput", "No", None, QtGui.QApplication.UnicodeUTF8),
+            inputWidget)
+        labelNo.setObjectName("lblNo" + parent.objectName() + self.attribute.name)
+        hLayout.addWidget(labelNo)
+        hLayout.addWidget(self.inputWidgetNo)
+        return [inputWidget, None]
 
-    def setNull(self,  setnull):
+    def setNull(self, setnull):
         '''Set this inputWidget to NULL'''
-        self.inputWidget.setTristate(setnull)
-        thisValue = None
 
+        thisValue = None
         if not setnull:
             if self.attribute.hasDefault:
                 thisValue = self.getDefault()
@@ -2696,34 +2721,27 @@ class DdCheckBox(DdLineEdit):
 
         self.setValue(thisValue)
 
-    def setValue(self,  thisValue):
-        if isinstance(thisValue,  str): # happens whe read from XML
-                if thisValue.upper() == "TRUE":
-                    thisValue = True
-                elif thisValue.upper() == "FALSE":
-                    thisValue = False
-                else:
-                    thisValue = None
+    def setValue(self, thisValue):
+        if isinstance(thisValue, str): # happens whe read from XML
+            if thisValue.upper() == "TRUE":
+                thisValue = True
+            elif thisValue.upper() == "FALSE":
+                thisValue = False
+            else:
+                thisValue = None
 
         if None == thisValue: #handle Null values
-            if self.inputWidget.isTristate():
-                self.inputWidget.setCheckState(QtCore.Qt.PartiallyChecked)
-            else:
-                self.inputWidget.setCheckState(0) # false
+            self.inputWidgetYes.setChecked(False) # false
+            self.inputWidgetNo.setChecked(False) # false
         else:
-            self.inputWidget.setChecked(thisValue)
+            self.inputWidgetYes.setChecked(thisValue)
+            self.inputWidgetNo.setChecked(not thisValue)
 
     def getValue(self):
         if self.chk.isChecked():
             thisValue = None
         else:
-            state = self.inputWidget.checkState()
-
-            if state == 0:
-                thisValue = False
-
-            elif state == 2:
-                thisValue = True
+            thisValue = self.inputWidgetYes.isChecked()
 
         return thisValue
 
