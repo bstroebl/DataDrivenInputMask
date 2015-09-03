@@ -33,7 +33,7 @@ import os
 # create the dialog
 class DdDialog(QtGui.QDialog):
     '''Each mask is a DdDialog instance, thus a child of QDialog'''
-    def __init__(self, ddManager, ui, layer, feature, db, multiEdit,
+    def __init__(self, ddManager, ui, layer, feature, db, multiEdit = False,
             parent = None, title = None):
         QtGui.QDialog.__init__(self,  parent)
         # Set up the user interface from Designer.

@@ -987,7 +987,7 @@ class DdWidget(object):
         must be implemented in child classes'''
         raise NotImplementedError("Should have implemented setupUi")
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         '''initialize this widget for feature in layer
         must be implemented in child classes'''
         raise NotImplementedError("Should have implemented initialize")
@@ -1117,7 +1117,7 @@ class DdDialogWidget(DdWidget):
 
             ddFormWidget.addInputWidget(inputWidget,  beforeWidget)
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         for aForm in self.forms:
             aForm.initialize(layer, feature, db, mode)
 
@@ -1263,7 +1263,7 @@ class DdFormWidget(DdWidget):
         else:
             self.inputWidgets.insert(beforeWidget,  ddInputWidget)
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
         self.oldSubsetString = self.layer.subsetString()
         enableAll = False
@@ -1720,7 +1720,7 @@ class DdLineEdit(DdInputWidget):
         if self.betweenWidget != None:
             self.setBetweenValue(thisValue)
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
 
         self.mode = mode
 
@@ -2967,7 +2967,7 @@ class DdN2mListWidget(DdN2mWidget):
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
 
         if feature != None:
@@ -3119,7 +3119,7 @@ class DdN2mTreeWidget(DdN2mWidget):
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
 
         if feature != None:
@@ -3341,7 +3341,7 @@ class DdN2mTableWidget(DdN2mWidget):
             # reset here in case the same table is connected twice
             self.applySubsetString(True)
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
 
         if feature != None:
@@ -3828,7 +3828,7 @@ class DdArrayTableWidget(DdLineEdit):
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
         return [inputWidget,  None]
 
-    def initialize(self, layer, feature, db, mode):
+    def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
 
         if feature == None:
