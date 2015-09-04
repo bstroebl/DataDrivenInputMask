@@ -8,6 +8,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 Currently no multi-edit support for n2m tables
 - run different instances of DdManager in the same application
 - tooltip is shown at mouseover on labels, too
+- new class *DdLineEditBoolean*, replaces *DdCheckBox*
 
 ### Changed
 - DdN2mTableWidget: geometry field is not shown
@@ -16,6 +17,10 @@ Currently no multi-edit support for n2m tables
 - DdDialog: constructor takes an optional additional parameter *multiEdit* (Boolean, defaults to False = without parameter method behaves as before)
 - DdWidget: initialize takes an optional additional parameter *mode* (integer, defaults to 0 = without parameter method behaves as before)
 - display of area/length: label states that value is derived from GIS, display is suppressed if empty geometry
+- Widget for boolean fields is a pair of radio buttons labeled with yes/no
+
+### Deprecated
+- class *DdCheckBox*
 
 ### Fixed
 - DdN2mTableWidget: handle runtime error if field cannot be found, reenable search
