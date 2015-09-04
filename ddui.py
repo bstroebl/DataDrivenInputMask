@@ -324,7 +324,7 @@ class DataDrivenUi(object):
                             if anAttribute.isArray:
                                 ddInputWidget = DdArrayTableWidgetBool(anAttribute)
                             else:
-                                ddInputWidget = DdCheckBox(anAttribute)
+                                ddInputWidget = DdLineEditBoolean(anAttribute)
                         elif anAttribute.type == "date":
                             if anAttribute.isArray:
                                 ddInputWidget = DdArrayTableWidgetDate(anAttribute)
@@ -2640,8 +2640,8 @@ class DdDateEdit(DdLineEdit):
 
         return thisValue
 
-class DdCheckBox(DdLineEdit):
-    '''input widget (QCheckBox) for a boolean field'''
+class DdLineEditBoolean(DdLineEdit):
+    '''input widget Radio Buttons labeld with yes/no for a boolean field'''
 
     def __init__(self,  attribute):
         DdLineEdit.__init__(self,  attribute)
@@ -2649,7 +2649,7 @@ class DdCheckBox(DdLineEdit):
         self.inputWidgetNo = None
 
     def __str__(self):
-        return "<ddui.DdCheckBox %s>" % str(self.attribute.name)
+        return "<ddui.DdLineEditBoolean %s>" % str(self.attribute.name)
 
     def getFeatureValue(self,  layer,  feature):
         '''returns a boolean representing the value in this field for this feature'''
@@ -2744,6 +2744,15 @@ class DdCheckBox(DdLineEdit):
             thisValue = self.inputWidgetYes.isChecked()
 
         return thisValue
+
+# class DdCheckBox is deprecated and replaced by DdLineEditBoolean
+class DdCheckBox(DdLineEditBoolean):
+    '''subclass DdLineEditBoolean to issue a deprecation warning'''
+    def __init__(self, attribute):
+        from warnings import warn
+        warn("The 'DdCheckBox' class was renamed to 'DdLineEditBoolean'",
+                      DeprecationWarning)
+        DdLineEditBoolean.__init__(self, attribute)
 
 class DdTextEdit(DdLineEdit):
     '''input widget (QTextEdit) for a text field'''
