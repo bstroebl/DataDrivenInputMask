@@ -18,6 +18,7 @@ Currently no multi-edit support for n2m tables
 - DdWidget: initialize takes an optional additional parameter *mode* (integer, defaults to 0 = without parameter method behaves as before)
 - display of area/length: label states that value is derived from GIS, display is suppressed if empty geometry
 - Widget for boolean fields is a pair of radio buttons labeled with yes/no
+- Input widgets are now properly resized when the dialog is resized by the user, NULL checkboxes align to the right
 
 ### Deprecated
 - class *DdCheckBox*
@@ -25,6 +26,7 @@ Currently no multi-edit support for n2m tables
 ### Fixed
 - DdN2mTableWidget: handle runtime error if field cannot be found, reenable search
 - DdN2mCheckableTableWidget: Handle feature only if in edit mode and improve readability of the code
+- code leading to warnings chagned
 
 ## [1.0.1] - 2015-04-21
 ### Added
