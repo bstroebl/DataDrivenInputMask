@@ -87,6 +87,11 @@ class DdLineEditSlider(DdLineEdit):
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QSlider(parent) # defaultInputWidget
         inputWidget.setObjectName("slid" + parent.objectName() + self.attribute.name)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(inputWidget.sizePolicy().hasHeightForWidth())
+        inputWidget.setSizePolicy(sizePolicy)
         min = self.attribute.min
         max = self.attribute.max
 
@@ -158,8 +163,8 @@ class DdLineEditSlider(DdLineEdit):
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
-
-        parent.layout().addRow(self.gbx)
+        newRow = parent.layout().rowCount() + 1
+        parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, self.gbx)
 
     def setNull(self,  setnull):
         '''Set this inputWidget to NULL'''
@@ -445,7 +450,8 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             formLayout.addRow(cbxLabel,  self.catalogCbx)
             verticalLayout.addLayout(formLayout)
             verticalLayout.addWidget(self.inputWidget)
-            parent.layout().addRow(frame)
+            newRow = parent.layout().rowCount() + 1
+            parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, frame)
             pParent = parent
 
             while (True):
