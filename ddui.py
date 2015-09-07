@@ -1654,7 +1654,7 @@ class DdLineEdit(DdInputWidget):
         '''setup the label and add the inputWidget to parents formLayout'''
 
         self.label = self.createLabel(parent)
-        hLayout = QtGui.QHBoxLayout(parent)
+        hLayout = QtGui.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
         self.searchCbx = QtGui.QComboBox(parent)
@@ -2733,7 +2733,7 @@ class DdLineEditBoolean(DdLineEdit):
 
         self.label = self.createLabel(parent)
         self.label.setMinimumSize(QtCore.QSize(0, 42))
-        hLayout = QtGui.QHBoxLayout(parent)
+        hLayout = QtGui.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
         self.searchCbx = QtGui.QComboBox(parent)
@@ -2875,7 +2875,7 @@ class DdN2mWidget(DdInputWidget):
         self.inputWidget = inputWidgets[0]
         self.setSizeMax(self.inputWidget)
         self.inputWidget.setToolTip(self.attribute.comment)
-        vLayout = QtGui.QVBoxLayout(parent)
+        vLayout = QtGui.QVBoxLayout()
         vLayout.setObjectName(
             "vLayout" + parent.objectName() + self.attribute.name)
         vLayout.addWidget(label)
@@ -3227,7 +3227,7 @@ class DdN2mTreeWidget(DdN2mWidget):
             query.prepare(dispStatement)
             query.bindValue(":featureId", feature.id())
             query.exec_()
-
+            self.debug(query.lastQuery())
             if query.isActive():
                 self.inputWidget.clear()
                 self.inputWidget.itemChanged.disconnect(self.registerChange)
@@ -3246,7 +3246,8 @@ class DdN2mTreeWidget(DdN2mWidget):
                     parentItem.setCheckState(0,  checked)
                     parentItem.setText(0,  parent)
 
-                    for i in range(len(self.attribute.fieldList)):
+                    self.debug(str(self.attribute.fieldList))
+                    for i in range(len(self.attribute.fieldList) -1):
                         val = query.value(i + 3)
 
                         if val != None:
