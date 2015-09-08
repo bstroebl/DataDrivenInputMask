@@ -56,6 +56,9 @@ class DdDialog(QtGui.QDialog):
         self.setTitle(title)
         self.initialize()
 
+    def debug(self, str):
+        QgsMessageLog.logMessage(str)
+
     def setTitle(self,  title = None):
         if title == None:
             title = self.layer.name()
@@ -87,6 +90,7 @@ class DdDialog(QtGui.QDialog):
                 self.done(2)
 
     def reject(self):
+
         self.ui.discard()
         self.done(0)
 
