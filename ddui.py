@@ -3226,7 +3226,7 @@ class DdN2mTreeWidget(DdN2mWidget):
             query.prepare(dispStatement)
             query.bindValue(":featureId", feature.id())
             query.exec_()
-            self.debug(query.lastQuery())
+
             if query.isActive():
                 self.inputWidget.clear()
                 self.inputWidget.itemChanged.disconnect(self.registerChange)
@@ -3245,7 +3245,6 @@ class DdN2mTreeWidget(DdN2mWidget):
                     parentItem.setCheckState(0,  checked)
                     parentItem.setText(0,  parent)
 
-                    self.debug(str(self.attribute.fieldList))
                     for i in range(len(self.attribute.fieldList) -1):
                         val = query.value(i + 3)
 
