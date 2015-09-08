@@ -1426,13 +1426,14 @@ class DdFormWidget(DdWidget):
     def reset(self):
         for anInputWidget in self.inputWidgets:
             anInputWidget.reset()
-        # reset previous subset string
-        self.layer.setSubsetString(self.oldSubsetString)
-        self.layer.reload()
 
-        if self.layer.geometryType() != 4:
-            self.parentDialog.ddManager.iface.mapCanvas().refresh()
+        if self.layer.subsetString() != self.oldSubsetString:
+            # reset previous subset string
+            self.layer.setSubsetString(self.oldSubsetString)
+            self.layer.reload()
 
+            if self.layer.geometryType() != 4:
+                self.parentDialog.ddManager.iface.mapCanvas().refresh()
 
     def createSearch(self,  parentElement):
         #parentElement is the XML root element in this case
