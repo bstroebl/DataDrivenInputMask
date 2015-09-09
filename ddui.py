@@ -2732,6 +2732,7 @@ class DdLineEditBoolean(DdLineEdit):
         '''setup the label and add the inputWidget to parents formLayout'''
 
         self.label = self.createLabel(parent)
+        self.label.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft)
         hLayout = QtGui.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
