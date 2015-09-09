@@ -90,7 +90,6 @@ class DdDialog(QtGui.QDialog):
                 self.done(2)
 
     def reject(self):
-
         self.ui.discard()
         self.done(0)
 

@@ -1095,7 +1095,6 @@ class DdDialogWidget(DdWidget):
             self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
 
         self.horizontalLayout.addWidget(self.buttonBox)
-        QtCore.QMetaObject.connectSlotsByName(ddDialog)
 
     def setHelpText(self,  helpText):
         self.helpText = helpText
