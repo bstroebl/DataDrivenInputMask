@@ -1034,12 +1034,12 @@ class DdDialogWidget(DdWidget):
     def setupUi(self,  ddDialog,  db): # ddDialog is a child of QDialog
         ddDialog.setObjectName("DataDrivenInputMask")
         ddDialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        self.horizontalLayout = QtGui.QVBoxLayout(ddDialog)
-        self.horizontalLayout.setObjectName("DataDrivenInputMask_horizontalLayout")
+        verticalLayout = QtGui.QVBoxLayout(ddDialog)
+        verticalLayout.setObjectName("DataDrivenInputMask_horizontalLayout")
         self.scrollArea = QtGui.QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("DataDrivenInputMask_scrollArea")
-        self.horizontalLayout.addWidget(self.scrollArea)
+        verticalLayout.addWidget(self.scrollArea)
         self.scrollAreaWidgetContents = QtGui.QWidget(ddDialog)
         self.scrollAreaWidgetContents.setObjectName("DataDrivenInputMask_scrollAreaWidgetContents")
         self.scrollAreaLayout = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -1094,7 +1094,7 @@ class DdDialogWidget(DdWidget):
         else:
             self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
 
-        self.horizontalLayout.addWidget(self.buttonBox)
+        verticalLayout.addWidget(self.buttonBox)
 
     def setHelpText(self,  helpText):
         self.helpText = helpText
