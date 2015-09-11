@@ -13,6 +13,7 @@ name=Data-Driven Input Mask
 qgisMinimumVersion=2.0
 description=Opens a data-driven input mask for any PostgreSQL Layer
 version=1.1.0
+about=DataDrivenInputMask is a QGIS plugin that automagically creates input masks for PostgreSQL layers. All table constraints (notNull, foreign keys etc.) are taken into account. From this mask the user can edit any data contained in related tables, too (n-2m relations). The appearance of the mask (field names, field order, tabs, min and max values) is configurable in dedicated database tables. In addition to the input mask a search mask is provided with exactly the same layout as the input mask.
 
 # end of mandatory metadata
 
