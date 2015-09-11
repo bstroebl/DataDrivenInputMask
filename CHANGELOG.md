@@ -1,12 +1,12 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased][unreleased]
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...HEAD)
 ### Added
 ### Changed
 ### Fixed
 
-## [1.1.0] - 2015-09-11
+## 1.1.0 - 2015-09-11
 ### Added
 - DdManager: new api method *createDdTable* to create a DdTable from schema + relation
 - multi edit mode: the same data for all selected features can be entered in one go; Input widgets can have more than two modes (until now only search and input)
@@ -33,7 +33,7 @@ Currently no multi-edit support for n2m tables
 - DdN2mCheckableTableWidget: Handle feature only if in edit mode and improve readability of the code
 - code leading to warnings chagned
 
-## [1.0.1] - 2015-04-21
+## 1.0.1 - 2015-04-21
 ### Added
 - New userclass *DdRelatedComboBox*: A ComboBox that is refreshed when another ComboBox has
     a currentIndexChanged event, i.e. the user chooses another value.
@@ -51,7 +51,7 @@ Currently no multi-edit support for n2m tables
 - DdN2mTableWidget: field names with upper-case letters work properly, search for null foreign keys fixed
 - Search dialog: widget is activated with double click even if it is not enabled in edit mode
 
-## [1.0.0] - 2015-02-17
+## 1.0.0 - 2015-02-17
 ### Added
 - Support array fields
 - Show area/length of polygon/line features in mask
