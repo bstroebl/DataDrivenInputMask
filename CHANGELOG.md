@@ -3,6 +3,11 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased][unreleased]
 ### Added
+### Changed
+### Fixed
+
+## [1.1.0] - 2015-09-11
+### Added
 - DdManager: new api method *createDdTable* to create a DdTable from schema + relation
 - multi edit mode: the same data for all selected features can be entered in one go; Input widgets can have more than two modes (until now only search and input)
 Currently no multi-edit support for n2m tables
