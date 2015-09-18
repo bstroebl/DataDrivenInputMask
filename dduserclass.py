@@ -257,10 +257,11 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         return layer
 
     def initialize(self, layer, feature, db, mode = 0):
-        self.mode = mode
+        DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
-            self.initializeLayer(layer,  feature,  db,  doShowParents = False,  withMask = True,  skip = [self.attribute.relationRelatedIdField])
+            self.initializeTableLayer(db, doShowParents = False,
+                withMask = True, skip = [self.attribute.relationRelatedIdField])
             self.relatedLayer = self.loadAdditionalLayer(db,  self.attribute.relatedTable)
 
             for i in range(len(self.attribute.attributes)):

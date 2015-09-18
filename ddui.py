@@ -2894,7 +2894,39 @@ class DdN2mWidget(DdInputWidget):
     #def reset(self):
     #    self.applySubsetString(True)
 
+    def initialize(self, layer, feature, db, mode = 0):
+        '''This method needs to be called by all subclasses!'''
+        self.mode = mode
+        # default mode is 0 = single feature edit, mode = 1: search mode, mode = 2 multi edit
+
+        if feature != None:
+            self.featureId = []
+
+            if self.mode == 2:
+                for anId in layer.selectedFeaturesIds():
+                    if anId >= 0:
+                        self.featureId.append(anId)
+
+            if self.featureId == []:
+                self.featureId = [feature.id()]
+
+        if self.mode == 1: #search ui
+            self.forEdit = True
+        elif self.mode == 2: #disable for multi-edit mode
+            self.forEdit = False
+        else:
+            self.forEdit = self.featureId[0] > 0
+
+            if self.forEdit:
+                self.forEdit = layer.isEditable()
+
     def initializeLayer(self,  layer,  feature,  db,  doShowParents = False,  withMask = False,  skip = []):
+        from warnings import warn
+        warn("The 'DdN2mWidget.initializeLayer' method was renamed to 'initializeTableLayer'",
+            DeprecationWarning)
+        self.initializeTableLayer(self, db, doShoParents, withMask, skip)
+
+    def initializeTableLayer(self, db, doShowParents = False, withMask = False, skip = []):
         # find the layer in the project
         self.tableLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.table)
 
@@ -2914,33 +2946,30 @@ class DdN2mWidget(DdInputWidget):
                                                 createAction = True,  db = None,  inputMask = True,   \
                                                 inputUi = None,  searchUi = None,  helpText = "") # reinitialize inputMask only
 
-        if self.mode == 2:
-            self.featureId = []
-
-            for anId in layer.selectedFeaturesIds():
-                self.featureId.append(anId)
-        else:
-            self.featureId = [feature.id()]
-
         self.oldSubsetString = self.tableLayer.subsetString()
 
-        if self.mode == 1: #search ui
-            self.forEdit = True
-        else:
-            self.forEdit = self.featureId[0] > 0
-
+        if self.mode != 1: #not search ui
             if self.forEdit:
-                self.forEdit = layer.isEditable()
+                self.forEdit = self.tableLayer.isEditable()
 
-                if self.forEdit:
-                    self.forEdit = self.tableLayer.isEditable()
+                if not self.forEdit:
+                    self.forEdit = self.tableLayer.startEditing()
 
                     if not self.forEdit:
-                        self.forEdit = self.tableLayer.startEditing()
+                        DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
+                           QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name(),  showInLog = True)
 
-                        if not self.forEdit:
-                            DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
-                               QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name(),  showInLog = True)
+    def prepareFeatureIdForSubsetString(self):
+        idList = ""
+        for i in range(len(self.featureId)):
+            anId = self.featureId[i]
+
+            if i == 0:
+                idList += str(anId)
+            else:
+                idList += "," + str(anId)
+
+        return idList
 
     def applySubsetString(self,  reset = True):
         if self.tableLayer != None:
@@ -2950,17 +2979,8 @@ class DdN2mWidget(DdInputWidget):
                         return True
             else:
                 # reduce the features in self.tableLayer to those related to feature
-                subsetString = self.attribute.subsetString + "("
-
-                for i in range(len(self.featureId)):
-                    anId = self.featureId[i]
-
-                    if i == 0:
-                        subsetString += str(anId)
-                    else:
-                        subsetString += "," + str(anId)
-
-                subsetString += ")"
+                idList = self.prepareFeatureIdForSubsetString()
+                subsetString = self.attribute.subsetString + "(" + idList + ")"
 
                 if self.tableLayer.setSubsetString(subsetString):
                     self.tableLayer.reload()
@@ -3012,6 +3032,7 @@ class DdN2mWidget(DdInputWidget):
 
 class DdN2mListWidget(DdN2mWidget):
     '''input widget (clickable QListWidget) for simple n2m relations'''
+    #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -3062,10 +3083,10 @@ class DdN2mListWidget(DdN2mWidget):
         return [inputWidget,  None]
 
     def initialize(self, layer, feature, db, mode = 0):
-        self.mode = mode
+        DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
-            self.initializeLayer(layer,  feature,  db)
+            self.initializeTableLayer(db)
             query = QtSql.QSqlQuery(db)
             dispStatement = self.attribute.displayStatement
 
@@ -3161,6 +3182,7 @@ class DdN2mListWidget(DdN2mWidget):
 class DdN2mTreeWidget(DdN2mWidget):
     '''input widget (clickable QTreeWidget) for n2m relations with more than one additional field in the related table
     TreeWidget is initialized directly from the DB'''
+    #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -3214,10 +3236,10 @@ class DdN2mTreeWidget(DdN2mWidget):
         return [inputWidget,  None]
 
     def initialize(self, layer, feature, db, mode = 0):
-        self.mode = mode
+        DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
-            self.initializeLayer(layer,  feature,  db)
+            self.initializeTableLayer(db)
             query = QtSql.QSqlQuery(db)
             dispStatement = self.attribute.displayStatement
 
@@ -3326,6 +3348,7 @@ class DdN2mTreeWidget(DdN2mWidget):
 class DdN2mTableWidget(DdN2mWidget):
     '''a input widget for n-to-m relations with more than one field in the relation table
     The input widget consists of a QTableWidget and an add (+) and a remove (-) button'''
+    #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -3436,13 +3459,13 @@ class DdN2mTableWidget(DdN2mWidget):
             self.applySubsetString(True)
 
     def initialize(self, layer, feature, db, mode = 0):
-        self.mode = mode
+        DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
             if self.mode == 1:
                 self.root = ET.Element('DdSearch')
 
-            self.initializeLayer(layer,  feature,  db,  self.attribute.showParents,  withMask = True)
+            self.initializeTableLayer(db, self.attribute.showParents, withMask = True)
 
             # read the values for any foreignKeys
             for anAtt in self.attribute.attributes:
