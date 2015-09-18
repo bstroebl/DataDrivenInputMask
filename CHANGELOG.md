@@ -3,7 +3,16 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...HEAD)
 ### Added
+- api method *DdN2mWidget.initializeTableLayer*
+- api method *DdN2mWidget.initialize*
+
 ### Changed
+- all n2m widgets are disabled in multi-edit mode
+- api method *DdN2mWidget.initialize* must be called by all subclasses upon initialize
+
+### Deprecated
+ - api method *DdN2mWidget.initializeLayer*
+
 ### Fixed
 
 ## 1.1.0 - 2015-09-11
