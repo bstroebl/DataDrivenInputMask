@@ -4591,18 +4591,20 @@ class DdArrayTableWidgetBool(DdArrayTableWidget):
 
         thisColumn = self.valueColumnIndex
         chk = self.inputWidget.cellWidget(thisRow,thisColumn)
-        thisValue = chk.isChecked()
-        operator = None
-        link = None
 
-        if self.mode == 1:
-            operator = self.inputWidget.cellWidget(aRow, 2).currentText()
+        if chk != None:
+            thisValue = chk.isChecked()
+            operator = None
+            link = None
 
-            if thisRow > 0:
-                link = self.inputWidget.cellWidget(aRow, 0).currentText()
+            if self.mode == 1:
+                operator = self.inputWidget.cellWidget(aRow, 2).currentText()
 
-        self.inputWidget.removeRow(thisRow)
-        self.insertRow(thisRow, thisValue, link, operator)
+                if thisRow > 0:
+                    link = self.inputWidget.cellWidget(aRow, 0).currentText()
+
+            self.inputWidget.removeRow(thisRow)
+            self.insertRow(thisRow, thisValue, link, operator)
 
     def toSqlString(self, aValue):
         if aValue:
@@ -4688,18 +4690,20 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
 
         thisColumn = self.valueColumnIndex
         date = self.inputWidget.cellWidget(thisRow, thisColumn)
-        thisValue = date.date()
-        operator = None
-        link = None
 
-        if self.mode == 1:
-            operator = self.inputWidget.cellWidget(aRow, 2).currentText()
+        if date != None:
+            thisValue = date.date()
+            operator = None
+            link = None
 
-            if thisRow > 0:
-                link = self.inputWidget.cellWidget(aRow, 0).currentText()
+            if self.mode == 1:
+                operator = self.inputWidget.cellWidget(aRow, 2).currentText()
 
-        self.inputWidget.removeRow(thisRow)
-        self.insertRow(thisRow, thisValue, link, operator)
+                if thisRow > 0:
+                    link = self.inputWidget.cellWidget(aRow, 0).currentText()
+
+            self.inputWidget.removeRow(thisRow)
+            self.insertRow(thisRow, thisValue, link, operator)
 
     def toString(self, thisValue):
         loc = QtCore.QLocale.system()
