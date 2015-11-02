@@ -32,6 +32,7 @@ from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
 import ddtools
 import xml.etree.ElementTree as ET
+import icons_rc
 
 class DdFormHelper:
     def __init__(self, thisDialog, layerId, featureId):
@@ -2876,9 +2877,46 @@ class DdN2mWidget(DdInputWidget):
         self.setSizeMax(self.inputWidget)
         self.inputWidget.setToolTip(self.attribute.comment)
         vLayout = QtGui.QVBoxLayout()
+        hLayout = QtGui.QHBoxLayout()
         vLayout.setObjectName(
             "vLayout" + parent.objectName() + self.attribute.name)
-        vLayout.addWidget(label)
+        hLayout.addWidget(label)
+        spacerItem = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        hLayout.addItem(spacerItem)
+        self.filterButton = QtGui.QPushButton(parent)
+        self.filterButton.setObjectName("btn" + parent.objectName() + \
+            self.attribute.name + "_filterButton")
+        filterIcon = QtGui.QIcon(":/filter.png")
+        self.filterButton.setIcon(filterIcon)
+        self.filterButton.setToolTip(
+            QtGui.QApplication.translate("DdInfo",
+            "Apply filter", None,
+            QtGui.QApplication.UnicodeUTF8))
+        self.filterButton.clicked.connect(self.filter)
+        self.filterButton.setEnabled(False)
+        hLayout.addWidget(self.filterButton)
+        self.removeFilterButton = QtGui.QPushButton(parent)
+        self.removeFilterButton.setObjectName("btn" + parent.objectName() + \
+            self.attribute.name + "_removeFilterButton")
+        removeFilterIcon = QtGui.QIcon(":/remove_filter.png")
+        self.removeFilterButton.setIcon(removeFilterIcon)
+        self.removeFilterButton.setToolTip(
+            QtGui.QApplication.translate("DdInfo",
+            "Remove filter", None,
+            QtGui.QApplication.UnicodeUTF8))
+        self.removeFilterButton.clicked.connect(self.removeFilter)
+        self.removeFilterButton.setEnabled(False)
+        hLayout.addWidget(self.removeFilterButton)
+        self.filterText = QtGui.QLineEdit(parent)
+        self.filterText.setObjectName("txl" + parent.objectName() + \
+            self.attribute.name + "_filter")
+        self.filterText.setToolTip(
+            QtGui.QApplication.translate("DdInfo",
+            "Enter filter expression", None,
+            QtGui.QApplication.UnicodeUTF8))
+        self.filterText.textChanged.connect(self.filterTxlChanged)
+        hLayout.addWidget(self.filterText)
+        vLayout.addLayout(hLayout)
         vLayout.addWidget(self.inputWidget)
         newRow = parent.layout().rowCount() + 1
         parent.layout().setLayout(newRow, QtGui.QFormLayout.SpanningRole, vLayout)
@@ -2893,6 +2931,20 @@ class DdN2mWidget(DdInputWidget):
 
     #def reset(self):
     #    self.applySubsetString(True)
+
+    def filterTxlChanged(self, newText):
+        self.filterButton.setEnabled(newText.strip() != "")
+
+    def removeFilter(self):
+        self.filterText.setText("")
+        self.removeFilterButton.setEnabled(False)
+        self.fill()
+
+    def filter(self):
+        '''Slot when user clicks on filter button'''
+        self.removeFilterButton.setEnabled(True)
+        self.filterButton.setEnabled(False)
+        self.fill()
 
     def initialize(self, layer, feature, db, mode = 0):
         '''This method needs to be called by all subclasses!'''
@@ -3036,6 +3088,8 @@ class DdN2mListWidget(DdN2mWidget):
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
+        self.uncheckedItems = {} # dicts to store possible values
+        self.checkedItems = {}
 
     def __str__(self):
         return "<ddui.DdN2mListWidget %s>" % str(self.attribute.name)
@@ -3046,13 +3100,24 @@ class DdN2mListWidget(DdN2mWidget):
             relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
             itemId = thisItem.id
 
+            if itemId in self.uncheckedItems:
+                itemText = self.uncheckedItems[itemId]
+                del self.uncheckedItems[itemId]
+            else:
+                if itemId in self.checkedItems:
+                    itemText = self.checkedItems[itemId]
+                    del self.checkedItems[itemId]
+
             if thisItem.checkState() == 2:
+                self.checkedItems[itemId] = itemText
+
                 for anId in self.featureId:
                     feat = self.createFeature()
                     feat.setAttribute(featureIdField, anId)
                     feat.setAttribute(relatedIdField, itemId)
                     self.tableLayer.addFeature(feat, False)
             else:
+                self.uncheckedItems[itemId] = itemText
                 self.applySubsetString(False)
                 self.tableLayer.selectAll()
 
@@ -3099,7 +3164,6 @@ class DdN2mListWidget(DdN2mWidget):
 
             if query.isActive():
                 self.inputWidget.clear()
-                self.inputWidget.itemChanged.disconnect(self.registerChange)
 
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
@@ -3110,15 +3174,46 @@ class DdN2mListWidget(DdN2mWidget):
                     else:
                         checked = int(query.value(2))
 
-                    parentItem = QtGui.QListWidgetItem(parent)
-                    parentItem.id = parentId
-                    parentItem.setCheckState(checked)
-                    self.inputWidget.addItem(parentItem)
+                    if checked == 2:
+                        self.checkedItems[parentId] = parent
+                    else:
+                        self.uncheckedItems[parentId] = parent
 
                 query.finish()
-                self.inputWidget.itemChanged.connect(self.registerChange)
+                self.fill()
             else:
                 DbError(query)
+
+    def createWidgetItem(self, parentId, parent):
+        parentItem = QtGui.QListWidgetItem(parent, self.inputWidget)
+        parentItem.id = parentId
+
+        return parentItem
+
+    def fill(self):
+        ''' fill the listbox with items'''
+
+        filterExpression = self.filterText.text().strip().lower()
+        self.inputWidget.itemChanged.disconnect(self.registerChange)
+        self.inputWidget.clear()
+
+        for parentId, parent in self.checkedItems.iteritems():
+            parentItem = self.createWidgetItem(parentId, parent)
+            parentItem.setCheckState(2)
+            self.inputWidget.addItem(parentItem)
+
+        for parentId, parent in self.uncheckedItems.iteritems():
+            doAdd = filterExpression == ""
+
+            if not doAdd:
+                doAdd = parent.lower().find(filterExpression) != -1
+
+            if doAdd:
+                parentItem = self.createWidgetItem(parentId, parent)
+                parentItem.setCheckState(0)
+                self.inputWidget.addItem(parentItem)
+
+        self.inputWidget.itemChanged.connect(self.registerChange)
 
     def search(self,  layer):
         searchSql = ""
@@ -3186,6 +3281,8 @@ class DdN2mTreeWidget(DdN2mWidget):
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
+        self.uncheckedItems = {} # dicts to store possible values
+        self.checkedItems = {}
 
     def __str__(self):
         return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
@@ -3197,13 +3294,24 @@ class DdN2mTreeWidget(DdN2mWidget):
                 relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
                 itemId = thisItem.id
 
+                if itemId in self.uncheckedItems:
+                    childs = self.uncheckedItems[itemId]
+                    del self.uncheckedItems[itemId]
+                else:
+                    if itemId in self.checkedItems:
+                        childs = self.checkedItems[itemId]
+                        del self.checkedItems[itemId]
+
                 if thisItem.checkState(0) == 2:
+                    self.checkedItems[itemId] = childs
+
                     for anId in self.featureId:
                         feat = self.createFeature()
                         feat.setAttribute(featureIdField, anId)
                         feat.setAttribute(relatedIdField, itemId)
                         self.tableLayer.addFeature(feat, False)
                 else:
+                    self.uncheckedItems[itemId] = childs
                     self.applySubsetString(False)
                     self.tableLayer.selectAll()
 
@@ -3251,9 +3359,6 @@ class DdN2mTreeWidget(DdN2mWidget):
             query.exec_()
 
             if query.isActive():
-                self.inputWidget.clear()
-                self.inputWidget.itemChanged.disconnect(self.registerChange)
-
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
                     parent = unicode(query.value(1))
@@ -3263,27 +3368,63 @@ class DdN2mTreeWidget(DdN2mWidget):
                     else:
                         checked = int(query.value(2))
 
-                    parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
-                    parentItem.id = parentId
-                    parentItem.setCheckState(0,  checked)
-                    parentItem.setText(0,  parent)
+                    childs = [parent]
 
                     for i in range(len(self.attribute.fieldList) -1):
                         val = query.value(i + 3)
 
                         if val != None:
-                            childItem = QtGui.QTreeWidgetItem(parentItem)
-                            childItem.setText(0,  val)
-                            parentItem.addChild(childItem)
+                            childs.append(val)
                         else: # no more fields left
                             break
 
-                    parentItem.setExpanded(False)
-                    self.inputWidget.addTopLevelItem(parentItem)
+                    if checked == 2:
+                        self.checkedItems[parentId] = childs
+                    else:
+                        self.uncheckedItems[parentId] = childs
+
                 query.finish()
-                self.inputWidget.itemChanged.connect(self.registerChange)
+                self.fill()
             else:
                 DbError(query)
+
+    def createWidgetItem(self, parentId, childs):
+        parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
+        parentItem.id = parentId
+        parent = childs[0]
+        parentItem.setText(0, parent)
+
+        for i in range(1, len(childs)):
+            val = childs[i]
+            childItem = QtGui.QTreeWidgetItem(parentItem)
+            childItem.setText(0, val)
+            parentItem.addChild(childItem)
+
+        parentItem.setExpanded(False)
+        return parentItem
+
+    def fill(self):
+        filterExpression = self.filterText.text().strip().lower()
+        self.inputWidget.itemChanged.disconnect(self.registerChange)
+        self.inputWidget.clear()
+
+        for parentId, childs in self.checkedItems.iteritems():
+            parentItem = self.createWidgetItem(parentId, childs)
+            parentItem.setCheckState(0, 2)
+            self.inputWidget.addTopLevelItem(parentItem)
+
+        for parentId, childs in self.uncheckedItems.iteritems():
+            doAdd = filterExpression == ""
+
+            if not doAdd:
+                doAdd = childs[0].lower().find(filterExpression) != -1
+
+            if doAdd:
+                parentItem = self.createWidgetItem(parentId, childs)
+                parentItem.setCheckState(0, 0)
+                self.inputWidget.addTopLevelItem(parentItem)
+
+        self.inputWidget.itemChanged.connect(self.registerChange)
 
     def search(self,  layer):
         searchSql = ""

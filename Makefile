@@ -26,6 +26,7 @@ PLUGIN_UPLOAD = $(CURDIR)/plugin_upload.py
 SOURCES = datadriveninputmask.py __init__.py dddialog.py ddui.py ddmanager.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
 TRANSLATIONS = i18n/datadriveninputmask_de.ts
+RESOURCE_FILES = icons_rc.py
 
 # global
 
@@ -35,19 +36,19 @@ PY_FILES = datadriveninputmask.py __init__.py dderror.py dddialog.py ddui.py dda
 
 EXTRAS = metadata.txt license.txt datadriveninputmask.png
 
-UI_FILES = 
+UI_FILES =
 
-#RESOURCE_FILES = resources_rc.py
+RESOURCE_FILES = icons_rc.py
 
 HELP = help/build/html
 
 default: compile
 
-#compile: $(UI_FILES) $(RESOURCE_FILES)
-compile: $(UI_FILES)
+compile: $(UI_FILES) $(RESOURCE_FILES)
+#compile: $(UI_FILES)
 
-#%_rc.py : %.qrc
-#	pyrcc4 -o $*_rc.py  $<
+%_rc.py : %.qrc
+	pyrcc4 -o $*_rc.py  $<
 
 %.py : %.ui
 	pyuic4 -o $@ $<
@@ -62,6 +63,7 @@ deploy: compile doc transcompile
 	mkdir -p $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
 	cp -vf $(PY_FILES) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
 	#cp -vf $(UI_FILES) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
+	cp -vf $(RESOURCE_FILES) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
 	cp -vf $(EXTRAS) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
 	cp -vfr i18n $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)
 	cp -vfr $(HELP) $(HOME)/.qgis2/python/plugins/$(PLUGINNAME)/help

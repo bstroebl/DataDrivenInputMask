@@ -3,6 +3,6 @@ DataDrivenInputMask.zip
 .eric5project/
 .ropeproject/
 ui*.*
-images/
 help/build/
 *.pyc
+icons_rc.py
