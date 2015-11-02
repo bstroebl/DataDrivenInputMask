@@ -14,6 +14,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
  - api method *DdN2mWidget.initializeLayer*
 
 ### Fixed
+- Fix runtime error in date and bool array widgets
 
 ## 1.1.0 - 2015-09-11
 ### Added
