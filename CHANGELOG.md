@@ -5,6 +5,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 ### Added
 - api method *DdN2mWidget.initializeTableLayer*
 - api method *DdN2mWidget.initialize*
+- Filter items in ListWidget and TreeWidget to enable user to find his choice quickly
 
 ### Changed
 - all n2m widgets are disabled in multi-edit mode
