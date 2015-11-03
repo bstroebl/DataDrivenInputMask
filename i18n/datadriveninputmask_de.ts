@@ -37,7 +37,7 @@
         <translation>Dieser Layer ist keine PostgreSQL-Tabelle: </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1832"/>
+        <location filename="../ddui.py" line="1845"/>
         <source>Field not found in layer: </source>
         <translation>Das folgende Feld wurde im Layer nicht gefunden: </translation>
     </message>
@@ -47,7 +47,7 @@
         <translation>Der folgende Layer hat keine Selektion: </translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="526"/>
+        <location filename="../dduserclass.py" line="533"/>
         <source>Could not save changes for layer:</source>
         <translation>Konnte die Änderungen in folgendem Layer nicht speichern:</translation>
     </message>
@@ -62,7 +62,7 @@
         <translation>Bitte aktivieren Sie einen Layer!</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="489"/>
+        <location filename="../dduserclass.py" line="496"/>
         <source>Could not add feature to layer:</source>
         <translation>Hinzufügen von Feature gescheitert zu Layer:</translation>
     </message>
@@ -75,52 +75,52 @@
 <context>
     <name>DdInfo</name>
     <message>
-        <location filename="../dddialog.py" line="69"/>
+        <location filename="../dddialog.py" line="72"/>
         <source>New Feature</source>
         <translation>Neues Feature</translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="72"/>
+        <location filename="../dddialog.py" line="75"/>
         <source>Feature</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="192"/>
+        <location filename="../dduserclass.py" line="197"/>
         <source>Null</source>
         <translation>leer</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="2892"/>
+        <location filename="../ddui.py" line="3037"/>
         <source>Layer cannot be edited: </source>
         <translation>Der folgende Layer kann nicht editiert werden: </translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="153"/>
+        <location filename="../dddialog.py" line="156"/>
         <source>Search</source>
         <translation>Suche</translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="195"/>
+        <location filename="../dddialog.py" line="198"/>
         <source>No matches found</source>
         <translation>Keine passenden Datensätze gefunden</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="156"/>
+        <location filename="../dduserclass.py" line="161"/>
         <source>Check if you want to save an empty (or null) value.</source>
         <translation>Anhaken, um einen leeren (oder Null) Wert zu speichern.</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="578"/>
+        <location filename="../dduserclass.py" line="585"/>
         <source>Ignore</source>
         <translation>auslassen</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="580"/>
+        <location filename="../dduserclass.py" line="587"/>
         <source>Check if you want this field to be ignored in the search.</source>
         <translation>Anhaken, um das Feld bei der Suche nicht zu berücksichtigen.</translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="112"/>
+        <location filename="../dddialog.py" line="115"/>
         <source>Help</source>
         <translation>Hilfe</translation>
     </message>
@@ -155,55 +155,70 @@
         <translation>Features übrig. Nächstes anzeigen?</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3890"/>
+        <location filename="../ddui.py" line="4136"/>
         <source>logical</source>
         <translation>logisch</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3893"/>
+        <location filename="../ddui.py" line="4139"/>
         <source>operator</source>
         <translation>Operator</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3896"/>
+        <location filename="../ddui.py" line="4142"/>
         <source>value</source>
         <translation>Wert</translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="65"/>
+        <location filename="../dddialog.py" line="68"/>
         <source>%s selected features</source>
         <translation>%s ausgewählte Features</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="4681"/>
+        <location filename="../ddui.py" line="4932"/>
         <source>GIS area</source>
         <translation>GIS-Fläche</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="4688"/>
+        <location filename="../ddui.py" line="4939"/>
         <source>GIS length</source>
         <translation>GIS-Länge</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="2917"/>
+        <source>Apply filter</source>
+        <translation>Filter anwenden</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="2929"/>
+        <source>Remove filter</source>
+        <translation>Filter löschen</translation>
+    </message>
+    <message>
+        <location filename="../ddui.py" line="2939"/>
+        <source>Enter filter expression</source>
+        <translation>Filterausdruck eingeben</translation>
     </message>
 </context>
 <context>
     <name>DdInput</name>
     <message>
-        <location filename="../ddui.py" line="4110"/>
+        <location filename="../ddui.py" line="4356"/>
         <source>Add</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="4113"/>
+        <location filename="../ddui.py" line="4359"/>
         <source>Remove</source>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="2713"/>
+        <location filename="../ddui.py" line="2736"/>
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="2725"/>
+        <location filename="../ddui.py" line="2748"/>
         <source>No</source>
         <translation>Nein</translation>
     </message>
@@ -236,17 +251,17 @@
         <translation>Konfiguriere Maske</translation>
     </message>
     <message>
-        <location filename="../dduserclass.py" line="321"/>
+        <location filename="../dduserclass.py" line="327"/>
         <source>Show all</source>
         <translation>Zeige alle</translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="216"/>
+        <location filename="../dddialog.py" line="219"/>
         <source>Save search as</source>
         <translation>Suche speichern</translation>
     </message>
     <message>
-        <location filename="../dddialog.py" line="246"/>
+        <location filename="../dddialog.py" line="249"/>
         <source>Load search</source>
         <translation>Suche laden</translation>
     </message>
@@ -259,22 +274,22 @@
 <context>
     <name>DdWarning</name>
     <message>
-        <location filename="../ddui.py" line="2365"/>
+        <location filename="../ddui.py" line="2378"/>
         <source>Input in Field is too long! </source>
         <translation>Ihre Eingabe in das Feld ist zu lang!</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="2370"/>
+        <location filename="../ddui.py" line="2383"/>
         <source>Input in Field is too short!</source>
         <translation>Ihre Eingabe in das Feld ist zu kurz!</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1803"/>
+        <location filename="../ddui.py" line="1816"/>
         <source>Field must not be empty!</source>
         <translation>Das Feld darf nicht leer sein!</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1241"/>
+        <location filename="../ddui.py" line="1242"/>
         <source>Layer cannot be put in editing mode:</source>
         <translation>Für den folgenden Layer konnte der Bearbeitungsstatus nicht umgeschaltet werden: </translation>
     </message>
@@ -299,32 +314,32 @@
         <translation>Passwort für </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1771"/>
+        <location filename="../ddui.py" line="1784"/>
         <source>Field value is too small! Minimum is </source>
         <translation>Der Feldwert ist zu klein! Mindesteingabe ist </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1784"/>
+        <location filename="../ddui.py" line="1797"/>
         <source>Field value is too large! Maximum is </source>
         <translation>Der Feldwert ist zu groß! Höchsteingabe ist </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="1816"/>
+        <location filename="../ddui.py" line="1829"/>
         <source>Input is not valid! Field type is %s</source>
         <translation>Die Eingabe ist ungültig! Der Feldtyp ist %s</translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3964"/>
+        <location filename="../ddui.py" line="4210"/>
         <source>Value </source>
         <translation>Wert </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3948"/>
+        <location filename="../ddui.py" line="4194"/>
         <source> is too small! Minimum is </source>
         <translation> ist zu klein! Mindesteingabe ist </translation>
     </message>
     <message>
-        <location filename="../ddui.py" line="3964"/>
+        <location filename="../ddui.py" line="4210"/>
         <source> is too large! Maximum is </source>
         <translation> ist zu groß! Höchsteingabe ist </translation>
     </message>
