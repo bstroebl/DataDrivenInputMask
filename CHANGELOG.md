@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...HEAD)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...develop)
 ### Added
 - api method *DdN2mWidget.initializeTableLayer*
 - api method *DdN2mWidget.initialize*
