@@ -42,6 +42,7 @@ class DdDialog(QtGui.QDialog):
         self.layer = layer
         self.feature = feature
         self.db = db
+        self.forwardReturn = True # use return pressed to accept self
 
         if multiEdit:
             self.mode = 2
@@ -80,14 +81,18 @@ class DdDialog(QtGui.QDialog):
     def initialize(self):
         self.ui.initialize(self.layer, self.feature, self.db, self.mode)
 
-    def accept(self):
-        if self.ui.checkInput(self.layer,  self.feature):
-            hasChanges = self.ui.save(self.layer,  self.feature,  self.db)
+    def setForwardReturn(self, doForward = True):
+        self.forwardReturn = doForward
 
-            if hasChanges:
-                self.done(1)
-            else:
-                self.done(2)
+    def accept(self):
+        if self.forwardReturn:
+            if self.ui.checkInput(self.layer, self.feature):
+                hasChanges = self.ui.save(self.layer, self.feature, self.db)
+
+                if hasChanges:
+                    self.done(1)
+                else:
+                    self.done(2)
 
     def reject(self):
         self.ui.discard()
@@ -136,8 +141,8 @@ class DdSearchDialog(QtGui.QDialog):
                                              QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Save| \
                                              QtGui.QDialogButtonBox.Open|QtGui.QDialogButtonBox.Reset)
         okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
-
         okBtn.setEnabled(True)
+        self.forwardReturn = True # use return pressed to accept self
         self.setTitle()
         self.initialize()
 
@@ -161,12 +166,16 @@ class DdSearchDialog(QtGui.QDialog):
     def initialize(self):
         self.ui.initialize(self.layer, self.feature, self.db, self.mode)
 
+    def setForwardReturn(self, doForward = True):
+        self.forwardReturn = doForward
+
     def clicked(self,  thisButton):
         if thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok):
-            root = self.createSearch()
+            if self.forwardReturn:
+                root = self.createSearch()
 
-            if self.ddManager.setLastSearch(self.layer,  root):
-                self.accept()
+                if self.ddManager.setLastSearch(self.layer,  root):
+                    self.accept()
         elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Cancel):
             self.reject()
         elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Save):

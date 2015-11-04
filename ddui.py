@@ -2862,6 +2862,11 @@ class DdN2mWidget(DdInputWidget):
         self.oldSubsetString = ""
         self.featureId = []
         self.forEdit = False
+        self.timer = QtCore.QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.forwardAccept)
+        self.uncheckedItems = {} # dicts to store possible values
+        self.checkedItems = {}
 
     def setSizeMax(self,  widget):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -2915,6 +2920,7 @@ class DdN2mWidget(DdInputWidget):
             "Enter filter expression", None,
             QtGui.QApplication.UnicodeUTF8))
         self.filterText.textChanged.connect(self.filterTxlChanged)
+        self.filterText.returnPressed.connect(self.filter)
         hLayout.addWidget(self.filterText)
         vLayout.addLayout(hLayout)
         vLayout.addWidget(self.inputWidget)
@@ -2932,11 +2938,19 @@ class DdN2mWidget(DdInputWidget):
     #def reset(self):
     #    self.applySubsetString(True)
 
+    def forwardAccept(self):
+        '''Slot to be called from self.timer'''
+        self.parentDialog.setForwardReturn()
+
     def filterTxlChanged(self, newText):
         self.filterButton.setEnabled(newText.strip() != "")
+        self.parentDialog.setForwardReturn(False)
 
     def removeFilter(self):
+        self.filterText.textChanged.disconnect(self.filterTxlChanged)
         self.filterText.setText("")
+        self.filterText.textChanged.connect(self.filterTxlChanged)
+        self.filterText.setFocus()
         self.removeFilterButton.setEnabled(False)
         self.fill()
 
@@ -2945,6 +2959,12 @@ class DdN2mWidget(DdInputWidget):
         self.removeFilterButton.setEnabled(True)
         self.filterButton.setEnabled(False)
         self.fill()
+        self.filterText.setFocus()
+        self.timer.start(10 * \
+            (len(self.uncheckedItems) + len(self.checkedItems)))
+        # timer is needed so that returnPress event is not pending anymore
+        # when self.parentDialog.setForwardReturn() is called
+        # otherwise pressing return will close the dialog, too
 
     def initialize(self, layer, feature, db, mode = 0):
         '''This method needs to be called by all subclasses!'''
@@ -3088,8 +3108,6 @@ class DdN2mListWidget(DdN2mWidget):
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
-        self.uncheckedItems = {} # dicts to store possible values
-        self.checkedItems = {}
 
     def __str__(self):
         return "<ddui.DdN2mListWidget %s>" % str(self.attribute.name)
@@ -3281,8 +3299,6 @@ class DdN2mTreeWidget(DdN2mWidget):
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
-        self.uncheckedItems = {} # dicts to store possible values
-        self.checkedItems = {}
 
     def __str__(self):
         return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
