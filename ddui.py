@@ -2968,6 +2968,8 @@ class DdN2mWidget(DdInputWidget):
 
     def initialize(self, layer, feature, db, mode = 0):
         '''This method needs to be called by all subclasses!'''
+        self.uncheckedItems = {}
+        self.checkedItems = {}
         self.mode = mode
         # default mode is 0 = single feature edit, mode = 1: search mode, mode = 2 multi edit
 
