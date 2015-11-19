@@ -25,8 +25,9 @@ Classes that make up or steer the DataDrivenUI
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore,  QtGui,  QtSql
+from PyQt4 import QtCore, QtGui, QtSql
 from qgis.core import *
+from qgis.gui import *
 from dderror import DdError,  DbError
 from ddattribute import *
 from dddialog import DdDialog,  DdSearchDialog
@@ -1121,6 +1122,10 @@ class DdDialogWidget(DdWidget):
 
             ddFormWidget.addInputWidget(inputWidget,  beforeWidget)
 
+    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+        for aForm in self.forms:
+            aForm.asGml(layer, feature, db, rootDoc, nsPrefix)
+
     def initialize(self, layer, feature, db, mode = 0):
         for aForm in self.forms:
             aForm.initialize(layer, feature, db, mode)
@@ -1266,6 +1271,10 @@ class DdFormWidget(DdWidget):
             self.inputWidgets.append(ddInputWidget)
         else:
             self.inputWidgets.insert(beforeWidget,  ddInputWidget)
+
+    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+        for anInputWidget in self.inputWidgets:
+            anInputWidget.asGml(self.layer, feature, db, rootDoc, nsPrefix)
 
     def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
@@ -1735,6 +1744,20 @@ class DdLineEdit(DdInputWidget):
 
         if self.betweenWidget != None:
             self.setBetweenValue(thisValue)
+
+    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+        self.debug("asGml " + self.attribute.name)
+        aValue = self.getFeatureValue(layer, feature)
+
+        if aValue != None:
+            if nsPrefix != "":
+                tagName = nsPrefix + ":" + self.attribute.name
+            else:
+                tagName = self.attribute.name
+            anElement = rootDoc.createElement(tagName)
+            textNode = rootDoc.createTextNode(unicode(aValue))
+            anElement.appendChild(textNode)
+            rootDoc.appendChild(anElement)
 
     def initialize(self, layer, feature, db, mode = 0):
 
@@ -2968,6 +2991,9 @@ class DdN2mWidget(DdInputWidget):
         # timer is needed so that returnPress event is not pending anymore
         # when self.parentDialog.setForwardReturn() is called
         # otherwise pressing return will close the dialog, too
+
+    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+        pass
 
     def initialize(self, layer, feature, db, mode = 0):
         '''This method needs to be called by all subclasses!'''
@@ -4900,7 +4926,7 @@ class DdLineEditGeometry(DdLineEditInt):
         if feature == None or self.mode == 2:
             return None
 
-        geom = feature.geometry()
+        geom = QgsGeometry(feature.geometry())
 
         if geom == None: # possible if new feature from within another mask
             self.inputWidget.setVisible(False)
@@ -4924,6 +4950,18 @@ class DdLineEditGeometry(DdLineEditInt):
                     self.inputWidget.setVisible(False)
                     self.label.setVisible(False)
                     return None
+
+    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+        geom = QgsGeometry(feature.geometry())
+
+        if nsPrefix != "":
+            tagName = nsPrefix + ":" + self.attribute.name
+        else:
+            tagName = self.attribute.name
+        anElement = rootDoc.createElement(tagName)
+        geomElement = QgsOgcUtils.geometryToGML(geom, rootDoc, "3.2", 5)
+        anElement.appendChild(geomElement)
+        rootDoc.appendChild(anElement)
 
     def checkDefault(self, feature):
         return [True, None]

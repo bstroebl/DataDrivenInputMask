@@ -25,7 +25,7 @@ Class that steers the DataDrivenUI
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, QtXml
 from dderror import DdError,  DbError
 
 try:
@@ -359,6 +359,78 @@ class DdManager(object):
         if actionToRemove >= 0:
             layer.actions().removeAction(actionToRemove)
 
+    def asGml(self, layer, feature, nsPrefix = ""):
+        '''
+        api method to return the feature as a QtXml.QDomElement
+        '''
+
+        layerValues = self.__getLayerValues(layer, inputMask = True,
+            searchMask = False)
+
+        if layerValues != None:
+            parentsInMask = layerValues[4]
+
+            if not parentsInMask:
+                self.initLayer(layer, showParents = True, inputMask = True,
+                    searchMask = False, skip = [], labels = {}, fieldOrder = [],
+                    fieldGroups = {}, minMax = {}, noSearchFields = [],
+                    createAction = True, db = None,  inputUi = None,
+                    searchUi = None, helpText = "")
+                layerValues = self.__getLayerValues(layer, inputMask = True,
+                    searchMask = False)
+
+        if layerValues != None:
+            wasEditable = layer.isEditable()
+
+            if wasEditable:
+                if layer.isModified() and askForSave:
+                    #ask user to save or discard changes
+                    reply = QtGui.QMessageBox.question(
+                        None, QtGui.QApplication.translate(
+                            "DdInfo", "Unsaved changes", None,
+                            QtGui.QApplication.UnicodeUTF8),
+                        QtGui.QApplication.translate("DdInfo",
+                            "Do you want to save the changes to layer ", None,
+                            QtGui.QApplication.UnicodeUTF8) + \
+                            layer.name() + "?",
+                        QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Save)
+
+                    if reply != QtGui.QMessageBox.Cancel:
+                        if reply == QtGui.QMessageBox.Discard:
+                            if not layer.rollBack():
+                                DdError(QtGui.QApplication.translate(
+                                    "DdError", "Could not discard changes for layer:",
+                                    None, QtGui.QApplication.UnicodeUTF8) + \
+                                    " " + layer.name(), iface = self.iface)
+                                return None
+                            else:
+                                if feature.id() <= 0: # new feature discarded
+                                    return None
+                        elif reply == QtGui.QMessageBox.Save:
+                            if not layer.commitChanges():
+                                DdError(QtGui.QApplication.translate(
+                                    "DdError", "Could not save changes for layer:", None,
+                                    QtGui.QApplication.UnicodeUTF8)  + " " + \
+                                    layer.name(), iface = self.iface)
+                                return None
+
+            db = layerValues[1]
+            ui = layerValues[2]
+            rootDoc = QtXml.QDomDocument()
+
+            if nsPrefix != "":
+                tagName = nsPrefix + ":" + layer.name()
+            else:
+                tagName = layer.name()
+
+            rootElement = rootDoc.createElement(tagName)
+            rootDoc.appendChild(rootElement)
+            ui.asGml(layer, feature, db, rootDoc, nsPrefix)
+            self.__debug("rootDoc", rootDoc.toString())
+        else:
+            return None
+
+
     def showFeatureForm(self, layer, feature, showParents = True,
             title = None, askForSave = True, multiEdit = False):
         '''
@@ -600,6 +672,30 @@ class DdManager(object):
             return foundWidget[0]
         else:
             return None
+
+    def getAttributes(self, layer):
+        '''api method returning the (visible) attributes for a layer'''
+        layerValues = self.__getLayerValues(layer)
+        ui = layerValues[2]
+        searchUi = layerValues[3]
+        theseAttributes = []
+
+        if ui != None:
+            theseForms = ui.forms
+        else:
+            if searchUi != None:
+                theseForms = searchUi.forms
+            else:
+                return None
+
+        for i in range(len(theseForms)):
+            theseInputWidgets = theseForms[i].inputWidgets
+
+            for j in range(len(theseInputWidgets)):
+                aDdWidget = theseInputWidgets[j]
+                theseAttributes.append(aDdWidget.attribute)
+
+        return theseAttributes
 
     def replaceInputWidget(self, layer, attributeName, newWidget,
         toUi = True, toSearchUi = True):
