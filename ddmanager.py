@@ -118,8 +118,9 @@ class DdManager(object):
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
-        inputUi = None,  searchUi = None,  helpText = "", fieldDisable = []):
-        '''api method initLayer: initialize this layer with a data-driven input mask.
+        inputUi = None,  searchUi = None,  helpText = "", fieldDisable = [], tags = {}):
+        '''
+        api method initLayer: initialize this layer with a data-driven input mask.
         In case there is configuration for this layer in the database read this
         configuration and apply what is provided there.
         Returns a Boolean stating the success of the initialization
@@ -143,7 +144,10 @@ class DdManager(object):
         - inputUi [ddui.DdDialogWidget]: apply this inputUi
         - searchUi [ddui.DdDialogWidget]: apply this as search ui
         - helpText [string] help text for this mask, may be html formatted
-        - fieldDisable [array[string]]: field names whose DdInputWidget shall be disabled in the inputMask'''
+        - fieldDisable [array[string]]: field names whose DdInputWidget shall be disabled in the inputMask
+        - tags [dict] with entries: "fieldname": "XML-tag"
+        '''
+
 
         thisSize = None # stores the size of the DdDialog
         root = ET.Element('DdSearch')
@@ -189,7 +193,8 @@ class DdManager(object):
                     autoInputUi,  autoSearchUi = ddui.createUi(
                         thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
                         noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText,  createAction,  \
-                        readConfigTables = readConfigTables, fieldDisable = fieldDisable)
+                        readConfigTables = readConfigTables, fieldDisable = fieldDisable,
+                        tags = tags)
 
                     if inputUi == None:
                         # use the automatically created mask if none has been provided
@@ -1258,6 +1263,33 @@ class DdManager(object):
             else:
                 return False
 
+        sQuery = "SELECT \"field_tag\" FROM \"public\".\"dd_field\";"
+
+        query = QtSql.QSqlQuery(db)
+        query.exec_(sQuery)
+
+        changeToVersion200 = not query.isActive()
+
+        if changeToVersion200:
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" \
+                ADD COLUMN field_tag varchar(256);"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "COMMENT ON COLUMN \"public\".\"dd_field\".\"field_tag\" \
+                IS \'Tag for this field to be used in XML/GML-Export';"
+
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
         return True
 
     def createConfigTables(self,  db):
@@ -1304,6 +1336,7 @@ class DdManager(object):
             \"dd_tab_id\" INTEGER NOT NULL,\
             \"field_name\" VARCHAR(256) NOT NULL,\
             \"field_alias\" VARCHAR(256) NULL,\
+            \"field_tag\" VARCHAR(256) NULL,\
             \"field_skip\" BOOLEAN NOT NULL DEFAULT \'f\',\
             \"field_search\" BOOLEAN NOT NULL DEFAULT \'t\',\
             \"field_order\" INTEGER NOT NULL DEFAULT 0,\
@@ -1322,6 +1355,7 @@ class DdManager(object):
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"dd_tab_id\" IS \'All fields not included here will be put in the tab with the highest tab_order. One and the same field should be included in _one_ tab only.\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_name\" IS \'Name of the field in the database\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_alias\" IS \'Alias of the field to be used in the mask\';\
+        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_tag\" IS \'Tag for this field to be used in XML/GML-Export\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_skip\" IS \'skip this field in the input and search mask, i.e. hide it from the user\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_search\" IS \'include this field in the search mask, if skip is true the field is not shown in the search mask, no matter if search is true\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_order\" IS \'order of the fields in the mask\';\

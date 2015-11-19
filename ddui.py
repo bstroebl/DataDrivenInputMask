@@ -120,7 +120,8 @@ class DataDrivenUi(object):
         QgsMessageLog.logMessage(title + "\n" + str)
 
     def configureLayer(self, ddTable, skip, labels, fieldOrder, fieldGroups,
-            minMax, noSearchFields, db, createAction, helpText, fieldDisable):
+            minMax, noSearchFields, db, createAction, helpText, fieldDisable,
+            tags):
         '''read configuration from db'''
 
         #check if config tables exist in db
@@ -139,7 +140,9 @@ class DataDrivenUi(object):
                 \"field_search\", \
                 \"field_min\", \
                 \"field_max\", \
-                COALESCE(\"field_enabled\",true)::varchar \
+                COALESCE(\"field_enabled\",true)::varchar, \
+                COALESCE(field_tag, \'\'), \
+                field_order \
             FROM \"public\".\"dd_table\" t \
                 LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
                 LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
@@ -169,16 +172,22 @@ class DataDrivenUi(object):
                     fieldMin = query.value(8)
                     fieldMax = query.value(9)
                     fieldEnable = query.value(10)
+                    fieldTag = query.value(11)
+                    fieldOrderNumber = query.value(12)
 
                     if tabAlias != lastTab and not fieldSkip:
                         if tabAlias != "":
                             lastTab = tabAlias
                             fieldGroups[fieldName] = [tabAlias,  tabTooltip]
 
-                    fieldOrder.append(fieldName)
+                    if fieldOrderNumber >= 0:
+                        fieldOrder.append(fieldName)
 
                     if fieldAlias != "":
                         labels[fieldName] = fieldAlias
+
+                    if fieldTag != "":
+                        tags[fieldName] = fieldTag
 
                     if fieldSkip:
                         skip.append(fieldName)
@@ -198,23 +207,24 @@ class DataDrivenUi(object):
             query.finish()
 
         return [skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields,
-            createAction, helpText, fieldDisable]
+            createAction, helpText, fieldDisable, tags]
 
     def __createForms(self, thisTable, db, skip, labels, fieldOrder,
             fieldGroups, minMax, noSearchFields, showParents,
-            showChildren, readConfigTables, createAction, fieldDisable):
+            showChildren, readConfigTables, createAction, fieldDisable,
+            tags):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
         ddSearchForms = []
         ddAttributes = self.getAttributes(
-            thisTable, db, labels, minMax, fieldDisable = fieldDisable)
+            thisTable, db, labels, tags, minMax, fieldDisable = fieldDisable)
         # do not pass skip here otherwise pk fields might not be included
 
         for anAtt in ddAttributes:
             if anAtt.isPK:
                 n2mAttributes = self.getN2mAttributes(db, thisTable, anAtt.name,
-                    anAtt.num, labels, showChildren, skip, fieldDisable)
+                    anAtt.num, labels, tags, showChildren, skip, fieldDisable)
                 ddAttributes = ddAttributes + n2mAttributes
 
         #check if we need a QToolBox
@@ -367,8 +377,11 @@ class DataDrivenUi(object):
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
                 if readConfigTables:
-                    pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax, pNoSearchFields, pCreateAction, pHelpText, pFieldDisable = \
-                        self.configureLayer(aParent, [], {}, [], {}, {}, [], db, createAction, "", [])
+                    pSkip, pLabels, pFieldOrder, pFieldGroups, \
+                        pMinMax, pNoSearchFields, pCreateAction, \
+                        pHelpText, pFieldDisable, pTags = \
+                        self.configureLayer(aParent, [], {}, [], {}, {}, [],
+                            db, createAction, "", [], [])
 
                     if pSkip == []:
                         pSkip = skip
@@ -384,19 +397,23 @@ class DataDrivenUi(object):
                         pNoSearchFields = noSearchFields
                     if pFieldDisable == []:
                         pFieldDisable = fieldDisable
+                    if pTags == {}:
+                        pTags = tags
 
                 parentForms, parentSearchForms = self.__createForms(aParent, db,
                     pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax,
                     pNoSearchFields, showParents, False, readConfigTables,
-                    pCreateAction, pFieldDisable)
+                    pCreateAction, pFieldDisable, pTags)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
         return [ddForms,  ddSearchForms]
 
-    def createUi(self,  thisTable,  db,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  \
-        noSearchFields = [],  showParents = True,  showChildren = True,   inputMask = True,  searchMask = True,  \
-        helpText = "",  createAction = True,  readConfigTables = False, fieldDisable = []):
+    def createUi(self, thisTable, db, skip = [], labels = {}, fieldOrder = [],
+            fieldGroups = {}, minMax = {}, noSearchFields = [],
+            showParents = True, showChildren = True, inputMask = True,
+            searchMask = True, helpText = "", createAction = True,
+            readConfigTables = False, fieldDisable = [], tags = {}):
         '''creates default uis for this table (DdTable instance)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
         see ddmanager.initLayer for other parameters
@@ -404,15 +421,15 @@ class DataDrivenUi(object):
 
         if readConfigTables:
             skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields, \
-            createAction, helpText, fieldDisable = self.configureLayer( \
+            createAction, helpText, fieldDisable, tags = self.configureLayer( \
                 thisTable, skip, labels, fieldOrder, fieldGroups, minMax, \
                 noSearchFields, db, createAction, \
-                helpText, fieldDisable)
+                helpText, fieldDisable, tags)
 
         forms, searchForms = self.__createForms(
             thisTable, db, skip, labels, fieldOrder, fieldGroups,
             minMax, noSearchFields, showParents, showChildren,
-            readConfigTables, createAction, fieldDisable)
+            readConfigTables, createAction, fieldDisable, tags)
 
         if  inputMask:
             ui = DdDialogWidget()
@@ -512,7 +529,7 @@ class DataDrivenUi(object):
 
         return parents
 
-    def getN2mAttributes(self, db, thisTable, attName, attNum, labels,
+    def getN2mAttributes(self, db, thisTable, attName, attNum, labels, tags,
             showChildren, skip = [], fieldDisable = []):
         '''find those tables (n2mtable) where our pk is a fk'''
 
@@ -679,16 +696,22 @@ class DataDrivenUi(object):
                 except KeyError:
                     attLabel = None
 
+                try:
+                    attTag = tags[str(relationTable)]
+                except KeyError:
+                    attTag = None
+
                 attEnableWidget = fieldDisable.count(ddRelationTable.tableName) == 0
 
                 if subType == "table":
                     configList =  self.configureLayer(
-                        ddRelationTable, [], {}, [], {}, {}, [], db, True, "", [])
+                        ddRelationTable, [], {}, [], {}, {}, [], db, True, "", [], {})
                     skipThese = configList[0]
                     rLabels = configList[1]
                     rMinMax = configList[4]
+                    rTags = configList[9]
                     attributes = self.getAttributes(
-                        ddRelationTable, db, rLabels, rMinMax, skipThese)
+                        ddRelationTable, db, rLabels, rTags, rMinMax, skipThese)
 
                     attrsToKeep = []
                     for aRelAtt in attributes:
@@ -696,14 +719,15 @@ class DataDrivenUi(object):
                             attrsToKeep.append(aRelAtt)
 
                     ddAtt = DdTableAttribute(
-                        ddRelationTable, relationComment, attLabel, relationFeatureIdField,
+                        ddRelationTable, relationComment, attLabel, attTag,
+                        relationFeatureIdField,
                         attrsToKeep, maxRows, showParents, attName, attEnableWidget)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
 
                     ddAtt = DdN2mAttribute(
                         ddRelationTable, ddRelatedTable, subType, relationComment,
-                        attLabel, relationFeatureIdField, relationRelatedIdField,
+                        attLabel, attTag, relationFeatureIdField, relationRelatedIdField,
                         relatedIdField, relatedDisplayField, fieldList, relatedForeignKeys,
                         attEnableWidget)
 
@@ -722,7 +746,8 @@ class DataDrivenUi(object):
 
         return n2mAttributes
 
-    def getAttributes(self, thisTable, db, labels, minMax, skip = [], fieldDisable = []):
+    def getAttributes(self, thisTable, db, labels, tags, minMax,
+            skip = [], fieldDisable = []):
         ''' query the DB and create DdAttributes'''
 
         ddAttributes = []
@@ -796,6 +821,11 @@ class DataDrivenUi(object):
                                     attLabel = attName + " (" + fk[2] + ")"
 
                                 try:
+                                    attTag = tags[str(attName)]
+                                except KeyError:
+                                    attTag = ""
+
+                                try:
                                     fkComment = fk[3]
                                 except IndexError:
                                     fkComment = ""
@@ -809,7 +839,7 @@ class DataDrivenUi(object):
                                 ddAtt = DdFkLayerAttribute(
                                     thisTable, attTyp, attNotNull, attName, attComment,
                                     attNum, isPK, attDefault, attHasDefault, fk[1], attLabel,
-                                    attEnableWidget)
+                                    attTag, attEnableWidget)
                                 normalAtt = False
                             except KeyError:
                                 # no fk defined
@@ -820,6 +850,11 @@ class DataDrivenUi(object):
                             attLabel = labels[str(attName)]
                         except KeyError:
                             attLabel = None
+
+                        try:
+                            attTag = tags[str(attName)]
+                        except KeyError:
+                            attTag = ""
 
                         try:
                             thisMinMax = minMax[str(attName)]
@@ -837,7 +872,7 @@ class DataDrivenUi(object):
                             ddAtt = DdDateLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                thisMin, thisMax, enableWidget = attEnableWidget,
+                                attTag, thisMin, thisMax, enableWidget = attEnableWidget,
                                 isArray = isArray, arrayDelim = arrayDelim)
                         elif attTyp == "geometry":
                             ddAtt = DdGeometryAttribute(
@@ -846,7 +881,7 @@ class DataDrivenUi(object):
                             ddAtt = DdLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                thisMin, thisMax, attEnableWidget, isArray, arrayDelim)
+                                attTag, thisMin, thisMax, attEnableWidget, isArray, arrayDelim)
 
                     ddAttributes.append(ddAtt)
 

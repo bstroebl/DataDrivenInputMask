@@ -54,7 +54,7 @@ class DdTable(object):
 class DdAttribute(object):
     '''abstract super class for all DdAttributes'''
 
-    def __init__(self, table, type, notNull, name, comment , label,
+    def __init__(self, table, type, notNull, name, comment , label, tag,
             min = None, max = None, enableWidget = True):
         self.table = table
         self.type = type
@@ -62,6 +62,7 @@ class DdAttribute(object):
         self.name = name
         self.comment = comment
         self.label = label
+        self.tag = tag
         self.setMinMax(min, max)
         self.enableWidget = enableWidget
 
@@ -84,6 +85,14 @@ class DdAttribute(object):
             labelString = self.name
 
         return labelString
+
+    def getTag(self):
+        if self.tag:
+            tagString = self.tag
+        else:
+            tagString = self.name
+
+        return tagString
 
     def setMinMax(self, min, max):
         self.min = None
@@ -134,10 +143,10 @@ class DdAttribute(object):
 class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK, isFK,
-            default, hasDefault, length, label = None, min = None, max = None,
+            default, hasDefault, length, label = None, tag = None, min = None, max = None,
             enableWidget = True, isArray = False, arrayDelim = ""):
         DdAttribute.__init__(self, table, type, notNull, name, comment,
-            label, min, max, enableWidget)
+            label, tag, min, max, enableWidget)
         self.isPK = isPK
         self.isFK = isFK
         self.default = default
@@ -163,13 +172,14 @@ class DdDateLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for a date field in a QGIS layer
     if you want to specify today as min or max, simply pass "today"'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK,
-            isFK, default, hasDefault, length, label = None, min = None,
+            isFK, default, hasDefault, length, label = None, tag = None,
+            min = None,
             max = None, dateFormat = "yyyy-MM-dd", enableWidget = True,
             isArray = False, arrayDelim = ""):
         self.dateFormat = dateFormat # set here because DdAttribute calls setMinMax on __init__
         DdLayerAttribute.__init__(self, table, type, notNull, name,
             comment, attNum, isPK, isFK, default, hasDefault, length,
-            label, min, max, enableWidget, isArray, arrayDelim)
+            label, tag, min, max, enableWidget, isArray, arrayDelim)
 
     def __str__(self):
         return "<ddattribute.DdDateLayerAttribute %s>" % self.name
@@ -211,9 +221,9 @@ class DdDateLayerAttribute(DdLayerAttribute):
 class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK,
-            default , hasDefault, queryForCbx, label = None, enableWidget = True):
+            default , hasDefault, queryForCbx, label = None, tag = None, enableWidget = True):
         DdLayerAttribute.__init__(self, table, type, notNull, name, comment,
-            attNum, isPK, True, default, hasDefault, -1, label,
+            attNum, isPK, True, default, hasDefault, -1, label, tag,
             enableWidget = enableWidget)
         self.queryForCbx = queryForCbx
 
@@ -230,9 +240,9 @@ class DdFkLayerAttribute(DdLayerAttribute):
 class DdManyToManyAttribute(DdAttribute):
     '''abstract class for any many2many attribute'''
     def __init__(self, relationTable, type, relationFeatureIdField,
-            comment, label, enableWidget = True):
+            comment, label, tag = None, enableWidget = True):
         DdAttribute.__init__(self, relationTable, type, False,
-            relationTable.tableName, comment, label, enableWidget = enableWidget)
+            relationTable.tableName, comment, label, tag, enableWidget = enableWidget)
 
         self.relationFeatureIdField = relationFeatureIdField
         self.setSubsetString()
@@ -250,10 +260,10 @@ class DdManyToManyAttribute(DdAttribute):
 
 class DdTableAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a relationTable'''
-    def __init__(self, relationTable, comment, label, relationFeatureIdField,
+    def __init__(self, relationTable, comment, label, tag, relationFeatureIdField,
             attributes, maxRows, showParents, pkAttName, enableWidget = True):
         DdManyToManyAttribute.__init__(self, relationTable, "table",
-            relationFeatureIdField, comment, label, enableWidget)
+            relationFeatureIdField, comment, label, tag, enableWidget)
 
         self.attributes = attributes # an array with DdAttributes
         self.pkAttName = pkAttName
@@ -272,12 +282,12 @@ class DdTableAttribute(DdManyToManyAttribute):
 class DdN2mAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a n2m relation, subtype can be list or tree
     relationTable and relatedTable are DdTable objects'''
-    def __init__(self, relationTable, relatedTable, subType, comment , label,
+    def __init__(self, relationTable, relatedTable, subType, comment , label, tag,
             relationFeatureIdField, relationRelatedIdField, relatedIdField,
             relatedDisplayField, fieldList = [], relatedForeignKeys = [],
             enableWidget = True):
         DdManyToManyAttribute.__init__(self, relationTable, "n2m",
-            relationFeatureIdField, comment, label, enableWidget)
+            relationFeatureIdField, comment, label, tag, enableWidget)
 
         self.subType = subType
         self.relatedTable = relatedTable
@@ -379,27 +389,27 @@ class DdN2mAttribute(DdManyToManyAttribute):
 class DdPushButtonAttribute(DdAttribute):
     '''a DdAttribute that draws a pushButton in the mask.
     the button must be implemented as subclass of dduserclass.DdPushButton'''
-    def __init__(self, comment , label, enableWidget = True):
+    def __init__(self, comment, label, tag = None, enableWidget = True):
         DdAttribute.__init__(self, None, "pushButton", False, "", comment,
-            label, enableWidget = enableWidget)
+            label, tag, enableWidget = enableWidget)
         pass
 
     def __str__(self):
         return "<ddattribute.DdPushButtonAttribute %s>" % self.name
 
 class DdCheckableTableAttribute(DdN2mAttribute, DdTableAttribute):
-    def __init__(self, relationTable, relatedTable, comment, label,
+    def __init__(self, relationTable, relatedTable, comment, label, tag,
             relationFeatureIdField, relationRelatedIdField,
             relatedIdField, relatedDisplayField, attributes,
             catalogTable = None, relatedCatalogIdField = None,
             catalogIdField = None, catalogDisplayField = None,
             catalogLabel = None, enableWidget = True):
         DdN2mAttribute.__init__(self, relationTable, relatedTable,
-            "default", comment, label, relationFeatureIdField,
+            "default", comment, label, tag, relationFeatureIdField,
             relationRelatedIdField, relatedIdField, relatedDisplayField,
             fieldList = [], relatedForeignKeys = [],
             enableWidget = enableWidget)
-        DdTableAttribute.__init__(self, relationTable, comment, label,
+        DdTableAttribute.__init__(self, relationTable, comment, label, tag,
             relationFeatureIdField, attributes, maxRows = None,
             showParents = False, pkAttName = None)
 
