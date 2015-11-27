@@ -1259,13 +1259,13 @@ class DdFormWidget(DdWidget):
     def __str__(self):
         return "<ddui.DdFormWidget>"
 
-    def __getLayer(self,  db):
+    def __getLayer(self, db, ddManager):
         # find the layer in the project
-        layer = self.parentDialog.ddManager.findPostgresLayer(db,  self.ddTable)
+        layer = ddManager.findPostgresLayer(db,  self.ddTable)
 
         if not layer:
             # load the layer into the project
-            layer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.ddTable)
+            layer = ddManager.loadPostGISLayer(db,  self.ddTable)
 
         return layer
 
@@ -1299,7 +1299,7 @@ class DdFormWidget(DdWidget):
             ddInputWidget.setupUi(parent,  db)
 
         if self.layer == None: # has not been passed to __init__
-            self.layer = self.__getLayer(db)
+            self.layer = self.__getLayer(db, self.parentDialog.ddManager)
 
     def addInputWidget(self,  ddInputWidget,  beforeWidget = None):
         '''insert this DdInputWidget into this DdForm before Widget'''
@@ -1312,16 +1312,12 @@ class DdFormWidget(DdWidget):
     def asGml(self, ddManager, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, parentsIncluded, idAsAttribute):
         if self.layer == None:
-            self.layer = ddManager.findPostgresLayer(db, self.ddTable)
-
-            if not self.layer:
-                # load the layer into the project
-                self.layer = ddManager.loadPostGISLayer(db, self.ddTable)
+            self.layer = self.__getLayer(db, ddManager)
 
         thisRootElement = rootElement
 
         if not parentsIncluded and layer.id() != self.layer.id():
-            tagName = self.layer.name()
+            tagName = self.ddTable.tableName
 
             if nsPrefix != "":
                 tagName = nsPrefix + ":" + tagName
