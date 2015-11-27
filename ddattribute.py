@@ -261,12 +261,16 @@ class DdManyToManyAttribute(DdAttribute):
 class DdTableAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a relationTable'''
     def __init__(self, relationTable, comment, label, tag, relationFeatureIdField,
-            attributes, maxRows, showParents, pkAttName, enableWidget = True):
+            attributes, maxRows, showParents, pkAttName, enableWidget = True,
+            relationRelatedIdField = None, relatedTable = None, relatedIdField = None):
         DdManyToManyAttribute.__init__(self, relationTable, "table",
             relationFeatureIdField, comment, label, tag, enableWidget)
 
         self.attributes = attributes # an array with DdAttributes
         self.pkAttName = pkAttName
+        self.relationRelatedIdField = relationRelatedIdField
+        self.relatedTable = relatedTable
+        self.relatedIdField = relatedIdField
 
         for anAtt in self.attributes:
 

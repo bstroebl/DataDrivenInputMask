@@ -568,6 +568,9 @@ class DataDrivenUi(object):
                 relationComment = pkQuery.value(7)
                 inPk = bool(pkQuery.value(8))
                 ddRelationTable = DdTable(relationOid,  relationSchema,  relationTable)
+                relationRelatedIdField = None
+                ddRelatedTable = None
+                relatedIdField = None
 
                 if inPk: # either n:m or 1:1
                     if numPkFields == 1: # 1:1 relation
@@ -580,7 +583,11 @@ class DataDrivenUi(object):
                         else:
                             continue
                     elif numPkFields > 1: # n:m relation
-                        if numFields == 2:
+                        if numFields >= 2:
+                            if numFields > 2:
+                                subType = "table"
+                                maxRows = None
+                                showParents = False
                             # get the related table i.e. the table where the other FK field is the PK
                             relatedQuery = QtSql.QSqlQuery(db)
                             sRelatedQuery = "SELECT c.oid, n.nspname, c.relname, att.attname \
@@ -611,9 +618,10 @@ class DataDrivenUi(object):
                             if relatedQuery.isActive():
 
                                 if relatedQuery.size() == 0: #no relatedTable but a Table with two PK columns
-                                    subType = "table"
-                                    maxRows = 1
-                                    showParents = False
+                                    if numFields == 2:
+                                        subType = "table"
+                                        maxRows = 1
+                                        showParents = False
                                 elif relatedQuery.size() == 1:
                                     while relatedQuery.next():
                                         relatedOid = relatedQuery.value(0)
@@ -629,28 +637,27 @@ class DataDrivenUi(object):
                                     relatedFieldsQuery.exec_()
 
                                     if relatedFieldsQuery.isActive():
-                                        if relatedFieldsQuery.size() == 2:
-                                            subType = "list"
-                                        else:
-                                            subType = "tree"
+                                        if numFields == 2:
+                                            if relatedFieldsQuery.size() == 2:
+                                                subType = "list"
+                                            else:
+                                                subType = "tree"
 
                                         relatedIdField = None
                                         relatedDisplayCandidate = None
                                         relatedDisplayField = None
-                                        i = 0
-
                                         fieldList = []
 
                                         while relatedFieldsQuery.next():
                                             relatedAttName = relatedFieldsQuery.value(0)
-                                            relatedAttNum = relatedFieldsQuery.value(1)
+                                            #relatedAttNum = relatedFieldsQuery.value(1)
                                             relatedAttNotNull = bool(relatedFieldsQuery.value(2))
-                                            relatedAttHasDefault = bool(relatedFieldsQuery.value(3))
-                                            relatedAttIsChild = bool(relatedFieldsQuery.value(4))
-                                            relatedAttLength = relatedFieldsQuery.value(5)
+                                            #relatedAttHasDefault = bool(relatedFieldsQuery.value(3))
+                                            #relatedAttIsChild = bool(relatedFieldsQuery.value(4))
+                                            #relatedAttLength = relatedFieldsQuery.value(5)
                                             relatedAttTyp = relatedFieldsQuery.value(6)
-                                            relatedAttComment = relatedFieldsQuery.value(7)
-                                            relatedAttDefault = relatedFieldsQuery.value(8)
+                                            #relatedAttComment = relatedFieldsQuery.value(7)
+                                            #relatedAttDefault = relatedFieldsQuery.value(8)
                                             relatedAttConstraint = relatedFieldsQuery.value(9)
 
                                             if relatedAttConstraint == "p": # PK of the related table
@@ -681,11 +688,6 @@ class DataDrivenUi(object):
                                 relatedQuery.finish()
                             else:
                                 DbError(relatedQuery)
-
-                        elif numFields > 2:
-                            subType = "table"
-                            maxRows = None
-                            showParents = False
                 else: # 1:n relation
                     subType = "table"
                     maxRows = None
@@ -721,7 +723,8 @@ class DataDrivenUi(object):
                     ddAtt = DdTableAttribute(
                         ddRelationTable, relationComment, attLabel, attTag,
                         relationFeatureIdField,
-                        attrsToKeep, maxRows, showParents, attName, attEnableWidget)
+                        attrsToKeep, maxRows, showParents, attName, attEnableWidget,
+                        relationRelatedIdField, ddRelatedTable, relatedIdField)
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
 
