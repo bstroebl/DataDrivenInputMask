@@ -381,7 +381,7 @@ class DataDrivenUi(object):
                         pMinMax, pNoSearchFields, pCreateAction, \
                         pHelpText, pFieldDisable, pTags = \
                         self.configureLayer(aParent, [], {}, [], {}, {}, [],
-                            db, createAction, "", [], [])
+                            db, createAction, "", [], {})
 
                     if pSkip == []:
                         pSkip = skip
@@ -1157,9 +1157,11 @@ class DdDialogWidget(DdWidget):
 
             ddFormWidget.addInputWidget(inputWidget,  beforeWidget)
 
-    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+    def asGml(self, ddManager, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, parentsIncluded, idAsAttribute):
         for aForm in self.forms:
-            aForm.asGml(layer, feature, db, rootDoc, nsPrefix)
+            aForm.asGml(ddManager, layer, feature, db, rootDoc, rootElement,
+                nsPrefix, withLookupValues, parentsIncluded, idAsAttribute)
 
     def initialize(self, layer, feature, db, mode = 0):
         for aForm in self.forms:
@@ -1307,91 +1309,120 @@ class DdFormWidget(DdWidget):
         else:
             self.inputWidgets.insert(beforeWidget,  ddInputWidget)
 
-    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+    def asGml(self, ddManager, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, parentsIncluded, idAsAttribute):
+        if self.layer == None:
+            self.layer = ddManager.findPostgresLayer(db, self.ddTable)
+
+            if not self.layer:
+                # load the layer into the project
+                self.layer = ddManager.loadPostGISLayer(db, self.ddTable)
+
+        thisRootElement = rootElement
+
+        if not parentsIncluded and layer.id() != self.layer.id():
+            tagName = self.layer.name()
+
+            if nsPrefix != "":
+                tagName = nsPrefix + ":" + tagName
+
+            thisRootElement = rootDoc.createElement(tagName)
+            rootElement.appendChild(thisRootElement)
+
+        self.mode = 0
+        self.initializeFeature(layer, feature)
+
         for anInputWidget in self.inputWidgets:
-            anInputWidget.asGml(self.layer, feature, db, rootDoc, nsPrefix)
+            anInputWidget.asGml(self.layer, self.feature, db, rootDoc,
+                thisRootElement, nsPrefix, withLookupValues, idAsAttribute)
+
+    def initializeFeature(self, layer, feature):
+        enableAll = False
+
+        if layer.id() == self.layer.id():
+            self.feature = feature
+            self.wasEditable = layer.isEditable()
+            enableAll = layer.isEditable()
+        else:
+            layerPkList = layer.pendingPkAttributesList()
+
+            if len(layerPkList) != 1:
+                self.feature = None # no combined keys
+            else:
+                layerPkIdx = layerPkList[0]
+                pkValues = []
+
+                if self.mode == 0:
+                    pkValue = feature[layerPkIdx]
+
+                    if pkValue == None:
+                        self.feature = None
+                    else:
+                        pkValues.append(str(pkValue))
+                elif self.mode == 2:
+                    for aFeat in layer.selectedFeatures():
+                        pkValue = aFeat[layerPkIdx]
+
+                        if pkValue == None:
+                            self.feature = None
+                            pkValues = []
+                            break
+                        else:
+                            pkValue = str(pkValue)
+
+                        pkValues.append(pkValue)
+
+                if len(pkValues) > 0:
+                    thisPkList = self.layer.pendingPkAttributesList()
+
+                    if len(thisPkList) != 1:
+                        self.feature = None
+                    else:
+                        #self.oldSubsetString = self.layer.subsetString()
+                        thisPkField = self.layer.pendingFields().field(thisPkList[0])
+                        newSubsetString = "\"" + thisPkField.name() + "\" IN ("
+
+                        for i in range(len(pkValues)):
+                            pkValue = pkValues[i]
+
+                            if thisPkField.typeName().find("char") != -1:
+                                pkValue = "\'" + pkValue + "\'" # quote value as string
+
+                            if i == 0:
+                                newSubsetString += pkValue
+                            else:
+                                newSubsetString += "," + pkValue
+
+                        newSubsetString += ")"
+                        self.layer.setSubsetString(newSubsetString)
+                        self.layer.reload()
+                        self.layer.selectAll()
+
+                        if self.mode == 0 and self.layer.selectedFeatureCount() != 1:
+                            # there is no or several features matching our feature
+                            self.feature = None
+                        elif self.mode == 2 and self.layer.selectedFeatureCount() == 0:
+                            self.feature = None
+                        else:
+                            self.feature = self.layer.selectedFeatures()[0]
+
+                            if layer.isEditable():
+                                enableAll = self.__setLayerEditable()
+
+                                if self.mode == 0:
+                                    self.layer.removeSelection()
+
+        return enableAll
 
     def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
         self.oldSubsetString = self.layer.subsetString()
-        enableAll = False
 
         if self.mode == 1: # search feature
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer, feature, db, self.mode)
         else:
-            if layer.id() == self.layer.id():
-                self.feature = feature
-                self.wasEditable = layer.isEditable()
-                enableAll = layer.isEditable()
-            else:
-                layerPkList = layer.pendingPkAttributesList()
-
-                if len(layerPkList) != 1:
-                    self.feature = None # no combined keys
-                else:
-                    layerPkIdx = layerPkList[0]
-                    pkValues = []
-
-                    if self.mode == 0:
-                        pkValue = feature[layerPkIdx]
-
-                        if pkValue == None:
-                            self.feature = None
-                        else:
-                            pkValues.append(str(pkValue))
-                    elif self.mode == 2:
-                        for aFeat in layer.selectedFeatures():
-                            pkValue = aFeat[layerPkIdx]
-
-                            if pkValue == None:
-                                self.feature = None
-                                pkValues = []
-                                break
-                            else:
-                                pkValue = str(pkValue)
-
-                            pkValues.append(pkValue)
-
-                    if len(pkValues) > 0:
-                        thisPkList = self.layer.pendingPkAttributesList()
-
-                        if len(thisPkList) != 1:
-                            self.feature = None
-                        else:
-                            #self.oldSubsetString = self.layer.subsetString()
-                            thisPkField = self.layer.pendingFields().field(thisPkList[0])
-                            newSubsetString = "\"" + thisPkField.name() + "\" IN ("
-
-                            for i in range(len(pkValues)):
-                                pkValue = pkValues[i]
-
-                                if thisPkField.typeName().find("char") != -1:
-                                    pkValue = "\'" + pkValue + "\'" # quote value as string
-
-                                if i == 0:
-                                    newSubsetString += pkValue
-                                else:
-                                    newSubsetString += "," + pkValue
-
-                            newSubsetString += ")"
-                            self.layer.setSubsetString(newSubsetString)
-                            self.layer.reload()
-                            self.layer.selectAll()
-
-                            if self.mode == 0 and self.layer.selectedFeatureCount() != 1:
-                                    # there is no or several features matching our feature
-                                    self.feature = None
-                            elif self.mode == 2 and self.layer.selectedFeatureCount() == 0:
-                                    self.feature = None
-                            else:
-                                self.feature = self.layer.selectedFeatures()[0]
-
-                                if layer.isEditable():
-                                    enableAll = self.__setLayerEditable()
-
-                                    if self.mode == 0:
-                                        self.layer.removeSelection()
+            enableAll = self.initializeFeature(layer, feature)
 
             for anInputWidget in self.inputWidgets:
                 anInputWidget.initialize(self.layer, self.feature, db, self.mode)
@@ -1542,6 +1573,18 @@ class DdInputWidget(DdWidget):
 
         return labelString
 
+    def getTag(self):
+        '''returns the XML-tag for this DdAttribute'''
+        tag = self.attribute.getTag()
+
+        return tag
+
+    def toXmlString(self, thisValue):
+        return self.toString(thisValue)
+
+    def toString(self, thisValue):
+        return unicode(thisValue)
+
     def createLabel(self,  parent):
         '''creates a QLabel object'''
         labelString = self.getLabel()
@@ -1672,9 +1715,6 @@ class DdLineEdit(DdInputWidget):
 
         self.betweenWidget.setText(unicode(thisValue))
 
-    def toString(self,  thisValue):
-        return unicode(thisValue)
-
     def getValue(self):
         if self.chk.isChecked():
             thisValue = None
@@ -1780,19 +1820,25 @@ class DdLineEdit(DdInputWidget):
         if self.betweenWidget != None:
             self.setBetweenValue(thisValue)
 
-    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
-        self.debug("asGml " + self.attribute.name)
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
         aValue = self.getFeatureValue(layer, feature)
 
         if aValue != None:
-            if nsPrefix != "":
-                tagName = nsPrefix + ":" + self.attribute.name
+            if idAsAttribute and self.attribute.isPK:
+                rootTagName = rootElement.tagName()
+                rootElement.setAttribute("gml:id",
+                    rootTagName + "_" + self.toXmlString(aValue))
             else:
-                tagName = self.attribute.name
-            anElement = rootDoc.createElement(tagName)
-            textNode = rootDoc.createTextNode(unicode(aValue))
-            anElement.appendChild(textNode)
-            rootDoc.appendChild(anElement)
+                tagName = self.getTag()
+
+                if nsPrefix != "":
+                    tagName = nsPrefix + ":" + tagName
+
+                anElement = rootDoc.createElement(tagName)
+                textNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                anElement.appendChild(textNode)
+                rootElement.appendChild(anElement)
 
     def initialize(self, layer, feature, db, mode = 0):
 
@@ -1885,6 +1931,7 @@ class DdLineEdit(DdInputWidget):
 
     def getFieldIndex(self,  layer):
         '''return the field index for this DdInputWidget's attribute's name in this layer'''
+
         if layer:
             fieldIndex = layer.fieldNameIndex(self.attribute.name)
         else:
@@ -2455,6 +2502,32 @@ class DdComboBox(DdLineEdit):
 
         return thisValue
 
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
+        aValue = self.getFeatureValue(layer, feature)
+
+        if aValue != None:
+            if idAsAttribute and self.attribute.isPK:
+                rootElement.setAttribute("gml:id",
+                    rootElement.tagName() + "_" + self.toXmlString(aValue))
+            else:
+                if self.values == {}:
+                    self.readValues(db)
+
+                tagName = self.getTag()
+
+                if nsPrefix != "":
+                    tagName = nsPrefix + ":" + tagName
+
+                anElement = rootDoc.createElement(tagName)
+
+                if withLookupValues:
+                    aValue = self.values[aValue][0]
+
+                textNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                anElement.appendChild(textNode)
+                rootElement.appendChild(anElement)
+
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QComboBox(parent) # defaultInputWidget
         inputWidget.setObjectName("cbx" + parent.objectName() + self.attribute.name)
@@ -2694,6 +2767,9 @@ class DdDateEdit(DdLineEdit):
                     newDate = QtCore.QDate.currentDate()
 
         self.betweenWidget.setDate(newDate)
+
+    def toXmlString(self, aValue):
+        return aValue.toString("yyyy-MM-dd")
 
     def toString(self,  thisValue):
         loc = QtCore.QLocale.system()
@@ -3027,7 +3103,8 @@ class DdN2mWidget(DdInputWidget):
         # when self.parentDialog.setForwardReturn() is called
         # otherwise pressing return will close the dialog, too
 
-    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
         pass
 
     def initialize(self, layer, feature, db, mode = 0):
@@ -3231,42 +3308,68 @@ class DdN2mListWidget(DdN2mWidget):
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
+        self.mode = 0
+
+        if self.fillDicts(db, feature):
+            if len (self.checkedItems) > 0:
+                aTagName = self.getTag()
+
+                if nsPrefix != "":
+                    aTagName = nsPrefix + ":" + aTagName
+
+                for key, item in self.checkedItems.items():
+                    if withLookupValues:
+                        aValue = item
+                    else:
+                        aValue = key
+
+                    anElement = rootDoc.createElement(aTagName)
+                    aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                    anElement.appendChild(aTextNode)
+                    rootElement.appendChild(anElement)
+
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
             self.initializeTableLayer(db)
-            query = QtSql.QSqlQuery(db)
-            dispStatement = self.attribute.displayStatement
 
-            if self.mode == 2:
-                dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
-
-            query.prepare(dispStatement)
-            query.bindValue(":featureId", feature.id())
-            query.exec_()
-
-            if query.isActive():
-                self.inputWidget.clear()
-
-                while query.next(): # returns false when all records are done
-                    parentId = int(query.value(0))
-                    parent = unicode(query.value(1))
-
-                    if self.mode == 2:
-                        checked = 0
-                    else:
-                        checked = int(query.value(2))
-
-                    if checked == 2:
-                        self.checkedItems[parentId] = parent
-                    else:
-                        self.uncheckedItems[parentId] = parent
-
-                query.finish()
+            if self.fillDicts(db, feature):
                 self.fill()
-            else:
-                DbError(query)
+
+    def fillDicts(self, db, feature):
+        query = QtSql.QSqlQuery(db)
+        dispStatement = self.attribute.displayStatement
+
+        if self.mode == 2:
+            dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
+
+        query.prepare(dispStatement)
+        query.bindValue(":featureId", feature.id())
+        query.exec_()
+
+        if query.isActive():
+            while query.next(): # returns false when all records are done
+                parentId = int(query.value(0))
+                parent = unicode(query.value(1))
+
+                if self.mode == 2:
+                    checked = 0
+                else:
+                    checked = int(query.value(2))
+
+                if checked == 2:
+                    self.checkedItems[parentId] = parent
+                else:
+                    self.uncheckedItems[parentId] = parent
+
+            query.finish()
+            return True
+        else:
+            DbError(query)
+            return False
 
     def createWidgetItem(self, parentId, parent):
         parentItem = QtGui.QListWidgetItem(parent, self.inputWidget)
@@ -3425,50 +3528,105 @@ class DdN2mTreeWidget(DdN2mWidget):
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
+        self.mode = 0
+
+        if self.fillDicts(db, feature):
+            if len (self.checkedItems) > 0:
+                thisTagName = self.getTag()
+
+                if nsPrefix != "":
+                    thisTagName = nsPrefix + ":" + thisTagName
+
+                n2mElement = rootDoc.createElement(thisTagName)
+
+                for key, item in self.checkedItems.items():
+                    keyTagName = self.attribute.relatedTable.tableName
+
+                    if nsPrefix != "":
+                        keyTagName = nsPrefix + ":" + keyTagName
+
+                    keyElement = rootDoc.createElement(keyTagName)
+
+                    if idAsAttribute:
+                        keyElement.setAttribute("gml:id",
+                            keyElement.tagName() + "_" + self.toXmlString(key))
+
+                    for i in range(len(item)):
+                        aValue = item[i]
+
+                        if i == 0:
+                            aTagName = self.attribute.relatedDisplayField
+                        else:
+                            aList = aValue.split(": ")
+                            aTagName = aList[0] # field name
+                            aValue = aList[1]
+
+                        if idAsAttribute and aTagName == self.attribute.relatedIdField:
+                            continue
+
+                        if aValue.strip() != u"NULL":
+                            if nsPrefix != "":
+                                aTagName = nsPrefix + ":" + aTagName
+
+                            anElement = rootDoc.createElement(aTagName)
+                            aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                            anElement.appendChild(aTextNode)
+                            keyElement.appendChild(anElement)
+                    n2mElement.appendChild(keyElement)
+                rootElement.appendChild(n2mElement)
+
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
             self.initializeTableLayer(db)
-            query = QtSql.QSqlQuery(db)
-            dispStatement = self.attribute.displayStatement
 
-            if self.mode == 2:
-                dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
-
-            query.prepare(dispStatement)
-            query.bindValue(":featureId", feature.id())
-            query.exec_()
-
-            if query.isActive():
-                while query.next(): # returns false when all records are done
-                    parentId = int(query.value(0))
-                    parent = unicode(query.value(1))
-
-                    if self.mode == 2:
-                        checked = 0
-                    else:
-                        checked = int(query.value(2))
-
-                    childs = [parent]
-
-                    for i in range(len(self.attribute.fieldList) -1):
-                        val = query.value(i + 3)
-
-                        if val != None:
-                            childs.append(val)
-                        else: # no more fields left
-                            break
-
-                    if checked == 2:
-                        self.checkedItems[parentId] = childs
-                    else:
-                        self.uncheckedItems[parentId] = childs
-
-                query.finish()
+            if self.fillDicts(db, feature):
                 self.fill()
-            else:
-                DbError(query)
+
+    def fillDicts(self, db, feature):
+        query = QtSql.QSqlQuery(db)
+        dispStatement = self.attribute.displayStatement
+
+        if self.mode == 2:
+            dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
+
+        query.prepare(dispStatement)
+        query.bindValue(":featureId", feature.id())
+        query.exec_()
+
+        if query.isActive():
+            while query.next(): # returns false when all records are done
+                parentId = int(query.value(0)) # relatedIdField
+                parent = unicode(query.value(1)) # relatedDisplayField
+
+                if self.mode == 2:
+                    checked = 0
+                else:
+                    checked = int(query.value(2))
+
+                childs = [parent]
+
+                for i in range(len(self.attribute.fieldList) -1):
+                    val = query.value(i + 3)
+
+                    if val != None:
+                        childs.append(val)
+                    else: # no more fields left
+                        break
+
+                if checked == 2:
+                    self.checkedItems[parentId] = childs
+                else:
+                    self.uncheckedItems[parentId] = childs
+
+            query.finish()
+            return True
+        else:
+            DbError(query)
+            return False
 
     def createWidgetItem(self, parentId, childs):
         parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
@@ -4008,7 +4166,11 @@ class DdArrayTableWidget(DdLineEdit):
             return None
 
         fieldIndex = self.getFieldIndex(layer)
-        thisValue = feature[fieldIndex]
+
+        try:
+            thisValue = feature[fieldIndex]
+        except:
+            return None
         retValue = None
 
         if thisValue != None:
@@ -4170,6 +4332,23 @@ class DdArrayTableWidget(DdLineEdit):
         inputWidget.cellClicked.connect(self.cellClicked)
         inputWidget.setObjectName("tbl" + parent.objectName() + self.attribute.name)
         return [inputWidget,  None]
+
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
+        aValue = self.getFeatureValue(layer, feature)
+
+        if aValue != None:
+            tagName = self.getTag()
+
+            if nsPrefix != "":
+                tagName = nsPrefix + ":" + tagName
+
+            for singleValue in aValue:
+                if singleValue != None:
+                    anElement = rootDoc.createElement(tagName)
+                    textNode = rootDoc.createTextNode(self.toXmlString(singleValue))
+                    anElement.appendChild(textNode)
+                    rootElement.appendChild(anElement)
 
     def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
@@ -4932,6 +5111,9 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
         loc = QtCore.QLocale.system()
         return loc.toString(thisValue)
 
+    def toXmlString(self, aValue):
+        return aValue.toString("yyyy-MM-dd")
+
     def toSqlString(self, aValue):
         retValue = aValue.toString("yyyy-MM-dd")
         retValue = "\'" + retValue + "\'"
@@ -4986,17 +5168,18 @@ class DdLineEditGeometry(DdLineEditInt):
                     self.label.setVisible(False)
                     return None
 
-    def asGml(self, layer, feature, db, rootDoc, nsPrefix):
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
         geom = QgsGeometry(feature.geometry())
+        tagName = self.getTag()
 
         if nsPrefix != "":
-            tagName = nsPrefix + ":" + self.attribute.name
-        else:
-            tagName = self.attribute.name
+            tagName = nsPrefix + ":" + tagName
+
         anElement = rootDoc.createElement(tagName)
         geomElement = QgsOgcUtils.geometryToGML(geom, rootDoc, "3.2", 5)
         anElement.appendChild(geomElement)
-        rootDoc.appendChild(anElement)
+        rootElement.appendChild(anElement)
 
     def checkDefault(self, feature):
         return [True, None]

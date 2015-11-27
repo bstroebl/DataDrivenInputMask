@@ -148,7 +148,6 @@ class DdManager(object):
         - tags [dict] with entries: "fieldname": "XML-tag"
         '''
 
-
         thisSize = None # stores the size of the DdDialog
         root = ET.Element('DdSearch')
 
@@ -364,9 +363,14 @@ class DdManager(object):
         if actionToRemove >= 0:
             layer.actions().removeAction(actionToRemove)
 
-    def asGml(self, layer, feature, nsPrefix = ""):
+    def asGml(self, layer, feature, nsPrefix = "",
+        withLookupValues = True, parentsIncluded = False,
+        idAsAttribute = False):
         '''
         api method to return the feature as a QtXml.QDomElement
+        withLookupValues: display values from combo boxes
+        parentsIncluded: show parent's values as belonging to the feature itself
+        idAsAttribute: show the pk value as attribute in the tag
         '''
 
         layerValues = self.__getLayerValues(layer, inputMask = True,
@@ -385,52 +389,20 @@ class DdManager(object):
                     searchMask = False)
 
         if layerValues != None:
-            wasEditable = layer.isEditable()
-
-            if wasEditable:
-                if layer.isModified() and askForSave:
-                    #ask user to save or discard changes
-                    reply = QtGui.QMessageBox.question(
-                        None, QtGui.QApplication.translate(
-                            "DdInfo", "Unsaved changes", None,
-                            QtGui.QApplication.UnicodeUTF8),
-                        QtGui.QApplication.translate("DdInfo",
-                            "Do you want to save the changes to layer ", None,
-                            QtGui.QApplication.UnicodeUTF8) + \
-                            layer.name() + "?",
-                        QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Save)
-
-                    if reply != QtGui.QMessageBox.Cancel:
-                        if reply == QtGui.QMessageBox.Discard:
-                            if not layer.rollBack():
-                                DdError(QtGui.QApplication.translate(
-                                    "DdError", "Could not discard changes for layer:",
-                                    None, QtGui.QApplication.UnicodeUTF8) + \
-                                    " " + layer.name(), iface = self.iface)
-                                return None
-                            else:
-                                if feature.id() <= 0: # new feature discarded
-                                    return None
-                        elif reply == QtGui.QMessageBox.Save:
-                            if not layer.commitChanges():
-                                DdError(QtGui.QApplication.translate(
-                                    "DdError", "Could not save changes for layer:", None,
-                                    QtGui.QApplication.UnicodeUTF8)  + " " + \
-                                    layer.name(), iface = self.iface)
-                                return None
-
+            ddTable = layerValues[0]
             db = layerValues[1]
             ui = layerValues[2]
             rootDoc = QtXml.QDomDocument()
 
             if nsPrefix != "":
-                tagName = nsPrefix + ":" + layer.name()
+                tagName = nsPrefix + ":" + ddTable.tableName
             else:
-                tagName = layer.name()
+                tagName = ddTable.tableName
 
             rootElement = rootDoc.createElement(tagName)
             rootDoc.appendChild(rootElement)
-            ui.asGml(layer, feature, db, rootDoc, nsPrefix)
+            ui.asGml(self, layer, feature, db, rootDoc, rootElement, nsPrefix,
+                withLookupValues, parentsIncluded, idAsAttribute)
             self.__debug("rootDoc", rootDoc.toString())
         else:
             return None
