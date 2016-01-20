@@ -3838,6 +3838,58 @@ class DdN2mTableWidget(DdN2mWidget):
             # reset here in case the same table is connected twice
             self.applySubsetString(True)
 
+    def asGml(self, layer, feature, db, rootDoc, rootElement,
+            nsPrefix, withLookupValues, idAsAttribute):
+        # TODO: die neuen Infos in attribute auswerten, um zu entscheiden, ob xlinkk oder in-line Attribut
+        self.debug("tableWidget for " + self.attribute.name + " relation table = table = " + self.attribute.table.tableName)
+        return None
+        self.mode = 0
+
+        if self.fillDicts(db, feature):
+            if len (self.checkedItems) > 0:
+                thisTagName = self.getTag()
+
+                if nsPrefix != "":
+                    thisTagName = nsPrefix + ":" + thisTagName
+
+                n2mElement = rootDoc.createElement(thisTagName)
+
+                for key, item in self.checkedItems.items():
+                    keyTagName = self.attribute.relatedTable.tableName
+
+                    if nsPrefix != "":
+                        keyTagName = nsPrefix + ":" + keyTagName
+
+                    keyElement = rootDoc.createElement(keyTagName)
+
+                    if idAsAttribute:
+                        keyElement.setAttribute("gml:id",
+                            keyElement.tagName() + "_" + self.toXmlString(key))
+
+                    for i in range(len(item)):
+                        aValue = item[i]
+
+                        if i == 0:
+                            aTagName = self.attribute.relatedDisplayField
+                        else:
+                            aList = aValue.split(": ")
+                            aTagName = aList[0] # field name
+                            aValue = aList[1]
+
+                        if idAsAttribute and aTagName == self.attribute.relatedIdField:
+                            continue
+
+                        if aValue.strip() != u"NULL":
+                            if nsPrefix != "":
+                                aTagName = nsPrefix + ":" + aTagName
+
+                            anElement = rootDoc.createElement(aTagName)
+                            aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                            anElement.appendChild(aTextNode)
+                            keyElement.appendChild(anElement)
+                    n2mElement.appendChild(keyElement)
+                rootElement.appendChild(n2mElement)
+
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
 

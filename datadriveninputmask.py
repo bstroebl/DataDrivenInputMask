@@ -115,6 +115,12 @@ class DataDrivenInputMask:
         # connect the action to the run method
         self.actionConfigure.triggered.connect(self.configureMask)
 
+        self.actionAsGml = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Convert to GML",
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        # set a name for the action
+        self.actionAsGml.setObjectName("ddAsGml")
+        # connect the action to the run method
+        self.actionAsGml.triggered.connect(self.asGml)
         # Add actions to menu
 
         if hasattr(self.iface,  "addPluginToVectorMenu"):
@@ -123,12 +129,14 @@ class DataDrivenInputMask:
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSearch)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionConfigure)
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionAsGml)
         else:
             self.iface.addPluginToMenu(self.menuLabel, self.action)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
             self.iface.addPluginToMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
             self.iface.addPluginToMenu(self.menuLabel, self.actionConfigure)
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionAsGml)
 
     def unload(self):
         """Remove the plugin menu item and icon"""
@@ -310,4 +318,12 @@ class DataDrivenInputMask:
                 self.app.ddManager.showFeatureForm(configLayer,  forFeature)
 
 
+    def asGml(self):
+        layer = self.iface.activeLayer()
+        #tags = {"BP_Plan_gemeinde":"gemeinde",
+        #    "XP_Plan_refBeschreibung":"refBeschreibung"}
 
+        for feat in layer.selectedFeatures():
+            self.app.ddManager.asGml(layer, feat, "xplan",
+                withLookupValues = False, parentsIncluded = False,
+                idAsAttribute = True)
