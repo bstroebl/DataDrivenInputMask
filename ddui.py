@@ -2998,7 +2998,7 @@ class DdN2mWidget(DdInputWidget):
         from warnings import warn
         warn("The 'DdN2mWidget.initializeLayer' method was renamed to 'initializeTableLayer'",
             DeprecationWarning)
-        self.initializeTableLayer(self, db, doShoParents, withMask, skip)
+        self.initializeTableLayer(self, db, doShowParents, withMask, skip)
 
     def initializeTableLayer(self, db, doShowParents = False, withMask = False, skip = []):
         # find the layer in the project
