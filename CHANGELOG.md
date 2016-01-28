@@ -6,10 +6,12 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 - api method *DdN2mWidget.initializeTableLayer*
 - api method *DdN2mWidget.initialize*
 - Filter items in ListWidget and TreeWidget to enable user to find his choice quickly
+- Use the authentification system introduced in QGIS 2.12: Load additional layers with authCfgId if layer itself has been loaded this way
 
 ### Changed
 - all n2m widgets are disabled in multi-edit mode
 - api method *DdN2mWidget.initialize* must be called by all subclasses upon initialize
+- new attribute authcfg for QtSql.QSqlDatabase instances created by DdManager
 
 ### Deprecated
  - api method *DdN2mWidget.initializeLayer*
