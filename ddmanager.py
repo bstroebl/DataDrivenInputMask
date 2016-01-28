@@ -36,6 +36,7 @@ except:
         None, QtGui.QApplication.UnicodeUTF8), fatal = True)
 from qgis.core import *
 from qgis.gui import *
+import qgis.core
 
 from ddui import DataDrivenUi, DdFormWidget
 from ddattribute import *
@@ -726,8 +727,15 @@ class DdManager(object):
         if thisPort == -1:
             thisPort = 5432
 
+        authcfg = db.authcfg
         # set host name, port, database name, username and password
-        uri.setConnection(db.hostName(), str(thisPort), db.databaseName(), db.userName(), db.password())
+        if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
+            uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
+                None, None, authConfigId = authcfg)
+        else:
+            uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
+                db.userName(), db.password())
+
         # set database schema, table name, geometry column and optionaly subset (WHERE clause)
         uri.setDataSource(ddTable.schemaName, ddTable.tableName, geomColumn)
 
@@ -737,7 +745,12 @@ class DdManager(object):
         if keyColumn:
             uri.setKeyColumn(keyColumn)
 
-        vlayer = QgsVectorLayer(uri.uri(), displayName, "postgres",  False)
+        if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
+            layerUri = uri.uri(False)
+        else:
+            layerUri = uri.uri(True)
+
+        vlayer = QgsVectorLayer(layerUri, displayName, "postgres",  False)
         # double check if layer is valid
         if not vlayer.dataProvider().isValid():
             DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
@@ -897,14 +910,17 @@ class DdManager(object):
 
 
     def __connectDb(self, qSqlDatabaseName, host,
-            database, port, username, passwd, sslmode = None):
+            database, port, username, passwd, sslmode = None,
+            authcfg = None):
         '''connect to the PostgreSQL DB'''
+
         db = QtSql.QSqlDatabase.addDatabase ("QPSQL",  qSqlDatabaseName)
         db.setHostName(host)
         db.setPort(port)
         db.setDatabaseName(database)
         db.setUserName(username)
         db.setPassword(passwd)
+        db.authcfg = authcfg
 
         if sslmode == "require":
             db.setConnectOptions("requiressl=1")
@@ -936,6 +952,7 @@ class DdManager(object):
     def __createDb(self,  layer):
         '''create a QtSql.QSqlDatabase object  for the DB-connection this layer comes from'''
         layerSrc = self.__analyzeSource(layer)
+        authcfg = None # initialize
 
         try:
             service = layerSrc["service"]
@@ -948,25 +965,40 @@ class DdManager(object):
 
             dbname = layerSrc["dbname"]
 
-        try:
-            user = layerSrc["user"]
-        except KeyError:
-            user,  ok = QtGui.QInputDialog.getText(None,  QtGui.QApplication.translate("DdWarning", "Username missing"),
-                                                QtGui.QApplication.translate("DdWarning", "Enter username for ", None,
-                                                QtGui.QApplication.UnicodeUTF8) + dbname + "." + host)
-            if not ok:
-                return None
+        if hasattr(qgis.core,'QgsAuthManager'):
+            try:
+                authcfg = layerSrc["authcfg"]
+            except KeyError:
+                pass
 
-        try:
-            password =  layerSrc["password"]
-        except KeyError:
-            password,  ok = QtGui.QInputDialog.getText(None,  QtGui.QApplication.translate("DdWarning", "Password missing"),
-                                                QtGui.QApplication.translate("DdWarning", "Enter password for ", None,
-                                                QtGui.QApplication.UnicodeUTF8) + user + u"@" + dbname + host,
-                                                QtGui.QLineEdit.Password)
+        if authcfg == None:
+            try:
+                user = layerSrc["user"]
+            except KeyError:
+                user, ok = QtGui.QInputDialog.getText(None,
+                    QtGui.QApplication.translate("DdWarning", "Username missing"),
+                    QtGui.QApplication.translate("DdWarning", "Enter username for ", None,
+                    QtGui.QApplication.UnicodeUTF8) + dbname + "." + host)
 
-            if not ok:
-                return None
+                if not ok:
+                    return None
+
+            try:
+                password = layerSrc["password"]
+            except KeyError:
+                password, ok = QtGui.QInputDialog.getText(None,
+                    QtGui.QApplication.translate("DdWarning", "Password missing"),
+                    QtGui.QApplication.translate("DdWarning", "Enter password for ", None,
+                    QtGui.QApplication.UnicodeUTF8) + user + u"@" + dbname + host,
+                    QtGui.QLineEdit.Password)
+
+                if not ok:
+                    return None
+        else:
+            amc = qgis.core.QgsAuthMethodConfig()
+            qgis.core.QgsAuthManager.instance().loadAuthenticationConfig( authcfg, amc, True)
+            user = amc.config( "username" )
+            password = amc.config( "password" )
 
         try:
             sslmode = layerSrc["sslmode"]
@@ -976,9 +1008,9 @@ class DdManager(object):
         if host == None:
             db = self.__connectServiceDb(layer.id(),  service, user, password)
         else:
-            db = self.__connectDb(layer.id(), host ,  dbname,
-                int(layerSrc["port"]),  user,
-                password, sslmode)
+            db = self.__connectDb(layer.id(), host, dbname,
+                int(layerSrc["port"]), user,
+                password, sslmode, authcfg)
 
         return db
 
