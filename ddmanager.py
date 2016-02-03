@@ -727,12 +727,17 @@ class DdManager(object):
         if thisPort == -1:
             thisPort = 5432
 
-        authcfg = db.authcfg
         # set host name, port, database name, username and password
-        if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
-            uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
-                None, None, authConfigId = authcfg)
-        else:
+        authcfg = None #ini'
+
+        if hasattr(db, "authcfg"):
+            authcfg = db.authcfg
+
+            if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
+                uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
+                    None, None, authConfigId = authcfg)
+
+        if authcfg == None:
             uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
                 db.userName(), db.password())
 
