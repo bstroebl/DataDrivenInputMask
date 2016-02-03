@@ -748,7 +748,7 @@ class DdManager(object):
         if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
             layerUri = uri.uri(False)
         else:
-            layerUri = uri.uri(True)
+            layerUri = uri.uri()
 
         vlayer = QgsVectorLayer(layerUri, displayName, "postgres",  False)
         # double check if layer is valid
