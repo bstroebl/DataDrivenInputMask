@@ -118,7 +118,7 @@ class DataDrivenInputMask:
         self.actionAsGml = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Convert to GML",
             None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
-        self.actionAsGml.setObjectName("ddAsGml")
+        self.actionAsGml.setObjectName("DdAsGml")
         # connect the action to the run method
         self.actionAsGml.triggered.connect(self.asGml)
         # Add actions to menu
@@ -136,7 +136,7 @@ class DataDrivenInputMask:
             self.iface.addPluginToMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
             self.iface.addPluginToMenu(self.menuLabel, self.actionConfigure)
-            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionAsGml)
+            self.iface.addPluginToMenu(self.menuLabel, self.actionAsGml)
 
     def unload(self):
         """Remove the plugin menu item and icon"""
@@ -148,12 +148,14 @@ class DataDrivenInputMask:
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionMulti)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionSearch)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionConfigure)
+            self.iface.removePluginVectorMenu(self.menuLabel, self.actionAsGml)
         else:
             self.iface.removePluginMenu(self.menuLabel, self.action)
             self.iface.removePluginMenu(self.menuLabel, self.actionSel)
             self.iface.removePluginMenu(self.menuLabel, self.actionMulti)
             self.iface.removePluginMenu(self.menuLabel, self.actionSearch)
             self.iface.removePluginMenu(self.menuLabel, self.actionConfigure)
+            self.iface.removePluginMenu(self.menuLabel, self.actionAsGml)
 
     def createFeature(self, layer):
         '''create a new QgsFeature for the layer'''
