@@ -2196,6 +2196,9 @@ class DdLineEditInt(DdLineEdit):
 
         self.inputWidget.setText(thisValue)
 
+    def toXmlString(self, thisValue):
+        return str(thisValue)
+
     def toString(self,  thisValue):
         loc = QtCore.QLocale.system()
         return loc.toString(thisValue)
