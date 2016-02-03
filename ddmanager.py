@@ -25,7 +25,7 @@ Class that steers the DataDrivenUI
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore, QtGui, QtXml
+from PyQt4 import QtCore, QtGui
 from dderror import DdError,  DbError
 
 try:
@@ -363,10 +363,11 @@ class DdManager(object):
         if actionToRemove >= 0:
             layer.actions().removeAction(actionToRemove)
 
-    def asGml(self, layer, feature, nsPrefix = "",
+    def asGml(self, layer, feature, rootDoc, nsPrefix = "",
         withLookupValues = True, parentsIncluded = False,
         idAsAttribute = False):
         '''
+        rootDoc: QtXmlQDomDocument where features are appended
         api method to return the feature as a QtXml.QDomElement
         withLookupValues: display values from combo boxes
         parentsIncluded: show parent's values as belonging to the feature itself
@@ -392,7 +393,6 @@ class DdManager(object):
             ddTable = layerValues[0]
             db = layerValues[1]
             ui = layerValues[2]
-            rootDoc = QtXml.QDomDocument()
 
             if nsPrefix != "":
                 tagName = nsPrefix + ":" + ddTable.tableName
@@ -403,7 +403,7 @@ class DdManager(object):
             rootDoc.appendChild(rootElement)
             ui.asGml(self, layer, feature, db, rootDoc, rootElement, nsPrefix,
                 withLookupValues, parentsIncluded, idAsAttribute)
-            self.__debug("rootDoc", rootDoc.toString())
+            #self.__debug("rootDoc", rootDoc.toString())
         else:
             return None
 

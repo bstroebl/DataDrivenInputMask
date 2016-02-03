@@ -24,7 +24,7 @@ Applies a data-driven input mask to any PostGIS-Layer
  ***************************************************************************/
 """
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore,  QtGui
+from PyQt4 import QtCore, QtGui, QtXml
 from qgis.core import *
 from dderror import DdError
 from ddmanager import DdManager
@@ -324,8 +324,11 @@ class DataDrivenInputMask:
         layer = self.iface.activeLayer()
         #tags = {"BP_Plan_gemeinde":"gemeinde",
         #    "XP_Plan_refBeschreibung":"refBeschreibung"}
+        rootDoc = QtXml.QDomDocument()
 
         for feat in layer.selectedFeatures():
-            self.app.ddManager.asGml(layer, feat, "xplan",
+            self.app.ddManager.asGml(layer, feat, rootDoc, "xplan",
                 withLookupValues = False, parentsIncluded = False,
                 idAsAttribute = True)
+
+        self.debug(rootDoc.toString())
