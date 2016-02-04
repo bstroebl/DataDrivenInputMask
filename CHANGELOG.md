@@ -18,6 +18,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ### Fixed
 - Fix runtime error in date and bool array widgets
+- Show related table with additinoal field
 
 ## 1.1.0 - 2015-09-11
 ### Added
