@@ -656,8 +656,11 @@ class DataDrivenUi(object):
                                     else:
                                         DbError(relatedFieldsQuery)
                                 else:
-                                    relatedQuery.finish()
-                                    continue
+                                    subType = "table"
+                                    maxRows = None
+                                    showParents = False
+
+                                relatedQuery.finish()
                             else:
                                 DbError(relatedQuery)
 
