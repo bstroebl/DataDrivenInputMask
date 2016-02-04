@@ -212,13 +212,14 @@ class DataDrivenUi(object):
     def __createForms(self, thisTable, db, skip, labels, fieldOrder,
             fieldGroups, minMax, noSearchFields, showParents,
             showChildren, readConfigTables, createAction, fieldDisable,
-            tags):
+            tags, skipXml):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
         ddSearchForms = []
         ddAttributes = self.getAttributes(
-            thisTable, db, labels, tags, minMax, fieldDisable = fieldDisable)
+            thisTable, db, labels, tags, minMax, fieldDisable = fieldDisable,
+            skipXml = skipXml)
         # do not pass skip here otherwise pk fields might not be included
 
         for anAtt in ddAttributes:
@@ -413,7 +414,8 @@ class DataDrivenUi(object):
             fieldGroups = {}, minMax = {}, noSearchFields = [],
             showParents = True, showChildren = True, inputMask = True,
             searchMask = True, helpText = "", createAction = True,
-            readConfigTables = False, fieldDisable = [], tags = {}):
+            readConfigTables = False, fieldDisable = [], tags = {},
+            skipXml = []):
         '''creates default uis for this table (DdTable instance)
         showChildren [Boolean]: show tabs for 1-to-1 relations (children)
         see ddmanager.initLayer for other parameters
@@ -429,7 +431,7 @@ class DataDrivenUi(object):
         forms, searchForms = self.__createForms(
             thisTable, db, skip, labels, fieldOrder, fieldGroups,
             minMax, noSearchFields, showParents, showChildren,
-            readConfigTables, createAction, fieldDisable, tags)
+            readConfigTables, createAction, fieldDisable, tags, skipXml)
 
         if  inputMask:
             ui = DdDialogWidget()
@@ -750,7 +752,7 @@ class DataDrivenUi(object):
         return n2mAttributes
 
     def getAttributes(self, thisTable, db, labels, tags, minMax,
-            skip = [], fieldDisable = []):
+            skip = [], fieldDisable = [], skipXml = []):
         ''' query the DB and create DdAttributes'''
 
         ddAttributes = []
@@ -779,6 +781,13 @@ class DataDrivenUi(object):
 
                     if nextResult:
                         continue
+
+                    noXmlOutput = False
+
+                    for skipName in skipXml:
+                        if skipName == attName:
+                            noXmlOutput = True
+                            break
 
                     attNum = query.value(1)
                     attNotNull = query.value(2)
@@ -842,7 +851,7 @@ class DataDrivenUi(object):
                                 ddAtt = DdFkLayerAttribute(
                                     thisTable, attTyp, attNotNull, attName, attComment,
                                     attNum, isPK, attDefault, attHasDefault, fk[1], attLabel,
-                                    attTag, attEnableWidget)
+                                    attTag, attEnableWidget, noXmlOutput)
                                 normalAtt = False
                             except KeyError:
                                 # no fk defined
@@ -875,16 +884,17 @@ class DataDrivenUi(object):
                             ddAtt = DdDateLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                attTag, thisMin, thisMax, enableWidget = attEnableWidget,
-                                isArray = isArray, arrayDelim = arrayDelim)
+                                attTag, thisMin, thisMax, enableWidget, noXmlOutput,
+                                isArray, arrayDelim)
                         elif attTyp == "geometry":
                             ddAtt = DdGeometryAttribute(
-                                thisTable, attTyp, attName, attComment, attNum)
+                                thisTable, attTyp, attName, attComment, attNum, noXmlOutput)
                         else:
                             ddAtt = DdLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                attTag, thisMin, thisMax, attEnableWidget, isArray, arrayDelim)
+                                attTag, thisMin, thisMax, attEnableWidget, noXmlOutput,
+                                isArray, arrayDelim)
 
                     ddAttributes.append(ddAtt)
 
@@ -1821,23 +1831,25 @@ class DdLineEdit(DdInputWidget):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
-        aValue = self.getFeatureValue(layer, feature)
 
-        if aValue != None:
-            if idAsAttribute and self.attribute.isPK:
-                rootTagName = rootElement.tagName()
-                rootElement.setAttribute("gml:id",
-                    rootTagName + "_" + self.toXmlString(aValue))
-            else:
-                tagName = self.getTag()
+        if not self.attribute.noXmlOutput:
+            aValue = self.getFeatureValue(layer, feature)
 
-                if nsPrefix != "":
-                    tagName = nsPrefix + ":" + tagName
+            if aValue != None:
+                if idAsAttribute and self.attribute.isPK:
+                    rootTagName = rootElement.tagName()
+                    rootElement.setAttribute("gml:id",
+                        rootTagName + "_" + self.toXmlString(aValue))
+                else:
+                    tagName = self.getTag()
 
-                anElement = rootDoc.createElement(tagName)
-                textNode = rootDoc.createTextNode(self.toXmlString(aValue))
-                anElement.appendChild(textNode)
-                rootElement.appendChild(anElement)
+                    if nsPrefix != "":
+                        tagName = nsPrefix + ":" + tagName
+
+                    anElement = rootDoc.createElement(tagName)
+                    textNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                    anElement.appendChild(textNode)
+                    rootElement.appendChild(anElement)
 
     def initialize(self, layer, feature, db, mode = 0):
 
@@ -2506,29 +2518,31 @@ class DdComboBox(DdLineEdit):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
-        aValue = self.getFeatureValue(layer, feature)
 
-        if aValue != None:
-            if idAsAttribute and self.attribute.isPK:
-                rootElement.setAttribute("gml:id",
-                    rootElement.tagName() + "_" + self.toXmlString(aValue))
-            else:
-                if self.values == {}:
-                    self.readValues(db)
+        if not self.attribute.noXmlOutput:
+            aValue = self.getFeatureValue(layer, feature)
 
-                tagName = self.getTag()
+            if aValue != None:
+                if idAsAttribute and self.attribute.isPK:
+                    rootElement.setAttribute("gml:id",
+                        rootElement.tagName() + "_" + self.toXmlString(aValue))
+                else:
+                    if self.values == {}:
+                        self.readValues(db)
 
-                if nsPrefix != "":
-                    tagName = nsPrefix + ":" + tagName
+                    tagName = self.getTag()
 
-                anElement = rootDoc.createElement(tagName)
+                    if nsPrefix != "":
+                        tagName = nsPrefix + ":" + tagName
 
-                if withLookupValues:
-                    aValue = self.values[aValue][0]
+                    anElement = rootDoc.createElement(tagName)
 
-                textNode = rootDoc.createTextNode(self.toXmlString(aValue))
-                anElement.appendChild(textNode)
-                rootElement.appendChild(anElement)
+                    if withLookupValues:
+                        aValue = self.values[aValue][0]
+
+                    textNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                    anElement.appendChild(textNode)
+                    rootElement.appendChild(anElement)
 
     def createInputWidget(self,  parent):
         inputWidget = QtGui.QComboBox(parent) # defaultInputWidget
@@ -3107,6 +3121,9 @@ class DdN2mWidget(DdInputWidget):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
+
+        if not self.attribute.noXmlOutput:
+            pass
         pass
 
     def initialize(self, layer, feature, db, mode = 0):
@@ -3312,25 +3329,27 @@ class DdN2mListWidget(DdN2mWidget):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
-        self.mode = 0
 
-        if self.fillDicts(db, feature):
-            if len (self.checkedItems) > 0:
-                aTagName = self.getTag()
+        if not self.attribute.noXmlOutput:
+            self.mode = 0
 
-                if nsPrefix != "":
-                    aTagName = nsPrefix + ":" + aTagName
+            if self.fillDicts(db, feature):
+                if len (self.checkedItems) > 0:
+                    aTagName = self.getTag()
 
-                for key, item in self.checkedItems.items():
-                    if withLookupValues:
-                        aValue = item
-                    else:
-                        aValue = key
+                    if nsPrefix != "":
+                        aTagName = nsPrefix + ":" + aTagName
 
-                    anElement = rootDoc.createElement(aTagName)
-                    aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
-                    anElement.appendChild(aTextNode)
-                    rootElement.appendChild(anElement)
+                    for key, item in self.checkedItems.items():
+                        if withLookupValues:
+                            aValue = item
+                        else:
+                            aValue = key
+
+                        anElement = rootDoc.createElement(aTagName)
+                        aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                        anElement.appendChild(aTextNode)
+                        rootElement.appendChild(anElement)
 
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
@@ -3532,52 +3551,54 @@ class DdN2mTreeWidget(DdN2mWidget):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
-        self.mode = 0
 
-        if self.fillDicts(db, feature):
-            if len (self.checkedItems) > 0:
-                thisTagName = self.getTag()
+        if not self.attribute.noXmlOutput:
+            self.mode = 0
 
-                if nsPrefix != "":
-                    thisTagName = nsPrefix + ":" + thisTagName
-
-                n2mElement = rootDoc.createElement(thisTagName)
-
-                for key, item in self.checkedItems.items():
-                    keyTagName = self.attribute.relatedTable.tableName
+            if self.fillDicts(db, feature):
+                if len (self.checkedItems) > 0:
+                    thisTagName = self.getTag()
 
                     if nsPrefix != "":
-                        keyTagName = nsPrefix + ":" + keyTagName
+                        thisTagName = nsPrefix + ":" + thisTagName
 
-                    keyElement = rootDoc.createElement(keyTagName)
+                    n2mElement = rootDoc.createElement(thisTagName)
 
-                    if idAsAttribute:
-                        keyElement.setAttribute("gml:id",
-                            keyElement.tagName() + "_" + self.toXmlString(key))
+                    for key, item in self.checkedItems.items():
+                        keyTagName = self.attribute.relatedTable.tableName
 
-                    for i in range(len(item)):
-                        aValue = item[i]
+                        if nsPrefix != "":
+                            keyTagName = nsPrefix + ":" + keyTagName
 
-                        if i == 0:
-                            aTagName = self.attribute.relatedDisplayField
-                        else:
-                            aList = aValue.split(": ")
-                            aTagName = aList[0] # field name
-                            aValue = aList[1]
+                        keyElement = rootDoc.createElement(keyTagName)
 
-                        if idAsAttribute and aTagName == self.attribute.relatedIdField:
-                            continue
+                        if idAsAttribute:
+                            keyElement.setAttribute("gml:id",
+                                keyElement.tagName() + "_" + self.toXmlString(key))
 
-                        if aValue.strip() != u"NULL":
-                            if nsPrefix != "":
-                                aTagName = nsPrefix + ":" + aTagName
+                        for i in range(len(item)):
+                            aValue = item[i]
 
-                            anElement = rootDoc.createElement(aTagName)
-                            aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
-                            anElement.appendChild(aTextNode)
-                            keyElement.appendChild(anElement)
-                    n2mElement.appendChild(keyElement)
-                rootElement.appendChild(n2mElement)
+                            if i == 0:
+                                aTagName = self.attribute.relatedDisplayField
+                            else:
+                                aList = aValue.split(": ")
+                                aTagName = aList[0] # field name
+                                aValue = aList[1]
+
+                            if idAsAttribute and aTagName == self.attribute.relatedIdField:
+                                continue
+
+                            if aValue.strip() != u"NULL":
+                                if nsPrefix != "":
+                                    aTagName = nsPrefix + ":" + aTagName
+
+                                anElement = rootDoc.createElement(aTagName)
+                                aTextNode = rootDoc.createTextNode(self.toXmlString(aValue))
+                                anElement.appendChild(aTextNode)
+                                keyElement.appendChild(anElement)
+                        n2mElement.appendChild(keyElement)
+                    rootElement.appendChild(n2mElement)
 
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
@@ -3845,6 +3866,9 @@ class DdN2mTableWidget(DdN2mWidget):
             nsPrefix, withLookupValues, idAsAttribute):
         # TODO: die neuen Infos in attribute auswerten, um zu entscheiden, ob xlinkk oder in-line Attribut
         self.debug("tableWidget for " + self.attribute.name + " relation table = table = " + self.attribute.table.tableName)
+
+        if not self.attribute.noXmlOutput:
+            pass
         return None
         self.mode = 0
 
@@ -4389,20 +4413,22 @@ class DdArrayTableWidget(DdLineEdit):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
-        aValue = self.getFeatureValue(layer, feature)
 
-        if aValue != None:
-            tagName = self.getTag()
+        if not self.attribute.noXmlOutput:
+            aValue = self.getFeatureValue(layer, feature)
 
-            if nsPrefix != "":
-                tagName = nsPrefix + ":" + tagName
+            if aValue != None:
+                tagName = self.getTag()
 
-            for singleValue in aValue:
-                if singleValue != None:
-                    anElement = rootDoc.createElement(tagName)
-                    textNode = rootDoc.createTextNode(self.toXmlString(singleValue))
-                    anElement.appendChild(textNode)
-                    rootElement.appendChild(anElement)
+                if nsPrefix != "":
+                    tagName = nsPrefix + ":" + tagName
+
+                for singleValue in aValue:
+                    if singleValue != None:
+                        anElement = rootDoc.createElement(tagName)
+                        textNode = rootDoc.createTextNode(self.toXmlString(singleValue))
+                        anElement.appendChild(textNode)
+                        rootElement.appendChild(anElement)
 
     def initialize(self, layer, feature, db, mode = 0):
         self.mode = mode
@@ -5224,16 +5250,18 @@ class DdLineEditGeometry(DdLineEditInt):
 
     def asGml(self, layer, feature, db, rootDoc, rootElement,
             nsPrefix, withLookupValues, idAsAttribute):
-        geom = QgsGeometry(feature.geometry())
-        tagName = self.getTag()
 
-        if nsPrefix != "":
-            tagName = nsPrefix + ":" + tagName
+        if not self.attribute.noXmlOutput:
+            geom = QgsGeometry(feature.geometry())
+            tagName = self.getTag()
 
-        anElement = rootDoc.createElement(tagName)
-        geomElement = QgsOgcUtils.geometryToGML(geom, rootDoc, "3.2", 5)
-        anElement.appendChild(geomElement)
-        rootElement.appendChild(anElement)
+            if nsPrefix != "":
+                tagName = nsPrefix + ":" + tagName
+
+            anElement = rootDoc.createElement(tagName)
+            geomElement = QgsOgcUtils.geometryToGML(geom, rootDoc, "3.2", 5)
+            anElement.appendChild(geomElement)
+            rootElement.appendChild(anElement)
 
     def checkDefault(self, feature):
         return [True, None]

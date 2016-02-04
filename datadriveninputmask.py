@@ -327,7 +327,10 @@ class DataDrivenInputMask:
         rootDoc = QtXml.QDomDocument()
 
         for feat in layer.selectedFeatures():
-            self.app.ddManager.asGml(layer, feat, rootDoc, "xplan",
+            parentElement = rootDoc.createElement("gml:featureMember")
+            rootDoc.appendChild(parentElement)
+            self.app.ddManager.asGml(layer, feat, rootDoc, parentElement = parentElement,
+                nsPrefix = "xplan",
                 withLookupValues = False, parentsIncluded = False,
                 idAsAttribute = True)
 

@@ -118,7 +118,7 @@ class DdManager(object):
 
     def initLayer(self,  layer,  skip = [],  labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
         showParents = True,  createAction = True,  db = None,  inputMask = True,  searchMask = True,  \
-        inputUi = None,  searchUi = None,  helpText = "", fieldDisable = [], tags = {}):
+        inputUi = None,  searchUi = None,  helpText = "", fieldDisable = [], tags = {}, skipXml = []):
         '''
         api method initLayer: initialize this layer with a data-driven input mask.
         In case there is configuration for this layer in the database read this
@@ -146,6 +146,7 @@ class DdManager(object):
         - helpText [string] help text for this mask, may be html formatted
         - fieldDisable [array[string]]: field names whose DdInputWidget shall be disabled in the inputMask
         - tags [dict] with entries: "fieldname": "XML-tag"
+        - skipXml [array[string]]: field names of fields that should be skipped when generating XML output
         '''
 
         thisSize = None # stores the size of the DdDialog
@@ -193,7 +194,7 @@ class DdManager(object):
                         thisTable,  db,  skip,  labels,  fieldOrder,  fieldGroups,  minMax,  \
                         noSearchFields, showParents,  True,  inputMask,  searchMask,  helpText,  createAction,  \
                         readConfigTables = readConfigTables, fieldDisable = fieldDisable,
-                        tags = tags)
+                        tags = tags, skipXml = skipXml)
 
                     if inputUi == None:
                         # use the automatically created mask if none has been provided
@@ -363,7 +364,7 @@ class DdManager(object):
         if actionToRemove >= 0:
             layer.actions().removeAction(actionToRemove)
 
-    def asGml(self, layer, feature, rootDoc, nsPrefix = "",
+    def asGml(self, layer, feature, rootDoc, parentElement = None, nsPrefix = "",
         withLookupValues = True, parentsIncluded = False,
         idAsAttribute = False):
         '''
@@ -400,7 +401,12 @@ class DdManager(object):
                 tagName = ddTable.tableName
 
             rootElement = rootDoc.createElement(tagName)
-            rootDoc.appendChild(rootElement)
+
+            if parentElement == None:
+                rootDoc.appendChild(rootElement)
+            else:
+                parentElement.appendChild(rootElement)
+
             ui.asGml(self, layer, feature, db, rootDoc, rootElement, nsPrefix,
                 withLookupValues, parentsIncluded, idAsAttribute)
             #self.__debug("rootDoc", rootDoc.toString())
