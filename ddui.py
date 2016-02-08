@@ -2941,6 +2941,63 @@ class DdN2mWidget(DdInputWidget):
     #def reset(self):
     #    self.applySubsetString(True)
 
+    def handleToggle(self, thisItem, isChecked):
+        '''
+        to be called if user toggles check box of item in
+        DdN2mListWidget and DdN2mTreeWidget
+
+        '''
+
+        featureIdField = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
+        relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
+        itemId = thisItem.id
+
+        if itemId in self.uncheckedItems:
+            childs = self.uncheckedItems[itemId]
+            del self.uncheckedItems[itemId]
+        else:
+            if itemId in self.checkedItems:
+                childs = self.checkedItems[itemId]
+                del self.checkedItems[itemId]
+
+        if isChecked:
+            self.checkedItems[itemId] = childs
+
+            for anId in self.featureId:
+                doAddFeature = True
+
+                if self.mode == 2:
+                    #check if already in
+                    expr = QgsExpression(
+                        "\"" + self.attribute.relationFeatureIdField + \
+                        "\" = " + str(anId) + " AND \"" + \
+                        self.attribute.relationRelatedIdField + "\" = " + \
+                        str(itemId))
+                    feat = QgsFeature()
+
+                    if self.tableLayer.getFeatures(QgsFeatureRequest(expr)).nextFeature(feat):
+                        doAddFeature = False
+
+                if doAddFeature:
+                    feat = self.createFeature()
+                    feat.setAttribute(featureIdField, anId)
+                    feat.setAttribute(relatedIdField, itemId)
+                    self.tableLayer.addFeature(feat, False)
+        else:
+            self.uncheckedItems[itemId] = childs
+            self.applySubsetString(False)
+            self.tableLayer.selectAll()
+
+            for aFeature in self.tableLayer.selectedFeatures():
+                for anId in self.featureId:
+                    if aFeature[featureIdField] == anId:
+                        if aFeature[relatedIdField] == itemId:
+                            idToDelete = aFeature.id()
+                            self.tableLayer.deleteFeature(idToDelete)
+
+            self.applySubsetString(True)
+        self.hasChanges = True
+
     def forwardAccept(self):
         '''Slot to be called from self.timer'''
         self.parentDialog.setForwardReturn()
@@ -2989,8 +3046,6 @@ class DdN2mWidget(DdInputWidget):
 
         if self.mode == 1: #search ui
             self.forEdit = True
-        elif self.mode == 2: #disable for multi-edit mode
-            self.forEdit = False
         else:
             self.forEdit = self.featureId[0] > 0
 
@@ -3109,7 +3164,6 @@ class DdN2mWidget(DdInputWidget):
 
 class DdN2mListWidget(DdN2mWidget):
     '''input widget (clickable QListWidget) for simple n2m relations'''
-    #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -3119,41 +3173,8 @@ class DdN2mListWidget(DdN2mWidget):
 
     def registerChange(self,  thisItem):
         if self.forEdit:
-            featureIdField = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
-            relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
-            itemId = thisItem.id
-
-            if itemId in self.uncheckedItems:
-                itemText = self.uncheckedItems[itemId]
-                del self.uncheckedItems[itemId]
-            else:
-                if itemId in self.checkedItems:
-                    itemText = self.checkedItems[itemId]
-                    del self.checkedItems[itemId]
-
-            if thisItem.checkState() == 2:
-                self.checkedItems[itemId] = itemText
-
-                for anId in self.featureId:
-                    feat = self.createFeature()
-                    feat.setAttribute(featureIdField, anId)
-                    feat.setAttribute(relatedIdField, itemId)
-                    self.tableLayer.addFeature(feat, False)
-            else:
-                self.uncheckedItems[itemId] = itemText
-                self.applySubsetString(False)
-                self.tableLayer.selectAll()
-
-                for aFeature in self.tableLayer.selectedFeatures():
-                    for anId in self.featureId:
-                        if aFeature[featureIdField] == anId:
-                            if aFeature[relatedIdField] == itemId:
-                                idToDelete = aFeature.id()
-                                self.tableLayer.deleteFeature(idToDelete)
-
-                self.applySubsetString(True)
-
-            self.hasChanges = True
+            isChecked = thisItem.checkState() == 2
+            self.handleToggle(thisItem, isChecked)
         else: # do not show any changes
             self.inputWidget.itemChanged.disconnect(self.registerChange)
 
@@ -3300,7 +3321,6 @@ class DdN2mListWidget(DdN2mWidget):
 class DdN2mTreeWidget(DdN2mWidget):
     '''input widget (clickable QTreeWidget) for n2m relations with more than one additional field in the related table
     TreeWidget is initialized directly from the DB'''
-    #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
         DdN2mWidget.__init__(self,  attribute)
@@ -3311,40 +3331,8 @@ class DdN2mTreeWidget(DdN2mWidget):
     def registerChange(self,  thisItem,  thisColumn):
         if thisColumn == 0:
             if self.forEdit:
-                featureIdField = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
-                relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
-                itemId = thisItem.id
-
-                if itemId in self.uncheckedItems:
-                    childs = self.uncheckedItems[itemId]
-                    del self.uncheckedItems[itemId]
-                else:
-                    if itemId in self.checkedItems:
-                        childs = self.checkedItems[itemId]
-                        del self.checkedItems[itemId]
-
-                if thisItem.checkState(0) == 2:
-                    self.checkedItems[itemId] = childs
-
-                    for anId in self.featureId:
-                        feat = self.createFeature()
-                        feat.setAttribute(featureIdField, anId)
-                        feat.setAttribute(relatedIdField, itemId)
-                        self.tableLayer.addFeature(feat, False)
-                else:
-                    self.uncheckedItems[itemId] = childs
-                    self.applySubsetString(False)
-                    self.tableLayer.selectAll()
-
-                    for aFeature in self.tableLayer.selectedFeatures():
-                        for anId in self.featureId:
-                            if aFeature[featureIdField] == anId:
-                                if aFeature[relatedIdField] == itemId:
-                                    idToDelete = aFeature.id()
-                                    self.tableLayer.deleteFeature(idToDelete)
-
-                    self.applySubsetString(True)
-                self.hasChanges = True
+                isChecked = thisItem.checkState(0) == 2
+                self.handleToggle(thisItem, isChecked)
             else: # do not show any changes
                 self.inputWidget.itemChanged.disconnect(self.registerChange)
 
