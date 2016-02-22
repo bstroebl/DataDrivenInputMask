@@ -3530,7 +3530,8 @@ class DdN2mTableWidget(DdN2mWidget):
         return [inputWidget,  None]
 
     def fill(self):
-        self.inputWidget.setRowCount(0)
+        if self.mode != 2:
+            self.inputWidget.setRowCount(0)
 
         if self.mode == 1:
             ddTable = self.ddManager.makeDdTable(self.tableLayer)
@@ -3591,22 +3592,21 @@ class DdN2mTableWidget(DdN2mWidget):
 
                     self.appendRow(thisFeature)
                     self.addButton.setEnabled(False)
-        elif self.mode == 2:
-            self.addButton.setEnabled(False)
         else:
-            self.applySubsetString(False)
-            # display the features in the QTableWidget
-            for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-                self.appendRow(aFeat)
+            if self.mode == 0:
+                self.applySubsetString(False)
+                # display the features in the QTableWidget
+                for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
+                    self.appendRow(aFeat)
+                # reset here in case the same table is connected twice
+                self.applySubsetString(True)
+                # hier muss für alle features geprüft werden, ob sie gemeinsam für alle ids sind?
 
             if self.forEdit:
                 if self.attribute.maxRows:
                     self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
             else:
                 self.addButton.setEnabled(False)
-
-            # reset here in case the same table is connected twice
-            self.applySubsetString(True)
 
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
@@ -3871,14 +3871,30 @@ class DdN2mTableWidget(DdN2mWidget):
             if result == 1:
                 self.root = self.ddManager.ddLayers[self.tableLayer.id()][6]
                 self.fill()
-        elif self.mode == 0:
+        else:
             thisFeature = self.createFeature()
             # set the parentFeature's id
             relationFeatFldIdx = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
             thisFeature[relationFeatFldIdx] = self.featureId[0]
 
             if self.tableLayer.addFeature(thisFeature):
-                result = self.ddManager.showFeatureForm(self.tableLayer,  thisFeature,  askForSave = False)
+                if self.mode == 0:
+                    multiEdit = False
+                else:
+                    fidsAdded = [thisFeature.id()]
+                    for i in range(1, len(self.featureId)):
+                        aFid = self.featureId[i]
+                        newFeature = self.createFeature()
+                        newFeature[relationFeatFldIdx] = aFid
+                        self.tableLayer.addFeature(newFeature)
+                        fidsAdded.append(newFeature.id())
+
+                    self.tableLayer.setSelectedFeatures(fidsAdded)
+                    multiEdit = True
+
+                result = self.ddManager.showFeatureForm(
+                    self.tableLayer, thisFeature, askForSave = False,
+                    multiEdit = multiEdit)
 
                 if result == 1: # user clicked OK
                     self.fill()
