@@ -2,6 +2,8 @@
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...develop)
+
+## [1.2.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...v1.2.0) - 2016-02-26
 ### Added
 - api method *DdN2mWidget.initializeTableLayer*
 - api method *DdN2mWidget.initialize*
@@ -20,7 +22,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 - Fix runtime error in date and bool array widgets
 - Show related table with additinoal field
 
-## 1.1.0 - 2015-09-11
+## [1.1.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.0.1...v1.1.0) - 2015-09-11
 ### Added
 - DdManager: new api method *createDdTable* to create a DdTable from schema + relation
 - multi edit mode: the same data for all selected features can be entered in one go; Input widgets can have more than two modes (until now only search and input)
