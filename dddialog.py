@@ -200,8 +200,7 @@ class DdSearchDialog(QtGui.QDialog):
             self.layer.setSubsetString(newSubsetString)
             self.layer.reload()
             self.layer.selectAll()
-            self.layer.setSubsetString(oldSubsetString)
-            self.layer.reload()
+            selFids = self.layer.selectedFeaturesIds()
 
             if self.layer.selectedFeatureCount() == 0:
                 QtGui.QMessageBox.information(None,  "", QtGui.QApplication.translate("DdInfo", "No matches found", None,
@@ -214,6 +213,9 @@ class DdSearchDialog(QtGui.QDialog):
             if self.layer.geometryType() != 4:
                 self.ddManager.iface.mapCanvas().refresh()
 
+            self.layer.setSubsetString(oldSubsetString)
+            self.layer.reload()
+            self.layer.setSelectedFeatures(selFids)
             self.done(1)
         else:
             self.done(0)
