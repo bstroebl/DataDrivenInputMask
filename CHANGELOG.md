@@ -1,7 +1,12 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.2.0...develop)
+
+## 1.2.1 - 2016-03-16
+
+### Fixed
+- Fix search, which did not return any results in QGIS 2.14+
 
 ## [1.2.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.1.0...v1.2.0) - 2016-02-26
 ### Added
