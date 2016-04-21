@@ -3434,6 +3434,8 @@ class DdN2mTreeWidget(DdN2mWidget):
             parentItem.setCheckState(0, 2)
             self.inputWidget.addTopLevelItem(parentItem)
 
+        self.inputWidget.sortItems(0, QtCore.Qt.AscendingOrder)
+
         for parentId, childs in self.uncheckedItems.iteritems():
             doAdd = filterExpression == ""
 
