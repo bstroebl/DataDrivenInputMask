@@ -160,18 +160,29 @@ class DataDrivenInputMask:
 
         return newFeature
 
-    def isSuitableLayer(self,  layer):
+    def isSuitableLayer(self, layer, showError = True):
         '''check if layer is suitable to apply a DataDrivenInputMaskl'''
-        if None == layer:
-            DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
-                                                               QtGui.QApplication.UnicodeUTF8),  iface = self.iface)
-        else:
-            if 0 != layer.type():   # not a vector layer
-                DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
-            else:
-                return True
 
+        if None == layer and showError:
+            DdError(QtGui.QApplication.translate("DdError",
+                "Please activate a layer!", None,
+                QtGui.QApplication.UnicodeUTF8),
+                iface = self.iface)
+        else:
+            if 0 != layer.type() and showError:   # not a vector layer
+                DdError(QtGui.QApplication.translate("DdError",
+                    "Layer is not a vector layer: ", None,
+                    QtGui.QApplication.UnicodeUTF8) + layer.name(),
+                    iface = self.iface)
+            else:
+                if u'PostgreSQL' == layer.dataProvider().storageType()[0:10]:
+                    return True
+                else:
+                    if showError:
+                        DdError(QtGui.QApplication.translate("DdError",
+                            "Layer is not a vector layer: ", None,
+                            QtGui.QApplication.UnicodeUTF8) + layer.name(),
+                            iface = self.iface)
         return False
 
     def getConfigFeature(self,  configLayer,  ddTable):
