@@ -44,6 +44,11 @@ class DataDrivenInputMask:
         except AttributeError:
             ddManager = DdManager(self.iface)
             self.app.ddManager = ddManager
+
+        self.currentLayer = None
+        self.iface.currentLayerChanged.connect(self.currentLayerHasChanged)
+        self.doShowMaskAfterFeatureCreation = False
+
         # initialize locale
         localePath = ""
         locale = QtCore.QSettings().value("locale/userLocale")[0:2]
@@ -108,6 +113,18 @@ class DataDrivenInputMask:
         # connect the action to the run method
         self.actionSearch.triggered.connect(self.showSearchForm)
 
+        self.actionShowMaskAfterFeatureCreation = QtGui.QAction(
+            QtGui.QApplication.translate("DdLabel",
+            "Show Form after Feature Creation",
+            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        self.actionShowMaskAfterFeatureCreation.setCheckable(True)
+        self.actionShowMaskAfterFeatureCreation.setChecked(
+            self.doShowMaskAfterFeatureCreation)
+        # set a name for the action
+        self.actionShowMaskAfterFeatureCreation.setObjectName("DdShowMaskAfterFeatureCreation")
+        # connect the action to the run method
+        self.actionShowMaskAfterFeatureCreation.triggered.connect(self.showMaskAfterFeatureCreation)
+
         self.actionConfigure = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Configure Mask",
             None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
         # set a name for the action
@@ -122,12 +139,14 @@ class DataDrivenInputMask:
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSel)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionSearch)
+            self.iface.addPluginToVectorMenu(self.menuLabel, self.actionShowMaskAfterFeatureCreation)
             self.iface.addPluginToVectorMenu(self.menuLabel, self.actionConfigure)
         else:
             self.iface.addPluginToMenu(self.menuLabel, self.action)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSel)
             self.iface.addPluginToMenu(self.menuLabel, self.actionMulti)
             self.iface.addPluginToMenu(self.menuLabel, self.actionSearch)
+            self.iface.addPluginToMenu(self.menuLabel, self.actionShowMaskAfterFeatureCreation)
             self.iface.addPluginToMenu(self.menuLabel, self.actionConfigure)
 
     def unload(self):
@@ -139,12 +158,14 @@ class DataDrivenInputMask:
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionSel)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionMulti)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionSearch)
+            self.iface.removePluginVectorMenu(self.menuLabel, self.actionShowMaskAfterFeatureCreation)
             self.iface.removePluginVectorMenu(self.menuLabel, self.actionConfigure)
         else:
             self.iface.removePluginMenu(self.menuLabel, self.action)
             self.iface.removePluginMenu(self.menuLabel, self.actionSel)
             self.iface.removePluginMenu(self.menuLabel, self.actionMulti)
             self.iface.removePluginMenu(self.menuLabel, self.actionSearch)
+            self.iface.removePluginMenu(self.menuLabel, self.actionShowMaskAfterFeatureCreation)
             self.iface.removePluginMenu(self.menuLabel, self.actionConfigure)
 
     def createFeature(self, layer):
@@ -180,7 +201,7 @@ class DataDrivenInputMask:
                 else:
                     if showError:
                         DdError(QtGui.QApplication.translate("DdError",
-                            "Layer is not a vector layer: ", None,
+                            "Layer is not a PostgreSQL layer: ", None,
                             QtGui.QApplication.UnicodeUTF8) + layer.name(),
                             iface = self.iface)
         return False
@@ -200,6 +221,29 @@ class DataDrivenInputMask:
         return forFeature
 
     #Slots
+    def currentLayerHasChanged(self, layer):
+        self.currentLayer = None
+
+        if layer != None: # may be None when project is closing
+            if self.doShowMaskAfterFeatureCreation:
+                if self.isSuitableLayer(layer, showError = False):
+                    self.currentLayer = layer
+                    self.currentLayer.featureAdded.connect(
+                        self.featureHasBeenAdded)
+
+    def featureHasBeenAdded(self, fid):
+        if self.currentLayer != None and self.doShowMaskAfterFeatureCreation:
+            self.currentLayer.setSelectedFeatures([fid])
+            self.currentLayer.featureAdded.disconnect(
+                        self.featureHasBeenAdded)
+            # disconnect so slot gets not called again when changes are commited
+            QtCore.QTimer.singleShot(1000, self.showFormForNewFeature)
+
+    def showFormForNewFeature(self):
+        self.showInputForm(withAddedFeature = True)
+        self.currentLayer.featureAdded.connect(
+                    self.featureHasBeenAdded)
+
     def initializeLayer(self):
         """SLOT: Create the mask for the active layer"""
         layer = self.iface.activeLayer()
@@ -211,7 +255,7 @@ class DataDrivenInputMask:
                 searchMask = True, inputUi = None, searchUi = None, helpText = "",
                 fieldDisable = []) # set the defaults here because somehow some of the values persist
 
-    def showInputForm(self):
+    def showInputForm(self, withAddedFeature = False):
         """SLOT: Show the mask for the selected features in the active layer"""
         layer = self.iface.activeLayer()
 
@@ -219,27 +263,31 @@ class DataDrivenInputMask:
             sel = layer.selectedFeatures()
 
             if len(sel) > 0:
-                counter = 0
-                doAskUser = True
+                if withAddedFeature:
+                    feature = sel[0]
+                    self.app.ddManager.showFeatureForm(layer, feature, askForSave = False)
+                else:
+                    counter = 0
+                    doAskUser = True
 
-                for feature in sel:
-                    if counter > 0 and doAskUser:
-                        reply = QtGui.QMessageBox.question(None,
-                            str(len(sel)) + " " + \
-                            QtGui.QApplication.translate("DdInfo",
-                            "features selected"),
-                            str(len(sel) - counter) + " " + \
-                            QtGui.QApplication.translate("DdInfo",
-                            "features to go. Show next?"),
-                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.Cancel)
+                    for feature in sel:
+                        if counter > 0 and doAskUser:
+                            reply = QtGui.QMessageBox.question(None,
+                                str(len(sel)) + " " + \
+                                QtGui.QApplication.translate("DdInfo",
+                                "features selected"),
+                                str(len(sel) - counter) + " " + \
+                                QtGui.QApplication.translate("DdInfo",
+                                "features to go. Show next?"),
+                                QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.Cancel)
 
-                        if reply == QtGui.QMessageBox.Cancel:
-                            break
-                        elif reply == QtGui.QMessageBox.YesToAll:
-                            doAskUser = False
+                            if reply == QtGui.QMessageBox.Cancel:
+                                break
+                            elif reply == QtGui.QMessageBox.YesToAll:
+                                doAskUser = False
 
-                    self.app.ddManager.showFeatureForm(layer, feature)
-                    counter += 1
+                        self.app.ddManager.showFeatureForm(layer, feature)
+                        counter += 1
             else:
                 DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
                     QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
@@ -264,6 +312,15 @@ class DataDrivenInputMask:
 
         if self.isSuitableLayer(layer):
             self.app.ddManager.showSearchForm(layer)
+
+
+    def showMaskAfterFeatureCreation(self):
+        '''SLOT: toggle showMaskAfterFeatureCreation'''
+        self.doShowMaskAfterFeatureCreation = not self.doShowMaskAfterFeatureCreation
+        self.actionShowMaskAfterFeatureCreation.setChecked(
+            self.doShowMaskAfterFeatureCreation)
+        layer = self.iface.activeLayer()
+        self.currentLayerHasChanged(layer)
 
     def configureMask(self):
         '''SLOT: configure the mask for the active layer using the config tables in the db'''
@@ -319,6 +376,5 @@ class DataDrivenInputMask:
                     forFeature = self.getConfigFeature(configLayer,  ddLayerTable)
 
                 self.app.ddManager.showFeatureForm(configLayer,  forFeature)
-
 
 
