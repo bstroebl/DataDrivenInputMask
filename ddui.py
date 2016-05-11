@@ -2870,6 +2870,7 @@ class DdN2mWidget(DdInputWidget):
         self.timer.timeout.connect(self.forwardAccept)
         self.uncheckedItems = {} # dicts to store possible values
         self.checkedItems = {}
+        self.childs = {} # dict to store all childs
 
     def setSizeMax(self,  widget):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -3035,6 +3036,9 @@ class DdN2mWidget(DdInputWidget):
                     if not self.forEdit:
                         DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
                            QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name(),  showInLog = True)
+
+    def keyForChild(self, parentId):
+        return self.childs[parentId][0].lower()
 
     def prepareFeatureIdForSubsetString(self):
         idList = ""
@@ -3202,6 +3206,8 @@ class DdN2mListWidget(DdN2mWidget):
                     else:
                         self.uncheckedItems[parentId] = parent
 
+                    self.childs[parentId] = [parent]
+
                 query.finish()
                 self.fill()
             else:
@@ -3220,12 +3226,16 @@ class DdN2mListWidget(DdN2mWidget):
         self.inputWidget.itemChanged.disconnect(self.registerChange)
         self.inputWidget.clear()
 
-        for parentId, parent in self.checkedItems.iteritems():
+        for parentId in sorted(self.checkedItems,
+                key = self.keyForChild):
+            parent = self.checkedItems[parentId]
             parentItem = self.createWidgetItem(parentId, parent)
             parentItem.setCheckState(2)
             self.inputWidget.addItem(parentItem)
 
-        for parentId, parent in self.uncheckedItems.iteritems():
+        for parentId in sorted(self.uncheckedItems,
+                key = self.keyForChild):
+            parent = self.uncheckedItems[parentId]
             doAdd = filterExpression == ""
 
             if not doAdd:
@@ -3316,15 +3326,15 @@ class DdN2mTreeWidget(DdN2mWidget):
                 itemId = thisItem.id
 
                 if itemId in self.uncheckedItems:
-                    childs = self.uncheckedItems[itemId]
+                    parent = self.uncheckedItems[itemId]
                     del self.uncheckedItems[itemId]
                 else:
                     if itemId in self.checkedItems:
-                        childs = self.checkedItems[itemId]
+                        parent = self.checkedItems[itemId]
                         del self.checkedItems[itemId]
 
                 if thisItem.checkState(0) == 2:
-                    self.checkedItems[itemId] = childs
+                    self.checkedItems[itemId] = parent
 
                     for anId in self.featureId:
                         feat = self.createFeature()
@@ -3332,7 +3342,7 @@ class DdN2mTreeWidget(DdN2mWidget):
                         feat.setAttribute(relatedIdField, itemId)
                         self.tableLayer.addFeature(feat, False)
                 else:
-                    self.uncheckedItems[itemId] = childs
+                    self.uncheckedItems[itemId] = parent
                     self.applySubsetString(False)
                     self.tableLayer.selectAll()
 
@@ -3400,9 +3410,11 @@ class DdN2mTreeWidget(DdN2mWidget):
                             break
 
                     if checked == 2:
-                        self.checkedItems[parentId] = childs
+                        self.checkedItems[parentId] = parent
                     else:
-                        self.uncheckedItems[parentId] = childs
+                        self.uncheckedItems[parentId] = parent
+
+                    self.childs[parentId] = childs
 
                 query.finish()
                 self.fill()
@@ -3429,14 +3441,16 @@ class DdN2mTreeWidget(DdN2mWidget):
         self.inputWidget.itemChanged.disconnect(self.registerChange)
         self.inputWidget.clear()
 
-        for parentId, childs in self.checkedItems.iteritems():
+        for parentId in sorted(self.checkedItems,
+                key = self.keyForChild):
+            childs = self.childs[parentId]
             parentItem = self.createWidgetItem(parentId, childs)
             parentItem.setCheckState(0, 2)
             self.inputWidget.addTopLevelItem(parentItem)
 
-        self.inputWidget.sortItems(0, QtCore.Qt.AscendingOrder)
-
-        for parentId, childs in self.uncheckedItems.iteritems():
+        for parentId in sorted(self.uncheckedItems,
+                key = self.keyForChild):
+            childs = self.childs[parentId]
             doAdd = filterExpression == ""
 
             if not doAdd:
