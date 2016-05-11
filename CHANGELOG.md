@@ -3,6 +3,9 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.2.0...develop)
 
+### Fixed
+- Sort items in DdN2mListWidget and DdN2mTreeWidget
+
 ## 1.2.1 - 2016-03-16
 
 ### Fixed
