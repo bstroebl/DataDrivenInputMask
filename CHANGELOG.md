@@ -5,6 +5,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ### Fixed
 - Sort items in DdN2mListWidget and DdN2mTreeWidget
+- Expand DdN2mListWidget and DdN2mTreeWidget vertically by means of a QFrame (as in DdN2mTableWidget, but invisible)
 
 ## 1.2.1 - 2016-03-16
 
