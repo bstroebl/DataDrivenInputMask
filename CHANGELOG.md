@@ -3,6 +3,8 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.2.0...develop)
 
+## 1.2.2 - 2016-05-12
+
 ### Fixed
 - Sort items in DdN2mListWidget and DdN2mTreeWidget
 - Expand DdN2mListWidget and DdN2mTreeWidget vertically by means of a QFrame (as in DdN2mTableWidget, but invisible)
