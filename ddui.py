@@ -2880,19 +2880,23 @@ class DdN2mWidget(DdInputWidget):
         widget.setSizePolicy(sizePolicy)
 
     def setupUi(self,  parent,  db):
-        label = self.createLabel(parent)
-        inputWidgets = self.createInputWidget(parent)
+        frame = QtGui.QFrame(parent)
+        frame.setFrameShape(QtGui.QFrame.NoFrame) #make it invisible
+        frame.setFrameShadow(QtGui.QFrame.Raised)
+        frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
+        label = self.createLabel(frame)
+        inputWidgets = self.createInputWidget(frame)
         self.inputWidget = inputWidgets[0]
-        self.setSizeMax(self.inputWidget)
+        self.setSizeMax(frame)
         self.inputWidget.setToolTip(self.attribute.comment)
-        vLayout = QtGui.QVBoxLayout()
+        vLayout = QtGui.QVBoxLayout(frame)
         hLayout = QtGui.QHBoxLayout()
         vLayout.setObjectName(
             "vLayout" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(label)
         spacerItem = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
-        self.filterButton = QtGui.QPushButton(parent)
+        self.filterButton = QtGui.QPushButton(frame)
         self.filterButton.setObjectName("btn" + parent.objectName() + \
             self.attribute.name + "_filterButton")
         filterIcon = QtGui.QIcon(":/filter.png")
@@ -2904,7 +2908,7 @@ class DdN2mWidget(DdInputWidget):
         self.filterButton.clicked.connect(self.filter)
         self.filterButton.setEnabled(False)
         hLayout.addWidget(self.filterButton)
-        self.removeFilterButton = QtGui.QPushButton(parent)
+        self.removeFilterButton = QtGui.QPushButton(frame)
         self.removeFilterButton.setObjectName("btn" + parent.objectName() + \
             self.attribute.name + "_removeFilterButton")
         removeFilterIcon = QtGui.QIcon(":/remove_filter.png")
@@ -2916,7 +2920,7 @@ class DdN2mWidget(DdInputWidget):
         self.removeFilterButton.clicked.connect(self.removeFilter)
         self.removeFilterButton.setEnabled(False)
         hLayout.addWidget(self.removeFilterButton)
-        self.filterText = QtGui.QLineEdit(parent)
+        self.filterText = QtGui.QLineEdit(frame)
         self.filterText.setObjectName("txl" + parent.objectName() + \
             self.attribute.name + "_filter")
         self.filterText.setToolTip(
@@ -2929,7 +2933,7 @@ class DdN2mWidget(DdInputWidget):
         vLayout.addLayout(hLayout)
         vLayout.addWidget(self.inputWidget)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setLayout(newRow, QtGui.QFormLayout.SpanningRole, vLayout)
+        parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, frame)
         pParent = parent
 
         while (True):
