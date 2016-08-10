@@ -724,6 +724,22 @@ class DdManager(object):
         uri = QgsDataSourceURI()
         thisPort = db.port()
 
+        #these numbers are best guesses from the enumeration
+        if db.sslMode == "prefer":
+            sslMode = QgsDataSourceURI.SSLprefer
+        elif db.sslMode == "disable":
+            sslMode = QgsDataSourceURI.SSLdisable
+        elif db.sslMode == "allow":
+            sslMode = QgsDataSourceURI.SSLallow
+        elif db.sslMode == "require":
+            sslMode = QgsDataSourceURI.SSLrequire
+        elif db.sslMode == "verifyCA":
+            sslMode = QgsDataSourceURI.SSLverifyCA
+        elif db.sslMode == "verifyFull":
+            sslMode = QgsDataSourceURI.SSLverifyFull
+        else:
+            sslMode = None # = prefer default anyway
+
         if thisPort == -1:
             thisPort = 5432
 
@@ -735,15 +751,14 @@ class DdManager(object):
 
             if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
                 uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
-                    None, None, authConfigId = authcfg)
+                    None, None, sslmode = sslMode, authConfigId = authcfg)
 
         if authcfg == None:
             uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
-                db.userName(), db.password())
+                db.userName(), db.password(), sslmode = sslMode)
 
         # set database schema, table name, geometry column and optionaly subset (WHERE clause)
         uri.setDataSource(ddTable.schemaName, ddTable.tableName, geomColumn)
-
         if whereClause:
             uri.setSql(whereClause)
 
@@ -926,6 +941,7 @@ class DdManager(object):
         db.setUserName(username)
         db.setPassword(passwd)
         db.authcfg = authcfg
+        db.sslMode = sslmode
 
         if sslmode == "require":
             db.setConnectOptions("requiressl=1")
