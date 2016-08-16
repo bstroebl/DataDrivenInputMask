@@ -738,7 +738,7 @@ class DdManager(object):
         elif db.sslMode == "verifyFull":
             sslMode = QgsDataSourceURI.SSLverifyFull
         else:
-            sslMode = None # = prefer default anyway
+            sslMode = QgsDataSourceURI.SSLprefer # default anyway
 
         if thisPort == -1:
             thisPort = 5432
