@@ -2,6 +2,8 @@
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.2.0...develop)
+### Added
+- DdN2mTableWidget and DdN2mCheckableTableWidget retain user changed column widths upon reopening of the dialog
 
 ## 1.2.2 - 2016-05-12
 
