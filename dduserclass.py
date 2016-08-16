@@ -277,6 +277,12 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             else:
                 self.fill()
 
+            for i in range(len(self.columnWidths)):
+                thisWidth = self.columnWidths[i]
+
+                if thisWidth != None:
+                    self.inputWidget.setColumnWidth(i, thisWidth)
+
     def getDefaultValues(self):
         defaultValues = []
 
@@ -463,6 +469,9 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                     break
         else:
             DdN2mWidget.setupUi(self, parent, db)
+
+        for i in range(len(self.attribute.attributes)):
+            self.columnWidths.append(None)
 
     # Slots
     @QtCore.pyqtSlot(int)

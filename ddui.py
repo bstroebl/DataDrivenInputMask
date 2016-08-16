@@ -2894,6 +2894,7 @@ class DdN2mWidget(DdInputWidget):
         self.uncheckedItems = {} # dicts to store possible values
         self.checkedItems = {}
         self.childs = {} # dict to store all childs
+        self.columnWidths = [] # for tables store width of columns
 
     def setSizeMax(self,  widget):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -3112,6 +3113,12 @@ class DdN2mWidget(DdInputWidget):
                 newFeature.setAttribute(i,provider.defaultValue(i))
 
         return newFeature
+
+    def reset(self):
+        '''save column widths'''
+        for i in range(len(self.columnWidths)):
+            thisWidth = self.inputWidget.columnWidth(i)
+            self.columnWidths[i] = thisWidth
 
     def save(self,  layer,  feature,  db):
         if self.forEdit:
@@ -3561,7 +3568,6 @@ class DdN2mTableWidget(DdN2mWidget):
         self.fkValues = {}
         self.root = ET.Element('DdSearch')
         self.ddManager = QgsApplication.instance().ddManager
-        self.columnWidths = []
 
     def __str__(self):
         return "<ddui.DdN2mTableWidget %s>" % str(self.attribute.name)
@@ -3795,12 +3801,6 @@ class DdN2mTableWidget(DdN2mWidget):
 
         for i in range(len(self.attribute.attributes)):
             self.columnWidths.append(None)
-
-    def reset(self):
-        '''save column widths'''
-        for i in range(len(self.columnWidths)):
-            thisWidth = self.inputWidget.columnWidth(i)
-            self.columnWidths[i] = thisWidth
 
     def search(self,  layer):
         '''create search sql-string'''
