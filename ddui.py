@@ -3132,6 +3132,7 @@ class DdN2mWidget(DdInputWidget):
         return False
 
     def discard(self):
+        self.reset()
         if self.tableLayer.isEditable():
             if not self.tableLayer.rollBack():
                 DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
@@ -3560,6 +3561,7 @@ class DdN2mTableWidget(DdN2mWidget):
         self.fkValues = {}
         self.root = ET.Element('DdSearch')
         self.ddManager = QgsApplication.instance().ddManager
+        self.columnWidths = []
 
     def __str__(self):
         return "<ddui.DdN2mTableWidget %s>" % str(self.attribute.name)
@@ -3697,6 +3699,12 @@ class DdN2mTableWidget(DdN2mWidget):
 
             self.fill()
 
+            for i in range(len(self.columnWidths)):
+                thisWidth = self.columnWidths[i]
+
+                if thisWidth != None:
+                    self.inputWidget.setColumnWidth(i, thisWidth)
+
     def fillRow(self, thisRow, thisFeature):
         '''fill thisRow with values from thisFeature'''
 
@@ -3784,6 +3792,15 @@ class DdN2mTableWidget(DdN2mWidget):
             if isinstance(pParent,  DdDialog) or isinstance(pParent,  DdSearchDialog):
                 self.parentDialog = pParent
                 break
+
+        for i in range(len(self.attribute.attributes)):
+            self.columnWidths.append(None)
+
+    def reset(self):
+        '''save column widths'''
+        for i in range(len(self.columnWidths)):
+            thisWidth = self.inputWidget.columnWidth(i)
+            self.columnWidths[i] = thisWidth
 
     def search(self,  layer):
         '''create search sql-string'''
