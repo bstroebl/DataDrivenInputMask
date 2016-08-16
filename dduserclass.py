@@ -349,7 +349,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         for relatedFeature in self.relatedLayer.getFeatures(
                 QgsFeatureRequest().setFlags(
                 QgsFeatureRequest.NoGeometry)):
-            relatedId = relatedFeature.id()
+            relatedId = self.getPk(relatedFeature, self.relatedLayer)
             relatedValue = relatedFeature[self.relatedLayer.fieldNameIndex(
                 self.attribute.relatedDisplayField)]
             isChecked = False
