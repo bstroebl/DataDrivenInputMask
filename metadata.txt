@@ -26,7 +26,7 @@ about=DataDrivenInputMask is a QGIS plugin that automagically creates input mask
 tags=
 
 homepage=https://github.com/bstroebl/DataDrivenInputMask/wiki
-tracker=http://hub.qgis.org/projects/datadriveninputmask
+tracker=https://github.com/bstroebl/DataDrivenInputMask/issues
 repository=https://github.com/bstroebl/DataDrivenInputMask
 icon=datadriveninputmask.png
 # experimental flag
