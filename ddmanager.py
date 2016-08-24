@@ -725,20 +725,23 @@ class DdManager(object):
         thisPort = db.port()
 
         #these numbers are best guesses from the enumeration
-        if db.sslMode == "prefer":
-            sslMode = QgsDataSourceURI.SSLprefer
-        elif db.sslMode == "disable":
-            sslMode = QgsDataSourceURI.SSLdisable
-        elif db.sslMode == "allow":
-            sslMode = QgsDataSourceURI.SSLallow
-        elif db.sslMode == "require":
-            sslMode = QgsDataSourceURI.SSLrequire
-        elif db.sslMode == "verifyCA":
-            sslMode = QgsDataSourceURI.SSLverifyCA
-        elif db.sslMode == "verifyFull":
-            sslMode = QgsDataSourceURI.SSLverifyFull
+        if hasattr(db, "sslmode"):
+            if db.sslMode == "prefer":
+                sslMode = QgsDataSourceURI.SSLprefer
+            elif db.sslMode == "disable":
+                sslMode = QgsDataSourceURI.SSLdisable
+            elif db.sslMode == "allow":
+                sslMode = QgsDataSourceURI.SSLallow
+            elif db.sslMode == "require":
+                sslMode = QgsDataSourceURI.SSLrequire
+            elif db.sslMode == "verifyCA":
+                sslMode = QgsDataSourceURI.SSLverifyCA
+            elif db.sslMode == "verifyFull":
+                sslMode = QgsDataSourceURI.SSLverifyFull
+            else:
+                sslMode = QgsDataSourceURI.SSLprefer # default anyway
         else:
-            sslMode = QgsDataSourceURI.SSLprefer # default anyway
+            sslMode = QgsDataSourceURI.SSLprefer
 
         if thisPort == -1:
             thisPort = 5432
