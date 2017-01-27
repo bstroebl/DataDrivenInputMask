@@ -4,6 +4,16 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.2.0...develop)
 ### Added
 - DdN2mTableWidget and DdN2mCheckableTableWidget retain user changed column widths upon reopening of the dialog
+- Additional layers are loaded with the same ssl-mode as the base layer
+- DdN2mCheckableTableWidget now displays foreign key lookup values instead of integers
+- DdN2mCheckableTableWidget and DdN2mTableWidget display a translatable string for boolean values
+
+### Changed
+- Bug tracker has been moved to github
+- Help files changed by new Sphinx version
+- Code for DdN2mTableWidget has been modularized
+- DdN2mCheckableTableWidget is now a child of DdN2mTableWidget
+- All string conversion is handled by DdInputWidget
 
 ## 1.2.2 - 2016-05-12
 
