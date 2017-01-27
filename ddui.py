@@ -1554,6 +1554,35 @@ class DdInputWidget(DdWidget):
     def enableAccordingToDdAttribute(self):
         self.setEnabled(self.attribute.enableWidget)
 
+    def boolToString(self, thisValue):
+        '''convert boolean to string'''
+        if thisValue == None:
+            thisString = "NULL"
+        else:
+            if thisValue:
+                thisString = QtGui.QApplication.translate(
+                    "DdLabel", "Yes", None, QtGui.QApplication.UnicodeUTF8)
+            else:
+                thisString = QtGui.QApplication.translate(
+                    "DdLabel", "No", None, QtGui.QApplication.UnicodeUTF8)
+
+        return thisString
+
+    def dateToString(self, thisValue):
+        '''convert QDate to a string'''
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
+    def doubleToString(self, thisValue):
+        '''convert a double to string'''
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
+    def intToString(self, thisValue):
+        '''convert an integer to a string'''
+        loc = QtCore.QLocale.system()
+        return loc.toString(thisValue)
+
 class DdLineEdit(DdInputWidget):
     '''abstract class for all Input Widgets that can be represented in one line,
     creates a QLineEdit as default InputWidget, adds it together with a QCheckBox (to store null values)
@@ -2116,8 +2145,7 @@ class DdLineEditInt(DdLineEdit):
         self.inputWidget.setText(thisValue)
 
     def toString(self,  thisValue):
-        loc = QtCore.QLocale.system()
-        return loc.toString(thisValue)
+        return self.intToString(thisValue)
 
     def getFeatureValue(self,  layer,  feature):
         if feature == None:
@@ -2291,8 +2319,7 @@ class DdLineEditDouble(DdLineEdit):
         self.betweenWidget.setText(thisValue)
 
     def toString(self,  thisValue):
-        loc = QtCore.QLocale.system()
-        return loc.toString(thisValue)
+        return self.doubleToString(thisValue)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -2661,8 +2688,7 @@ class DdDateEdit(DdLineEdit):
         self.betweenWidget.setDate(newDate)
 
     def toString(self,  thisValue):
-        loc = QtCore.QLocale.system()
-        return loc.toString(thisValue)
+        return self.dateToString(thisValue)
 
     def setValue(self,  thisValue):
 
@@ -3740,33 +3766,29 @@ class DdN2mTableWidget(DdN2mWidget):
                         except KeyError:
                             aValue = 'NULL'
 
-                    if anAtt.type == "bool" and not isinstance(aValue, bool):
-                        self.debug(anAtt.name + " is bool, value = " + str(aValue))
-                        aValue = (aValue == "t" or aValue == "true" or aValue == "True")
-                        self.debug(anAtt.name + " 2, value = " + str(aValue))
+                    if anAtt.type == "bool":
+                        if not isinstance(aValue, bool):
+                            aValue = (aValue == "t" or aValue == "true" or aValue == "True")
+
+                        aValue = self.boolToString(aValue)
 
             fetureValues.append(aValue)
 
         return fetureValues
 
     def createTableWidgetItem(self,  aValue):
-        if isinstance(aValue, int) or isinstance(aValue, float) or isinstance(aValue, QtCore.QDate):
-            item = QtGui.QTableWidgetItem()
-            item.setData(QtCore.Qt.DisplayRole, aValue)
+        if isinstance(aValue, int):
+            aValue = self.intToString(aValue)
+        elif isinstance(aValue, float):
+            aValue = self.floatToString(aValue)
+        elif isinstance(aValue, QtCore.QDate):
+            aValue = self.dateToString(aValue)
+        elif isinstance(aValue, bool):
+            aValue = self.boolToString(aValue)
         else:
-            self.debug("createTableWidgetItem " + unicode(aValue))
-            if isinstance(aValue, bool):
-                self.debug("createTableWidgetItem BOOL " + str(aValue))
-                if aValue:
-                    aValue = QtGui.QApplication.translate(
-                        "DdLabel", "Yes", None, QtGui.QApplication.UnicodeUTF8)
-                else:
-                    aValue = QtGui.QApplication.translate(
-                        "DdLabel", "No", None, QtGui.QApplication.UnicodeUTF8)
+            aValue = unicode(aValue)
 
-            item = QtGui.QTableWidgetItem(unicode(aValue))
-
-        return item
+        return QtGui.QTableWidgetItem(aValue)
 
     def fillRow(self, thisRow, thisFeature):
         '''fill thisRow with values from thisFeature'''
