@@ -2736,7 +2736,7 @@ class DdLineEditBoolean(DdLineEdit):
         self.inputWidgetYes.installEventFilter(yesEventFilter)
         yesEventFilter.doubleClicked.connect(self.onDoubleClick)
         labelYes = QtGui.QLabel(QtGui.QApplication.translate(
-            "DdInput", "Yes", None, QtGui.QApplication.UnicodeUTF8),
+            "DdLabel", "Yes", None, QtGui.QApplication.UnicodeUTF8),
             inputWidget)
         labelYes.setObjectName("lblYes" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(labelYes)
@@ -2748,7 +2748,7 @@ class DdLineEditBoolean(DdLineEdit):
         self.inputWidgetNo.installEventFilter(noEventFilter)
         noEventFilter.doubleClicked.connect(self.onDoubleClick)
         labelNo = QtGui.QLabel(QtGui.QApplication.translate(
-            "DdInput", "No", None, QtGui.QApplication.UnicodeUTF8),
+            "DdLabel", "No", None, QtGui.QApplication.UnicodeUTF8),
             inputWidget)
         labelNo.setObjectName("lblNo" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(labelNo)
@@ -3671,6 +3671,29 @@ class DdN2mTableWidget(DdN2mWidget):
             # reset here in case the same table is connected twice
             self.applySubsetString(True)
 
+    def getFkValues(self, db):
+        for anAtt in self.attribute.attributes:
+            if anAtt.isFK:
+                values = {}
+
+                if not anAtt.notNull:
+                    values[""] = None
+
+                query = QtSql.QSqlQuery(db)
+                query.prepare(anAtt.queryForCbx)
+                query.exec_()
+
+                if query.isActive():
+                    while query.next(): # returns false when all records are done
+                        sValue =query.value(0)
+                        keyValue = query.value(1)
+                        values[keyValue] = sValue
+                    query.finish()
+                else:
+                    DbError(query)
+
+                self.fkValues[anAtt.name] = values
+
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
 
@@ -3681,28 +3704,7 @@ class DdN2mTableWidget(DdN2mWidget):
             self.initializeTableLayer(db, self.attribute.showParents, withMask = True)
 
             # read the values for any foreignKeys
-            for anAtt in self.attribute.attributes:
-                if anAtt.isFK:
-                    values = {}
-
-                    if not anAtt.notNull:
-                        values[""] = None
-
-                    query = QtSql.QSqlQuery(db)
-                    query.prepare(anAtt.queryForCbx)
-                    query.exec_()
-
-                    if query.isActive():
-                        while query.next(): # returns false when all records are done
-                            sValue =query.value(0)
-                            keyValue = query.value(1)
-                            values[keyValue] = sValue
-                        query.finish()
-                    else:
-                        DbError(query)
-
-                    self.fkValues[anAtt.name] = values
-
+            self.getFkValues(db)
             self.fill()
 
             for i in range(len(self.columnWidths)):
@@ -3711,12 +3713,12 @@ class DdN2mTableWidget(DdN2mWidget):
                 if thisWidth != None:
                     self.inputWidget.setColumnWidth(i, thisWidth)
 
-    def fillRow(self, thisRow, thisFeature):
-        '''fill thisRow with values from thisFeature'''
+    def getFeatureValues(self, thisFeature):
+        '''get a string representation of the values of this feature, None values are returned as "NULL" '''
+        fetureValues = []
 
         for i in range(len(self.attribute.attributes)):
             anAtt = self.attribute.attributes[i]
-
             try:
                 aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
             except:
@@ -3727,25 +3729,52 @@ class DdN2mTableWidget(DdN2mWidget):
                 if isinstance(aValue,  QtCore.QPyNullVariant):
                     aValue = ""
             else:
-                if anAtt.isFK:
-                    values = self.fkValues[anAtt.name]
-                    try:
-                        aValue = values[aValue]
-                    except KeyError:
-                        aValue = 'NULL'
-
                 if isinstance(aValue,  QtCore.QPyNullVariant):
                     aValue = 'NULL'
-
-            if isinstance(anAtt, DdDateLayerAttribute):
-                item = QtGui.QTableWidgetItem()
-                item.setData(QtCore.Qt.DisplayRole, aValue)
-            else:
-                if anAtt.isTypeInt() or anAtt.isTypeFloat():
-                    item = QtGui.QTableWidgetItem()
-                    item.setData(QtCore.Qt.DisplayRole, aValue)
                 else:
-                    item = QtGui.QTableWidgetItem(unicode(aValue))
+                    if anAtt.isFK and len(self.fkValues) > 0:
+                        values = self.fkValues[anAtt.name]
+
+                        try:
+                            aValue = values[aValue]
+                        except KeyError:
+                            aValue = 'NULL'
+
+                    if anAtt.type == "bool" and not isinstance(aValue, bool):
+                        self.debug(anAtt.name + " is bool, value = " + str(aValue))
+                        aValue = (aValue == "t" or aValue == "true" or aValue == "True")
+                        self.debug(anAtt.name + " 2, value = " + str(aValue))
+
+            fetureValues.append(aValue)
+
+        return fetureValues
+
+    def createTableWidgetItem(self,  aValue):
+        if isinstance(aValue, int) or isinstance(aValue, float) or isinstance(aValue, QtCore.QDate):
+            item = QtGui.QTableWidgetItem()
+            item.setData(QtCore.Qt.DisplayRole, aValue)
+        else:
+            self.debug("createTableWidgetItem " + unicode(aValue))
+            if isinstance(aValue, bool):
+                self.debug("createTableWidgetItem BOOL " + str(aValue))
+                if aValue:
+                    aValue = QtGui.QApplication.translate(
+                        "DdLabel", "Yes", None, QtGui.QApplication.UnicodeUTF8)
+                else:
+                    aValue = QtGui.QApplication.translate(
+                        "DdLabel", "No", None, QtGui.QApplication.UnicodeUTF8)
+
+            item = QtGui.QTableWidgetItem(unicode(aValue))
+
+        return item
+
+    def fillRow(self, thisRow, thisFeature):
+        '''fill thisRow with values from thisFeature'''
+
+        values = self.getFeatureValues(thisFeature)
+        for i in range(len(values)):
+            aValue = values[i]
+            item = self.createTableWidgetItem(aValue)
 
             if i == 0:
                 item.feature = thisFeature
