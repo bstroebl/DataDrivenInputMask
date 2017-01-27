@@ -27,7 +27,7 @@ to be used in subclasses of DataDrivenUi
 """
 
 
-from ddui import DdInputWidget, DdN2mWidget, DdLineEdit, DdComboBox
+from ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
 from dderror import DdError
 from qgis.core import *
 from PyQt4 import QtCore, QtGui, QtSql
@@ -205,7 +205,7 @@ class DdLineEditSlider(DdLineEdit):
 
         self.gbx.setTitle(newLabel)
 
-class DdN2mCheckableTableWidget(DdN2mWidget):
+class DdN2mCheckableTableWidget(DdN2mTableWidget):
     '''a table widget for a n2m relation with more than the
     pk fields in the relation table but with checkboxes to assign a value
     to the feature, values to fields in the relation table are assigned
@@ -215,7 +215,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
     only from related features being in this catalog'''
 
     def __init__(self,  attribute):
-        DdN2mWidget.__init__(self, attribute)
+        DdN2mTableWidget.__init__(self, attribute)
         self.catalogCbx = None
         self.catalogLayer = None
         self.catalogIndex = 0
@@ -263,6 +263,7 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
             self.initializeTableLayer(db, doShowParents = False,
                 withMask = True, skip = [self.attribute.relationRelatedIdField])
             self.relatedLayer = self.loadAdditionalLayer(db,  self.attribute.relatedTable)
+            self.getFkValues(db)
 
             for i in range(len(self.attribute.attributes)):
                 anAttr = self.attribute.attributes[i]
@@ -293,20 +294,6 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
                 defaultValues.append("NULL")
 
         return defaultValues
-
-    def getFeatureValues(self, thisFeature):
-        values = []
-
-        for i in range(len(self.attribute.attributes)):
-            anAtt = self.attribute.attributes[i]
-            aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
-
-            if isinstance(aValue, QtCore.QPyNullVariant):
-                aValue = 'NULL'
-
-            values.append(aValue)
-
-        return values
 
     def fillCatalog(self, initialIndex = 0):
         '''
@@ -407,21 +394,12 @@ class DdN2mCheckableTableWidget(DdN2mWidget):
         self.inputWidget.setItem(thisRow, 0, chkItem)
 
         for i in range(len(values)):
-            aValue = values[i]
-
             if i == self.relationRelatedIdIndex:
-                if isinstance(thisValue, int) or isinstance(thisValue, float) or isinstance(thisValue, QtCore.QDate):
-                    item = QtGui.QTableWidgetItem()
-                    item.setData(QtCore.Qt.DisplayRole, thisValue)
-                else:
-                    item = QtGui.QTableWidgetItem(thisValue)
+                item = self.createTableWidgetItem(thisValue)
                 item.id = relatedId
             else:
-                if isinstance(aValue, int) or isinstance(aValue, float) or isinstance(aValue, QtCore.QDate):
-                    item = QtGui.QTableWidgetItem()
-                    item.setData(QtCore.Qt.DisplayRole, aValue)
-                else:
-                    item = QtGui.QTableWidgetItem(unicode(aValue))
+                aValue = values[i]
+                item = self.createTableWidgetItem(aValue)
 
             self.inputWidget.setItem(thisRow, i+1, item)
 
