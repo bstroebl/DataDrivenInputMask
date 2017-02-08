@@ -3777,18 +3777,20 @@ class DdN2mTableWidget(DdN2mWidget):
         return fetureValues
 
     def createTableWidgetItem(self,  aValue):
-        if isinstance(aValue, int):
-            aValue = self.intToString(aValue)
-        elif isinstance(aValue, float):
-            aValue = self.floatToString(aValue)
-        elif isinstance(aValue, QtCore.QDate):
-            aValue = self.dateToString(aValue)
-        elif isinstance(aValue, bool):
-            aValue = self.boolToString(aValue)
+        if isinstance(aValue, int) or isinstance(aValue, float):
+            item = QtGui.QTableWidgetItem()
+            item.setData(QtCore.Qt.DisplayRole, aValue)
         else:
-            aValue = unicode(aValue)
+            if isinstance(aValue, QtCore.QDate):
+                aValue = self.dateToString(aValue)
+            elif isinstance(aValue, bool):
+                aValue = self.boolToString(aValue)
+            else:
+                aValue = unicode(aValue)
 
-        return QtGui.QTableWidgetItem(aValue)
+            item = QtGui.QTableWidgetItem(aValue)
+
+        return item
 
     def fillRow(self, thisRow, thisFeature):
         '''fill thisRow with values from thisFeature'''
