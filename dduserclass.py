@@ -28,7 +28,7 @@ to be used in subclasses of DataDrivenUi
 
 
 from ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
-from dderror import DdError
+from dderror import DdError, DbError
 from qgis.core import *
 from PyQt4 import QtCore, QtGui, QtSql
 from dddialog import DdDialog,  DdSearchDialog
