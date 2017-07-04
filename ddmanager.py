@@ -426,6 +426,13 @@ class DdManager(object):
                     highlightGeom = self.highlightFeature(layer, feature)
 
                 db = layerValues[1]
+
+                if not db.isValid():
+                    db = self.__createDb(layer)
+
+                if db == None:
+                    return None
+
                 ui = layerValues[2]
                 thisSize = layerValues[5]
 
@@ -464,6 +471,15 @@ class DdManager(object):
         if layerValues != None:
             #QtGui.QMessageBox.information(None, "", str(layerValues[2]))
             db = layerValues[1]
+
+            if not db.isValid():
+                db = self.__createDb(layer)
+
+                if db != None:
+                    self.setDb(layer, db)
+                else:
+                    return None
+
             searchUi = layerValues[3]
             thisSize = layerValues[5]
             dlg = DdSearchDialog(searchUi,  layer,  db,  root = root)
