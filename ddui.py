@@ -3447,7 +3447,7 @@ class DdN2mTreeWidget(DdN2mWidget):
                 dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
 
             query.prepare(dispStatement)
-            query.bindValue(":featureId", feature.id())
+            query.bindValue(":featureId", self.getPk(feature, layer))
             query.exec_()
 
             if query.isActive():
