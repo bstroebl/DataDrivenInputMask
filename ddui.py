@@ -3040,7 +3040,7 @@ class DdN2mWidget(DdInputWidget):
                         self.featureId.append(anId)
 
             if self.featureId == []:
-                self.featureId = [feature.id()]
+                self.featureId = [self.getPk(feature, layer)]
 
         if self.mode == 1: #search ui
             self.forEdit = True
@@ -3247,7 +3247,7 @@ class DdN2mListWidget(DdN2mWidget):
                 dispStatement = dispStatement.replace("ORDER BY checked DESC,","ORDER BY ")
 
             query.prepare(dispStatement)
-            query.bindValue(":featureId", feature.id())
+            query.bindValue(":featureId", self.getPk(feature, layer))
             query.exec_()
 
             if query.isActive():
