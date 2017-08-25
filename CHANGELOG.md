@@ -7,6 +7,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 - Additional layers are loaded with the same ssl-mode as the base layer
 - DdN2mCheckableTableWidget now displays foreign key lookup values instead of integers
 - DdN2mCheckableTableWidget and DdN2mTableWidget display a translatable string for boolean values
+- Plugin now works properly with bigint primary keys in QGIS > 2.14
 
 ### Changed
 - Bug tracker has been moved to github
