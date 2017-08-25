@@ -1029,9 +1029,11 @@ class DdWidget(object):
         '''only relevant for QGIS 2.16 and newer:
         read the pk-id value either from the feature itself or, in case
         of a bigint pk field from the field'''
-
-        if QGis.QGIS_VERSION_INT >= 21600:
-            #teste, ob bigint
+    
+        thisId = feature.id()
+        
+        if thisId > 0 and QGis.QGIS_VERSION_INT >= 21600:
+            #not for newly created features
             uri = QgsDataSourceURI(layer.dataProvider().dataSourceUri())
             pkFieldName = uri.keyColumn()
             pkFieldIndex = layer.fieldNameIndex(pkFieldName.replace("\"",""))
@@ -1040,13 +1042,8 @@ class DdWidget(object):
 
             if pkFieldType == 'int8': # bigint
                 thisId = feature[pkFieldIndex]
-            else:
-                thisId = feature.id()
-        else:
-            thisId = feature.id()
 
         return thisId
-
 
 class DdDialogWidget(DdWidget):
     '''This is the mask ui'''
