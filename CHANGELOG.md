@@ -1,7 +1,9 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.2.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.3.0...develop)
+
+## 1.3.0 - 2017-09-01
 ### Added
 - DdN2mTableWidget and DdN2mCheckableTableWidget retain user changed column widths upon reopening of the dialog
 - Additional layers are loaded with the same ssl-mode as the base layer
