@@ -149,6 +149,9 @@ class DdSearchDialog(QtGui.QDialog):
         if root == None:
             root = self.ddManager.ddLayers[self.layer.id()][6]
 
+            if root == None:
+                root = self.createSearch()
+
         self.applySearch(root)
 
     def debug(self,  str):
