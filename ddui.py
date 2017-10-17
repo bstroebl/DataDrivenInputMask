@@ -857,7 +857,7 @@ class DataDrivenUi(object):
 
     def isSupportedType(self,  typ):
         supportedAttributeTypes = ["int2", "int4", "int8",
-            "char", "varchar", "float4", "float8", "text",
+            "bpchar", "varchar", "float4", "float8", "text",
             "bool", "date", "geometry"]
         supported = False
 
@@ -1029,9 +1029,9 @@ class DdWidget(object):
         '''only relevant for QGIS 2.16 and newer:
         read the pk-id value either from the feature itself or, in case
         of a bigint pk field from the field'''
-    
+
         thisId = feature.id()
-        
+
         if thisId > 0 and QGis.QGIS_VERSION_INT >= 21600:
             #not for newly created features
             uri = QgsDataSourceURI(layer.dataProvider().dataSourceUri())
