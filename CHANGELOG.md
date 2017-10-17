@@ -3,6 +3,10 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.3.0...develop)
 
+### Fixed
+- Show search mask for n2mTable
+- Show char (bpchar) fields in mask
+
 ## 1.3.0 - 2017-09-01
 ### Added
 - DdN2mTableWidget and DdN2mCheckableTableWidget retain user changed column widths upon reopening of the dialog
