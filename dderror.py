@@ -24,7 +24,8 @@ Error classes
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4 import QtGui
+from builtins import object
+from qgis.PyQt import QtGui
 from qgis.gui import QgsMessageBar
 from qgis.core import QgsMessageLog
 
