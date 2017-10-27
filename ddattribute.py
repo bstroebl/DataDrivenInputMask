@@ -37,7 +37,9 @@ General rules:
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4 import QtGui, QtCore
+from builtins import str
+from builtins import object
+from qgis.PyQt import QtGui, QtCore
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
@@ -312,9 +314,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
                     displayStatement += ", \'" + aField + ": \' || COALESCE(disp.\"" + aField + "\", \'NULL\')"
 
         if len(self.relatedForeignKeys) > 0:
-            for anItem in self.relatedForeignKeys.iteritems():
-                aKey = anItem[0]
-                aValue = anItem[1]
+            for aKey, aValue in list(self.relatedForeignKeys.items()):
                 displayFieldName = aValue[2]
                 self.fieldList.append("fk_" + aKey + ".value")
                 displayStatement += ", \'" + displayFieldName + ": \' || fk_" + aKey + ".value"
@@ -329,9 +329,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
         displayStatement += " ON disp.\"" + relatedIdField + "\" = lnk.\"" + relationRelatedIdField + "\""
 
         if len(self.relatedForeignKeys) > 0:
-            for anItem in self.relatedForeignKeys.iteritems():
-                aKey = anItem[0]
-                aValue = anItem[1]
+            for aKey, aValue in list(self.relatedForeignKeys.items()):
                 fkSelectStatement = aValue[1]
                 #example: SELECT my_string as value, id as key FROM my_schema.my_lookup_table;
                 fkSelectStatement = fkSelectStatement[: len(fkSelectStatement) -1] # get rid of ;
