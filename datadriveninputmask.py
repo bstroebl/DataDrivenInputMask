@@ -23,15 +23,20 @@ Applies a data-driven input mask to any PostGIS-Layer
  *                                                                         *
  ***************************************************************************/
 """
+
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore,  QtGui
+from QGIS.PyQt import QtCore,  QtGui
 from qgis.core import *
-from dderror import DdError
-from ddmanager import DdManager
-from ddattribute import DdTable
+from. dderror import DdError
+from .ddmanager import DdManager
+from .ddattribute import DdTable
 import os.path, sys
 
-class DataDrivenInputMask:
+class DataDrivenInputMask(objekt):
     """Main class for the QGIS plugin"""
     def __init__(self, iface):
         # Save reference to the QGIS interface
