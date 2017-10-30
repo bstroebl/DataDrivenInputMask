@@ -37,7 +37,7 @@ class DdDialog(QtWidgets.QDialog):
     '''Each mask is a DdDialog instance, thus a child of QDialog'''
     def __init__(self, ddManager, ui, layer, feature, db, multiEdit = False,
             parent = None, title = None):
-        super().__init__(self,  parent)
+        super().__init__(parent)
         # Set up the user interface from Designer.
         self.ddManager = ddManager
         self.ui = ui
@@ -122,7 +122,7 @@ class DdDialog(QtWidgets.QDialog):
 class DdSearchDialog(QtWidgets.QDialog):
     '''Each searchDialog is a child of QDialog'''
     def __init__(self, ui, layer, db, parent = None,  root = None):
-        super().__init__(self, parent)
+        super().__init__(parent)
         self.ddManager = QgsApplication.instance().ddManager
         self.ui = ui
         self.layer = layer
