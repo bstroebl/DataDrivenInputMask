@@ -24,17 +24,21 @@ Classes that make up or steer the DataDrivenUI
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtCore,  QtGui,  QtSql
+from qgis.PyQt import QtCore,  QtGui,  QtSql
 from qgis.core import *
-from dderror import DdError,  DbError
-from ddattribute import *
-from dddialog import DdDialog,  DdSearchDialog
-import ddtools
+from .dderror import DdError,  DbError
+from .ddattribute import *
+from .dddialog import DdDialog,  DdSearchDialog
+from . import ddtools
 import xml.etree.ElementTree as ET
-import icons_rc
+#from . import icons_rc
 
-class DdFormHelper:
+class DdFormHelper(object):
     def __init__(self, thisDialog, layerId, featureId):
         app = QgsApplication.instance()
         ddManager = app.ddManager
@@ -276,7 +280,7 @@ class DataDrivenUi(object):
         for anAttribute in orderedAttributes:
             addToSearch = True
 
-            for key in fieldGroups.iterkeys():
+            for key in list(fieldGroups.keys()):
                 if key == anAttribute.name:
                     # we need a new form
                     if ddFormWidget != None:
@@ -1173,7 +1177,7 @@ class DdDialogWidget(DdWidget):
 
         hasChanges = False
 
-        for aLayerId in layerDict.iterkeys():
+        for aLayerId in list(layerDict.keys()):
             aLayer = layerDict[aLayerId][0]
             doSave = layerDict[aLayerId][1]
 
@@ -1664,7 +1668,7 @@ class DdLineEdit(DdInputWidget):
         if thisValue == None:
             thisValue = ""
 
-        self.inputWidget.setText(unicode(thisValue))
+        self.inputWidget.setText(str(thisValue))
 
     def setSearchValue(self,  thisValue):
         '''sets the search value, diverging implementations in subclasses'''
@@ -1676,10 +1680,10 @@ class DdLineEdit(DdInputWidget):
         if thisValue == None:
             thisValue = ""
 
-        self.betweenWidget.setText(unicode(thisValue))
+        self.betweenWidget.setText(str(thisValue))
 
     def toString(self,  thisValue):
-        return unicode(thisValue)
+        return str(thisValue)
 
     def getValue(self):
         if self.chk.isChecked():
@@ -1920,16 +1924,16 @@ class DdLineEdit(DdInputWidget):
                         thisValue = thisValue.replace("\'", "").strip()
 
                         if operator == "IN":
-                            thisValue = unicode(thisValue)
+                            thisValue = str(thisValue)
                         elif operator == "LIKE" or operator == "ILIKE":
                             thisValue = thisValue.replace("*", "%") #get rid of user's wildcard
 
                             if thisValue.find("%") == -1:
                                 thisValue = "%" + thisValue + "%" # add wildcard
 
-                            thisValue = "\'" + unicode(thisValue) + "\'"
+                            thisValue = "\'" + str(thisValue) + "\'"
                         else:
-                            thisValue = "\'" + unicode(thisValue) + "\'"
+                            thisValue = "\'" + str(thisValue) + "\'"
                     else:
                         if self.attribute.type == "bool":
                             if thisValue:
@@ -1938,16 +1942,16 @@ class DdLineEdit(DdInputWidget):
                                 thisValue = "\'f\'"
                         elif self.attribute.type == "text":
                             if operator == "IN":
-                                thisValue = unicode(thisValue)
+                                thisValue = str(thisValue)
                             elif operator == "LIKE" or operator == "ILIKE":
                                 thisValue = thisValue.replace("*", "%") #get rid of user's wildcard
 
                                 if thisValue.find("%") == -1:
                                     thisValue = "%" + thisValue + "%" # add wildcard
 
-                                thisValue = "\'" + unicode(thisValue) + "\'"
+                                thisValue = "\'" + str(thisValue) + "\'"
                             else:
-                                thisValue = "\'" + unicode(thisValue) + "\'"
+                                thisValue = "\'" + str(thisValue) + "\'"
                         elif self.attribute.type == "date":
                             thisValue = "\'" + thisValue.toString("yyyy-MM-dd") + "\'"
                         else:
@@ -2011,12 +2015,12 @@ class DdLineEdit(DdInputWidget):
                     if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
                         thisValue = str(thisValue)
                     elif self.attribute.isTypeChar():
-                        thisValue = unicode(thisValue.replace("\'", "").strip())
+                        thisValue = str(thisValue.replace("\'", "").strip())
                     else:
                         if self.attribute.type == "bool":
                             thisValue = str(thisValue)
                         elif self.attribute.type == "text":
-                            thisValue = unicode(thisValue.replace("\'", "").strip())
+                            thisValue = str(thisValue.replace("\'", "").strip())
                         elif self.attribute.type == "date":
                             thisValue = thisValue.toString("yyyy-MM-dd")
                         else:
@@ -2032,12 +2036,12 @@ class DdLineEdit(DdInputWidget):
                         if (self.attribute.isTypeInt() or self.attribute.isTypeFloat()):
                             betweenValue = str(betweenValue)
                         elif self.attribute.isTypeChar():
-                            betweenValue = unicode(betweenValue.replace("\'", "").strip())
+                            betweenValue = str(betweenValue.replace("\'", "").strip())
                         else:
                             if self.attribute.type == "bool":
                                 betweenValue = str(betweenValue)
                             elif self.attribute.type == "text":
-                                betweenValue = unicode(betweenValue.replace("\'", "").strip())
+                                betweenValue = str(betweenValue.replace("\'", "").strip())
                             elif self.attribute.type == "date":
                                 betweenValue = betweenValue.toString("yyyy-MM-dd")
                             else:
@@ -2469,7 +2473,7 @@ class DdComboBox(DdLineEdit):
             while query.next(): # returns false when all records are done
                 sValue = query.value(0)
 
-                if not isinstance(sValue,  unicode):
+                if not isinstance(sValue,  str):
                     sValue = str(sValue)
 
                 keyValue = query.value(1)
@@ -2485,7 +2489,7 @@ class DdComboBox(DdLineEdit):
         if self.values != {}:
             self.inputWidget.clear()
 
-            for keyValue, valueArray in self.values.iteritems():
+            for keyValue, valueArray in list(self.values.items()):
                 sValue = valueArray[0]
                 self.inputWidget.addItem(sValue, keyValue)
 
@@ -2501,7 +2505,7 @@ class DdComboBox(DdLineEdit):
 
         completerList = []
 
-        for keyValue, valueArray in self.values.iteritems():
+        for keyValue, valueArray in list(self.values.items()):
             completerList.append(valueArray[0])
 
         self.completer = QtGui.QCompleter(completerList)
@@ -2617,7 +2621,7 @@ class DdDateEdit(DdLineEdit):
                     if self.attribute.notNull:
                         thisValue = QtCore.QDate.currentDate()
 
-        if isinstance(thisValue,  unicode):
+        if isinstance(thisValue,  str):
             if thisValue.find("now") != -1 or thisValue.find("current_date") != -1:
                 thisValue = QtCore.QDate.currentDate()
 
@@ -2662,7 +2666,7 @@ class DdDateEdit(DdLineEdit):
     def setSearchValue(self,  thisValue):
         '''sets the search value'''
         if thisValue != None:
-            if isinstance(thisValue,  unicode) or isinstance(thisValue,  str): # this is the case when derived from XML
+            if isinstance(thisValue,  str): # this is the case when derived from XML
                 newDate = QtCore.QDate.fromString(thisValue,  "yyyy-MM-dd")
 
                 if newDate.isNull():
@@ -2677,7 +2681,7 @@ class DdDateEdit(DdLineEdit):
         newDate = QtCore.QDate.currentDate()
 
         if thisValue != None:
-            if isinstance(thisValue,  unicode) or isinstance(thisValue,  str): # this is the case when derived from XML
+            if isinstance(thisValue,  str): # this is the case when derived from XML
                 newDate = QtCore.QDate.fromString(thisValue,  "yyyy-MM-dd")
 
                 if newDate.isNull():
@@ -3254,7 +3258,7 @@ class DdN2mListWidget(DdN2mWidget):
 
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
-                    parent = unicode(query.value(1))
+                    parent = str(query.value(1))
 
                     if self.mode == 2:
                         checked = 0
@@ -3452,7 +3456,7 @@ class DdN2mTreeWidget(DdN2mWidget):
             if query.isActive():
                 while query.next(): # returns false when all records are done
                     parentId = int(query.value(0))
-                    parent = unicode(query.value(1))
+                    parent = str(query.value(1))
 
                     if self.mode == 2:
                         checked = 0
@@ -3658,7 +3662,7 @@ class DdN2mTableWidget(DdN2mWidget):
                                             except KeyError:
                                                 aValue = textValue
 
-                                            if not isinstance(aValue, unicode):
+                                            if not isinstance(aValue, str):
                                                 aValue = str(aValue)
                                         else:
                                             aValue = textValue
@@ -3785,7 +3789,7 @@ class DdN2mTableWidget(DdN2mWidget):
             elif isinstance(aValue, bool):
                 aValue = self.boolToString(aValue)
             else:
-                aValue = unicode(aValue)
+                aValue = str(aValue)
 
             item = QtGui.QTableWidgetItem(aValue)
 
