@@ -28,7 +28,7 @@ from builtins import str
 from builtins import range
 from builtins import object
 # Import the PyQt and QGIS libraries
-from qgis.PyQt import QtCore,  QtGui
+from qgis.PyQt import QtCore, QtWidgets
 from qgis.core import *
 from. dderror import DdError
 from .ddmanager import DdManager
@@ -41,7 +41,7 @@ class DataDrivenInputMask(object):
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
-        self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/DataDrivenInputMask"
+        self.plugin_dir = QtCore.QFileInfo(QgsApplication.qgisUserDatabaseFilePath()).path() + "/python/plugins/DataDrivenInputMask"
         self.app = QgsApplication.instance()
         try:
             self.app.ddManager
@@ -80,40 +80,39 @@ class DataDrivenInputMask(object):
     def initGui(self):
         """Add menu and menu items."""
 
-        self.action = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Initialize Layer",
-            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        self.action = QtWidgets.QAction(QtWidgets.QApplication.translate("DdLabel", "Initialize Layer"),
+            self.iface.mainWindow())
         # set a name for the action
         self.action.setObjectName("DdInitializeLayer")
         # connect the action to the run method
         self.action.triggered.connect(self.initializeLayer)
 
         # Add toolbar button and menu item
-        self.menuLabel = QtGui.QApplication.translate("DdLabel", "&Data-driven Input Mask",
-            None, QtGui.QApplication.UnicodeUTF8)
+        self.menuLabel = QtWidgets.QApplication.translate("DdLabel", "&Data-driven Input Mask")
 
-        self.actionSel = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Input Form",
-            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        self.actionSel = QtWidgets.QAction(QtWidgets.QApplication.translate("DdLabel", "Show Input Form"),
+            self.iface.mainWindow())
         # set a name for the action
         self.actionSel.setObjectName("DdShowInputForm")
         # connect the action to the run method
         self.actionSel.triggered.connect(self.showInputForm)
 
-        self.actionMulti = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Multi Input Form",
-            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        self.actionMulti = QtWidgets.QAction(QtWidgets.QApplication.translate("DdLabel", "Multi Input Form"),
+            self.iface.mainWindow())
         # set a name for the action
         self.actionMulti.setObjectName("DdMultiInputForm")
         # connect the action to the run method
         self.actionMulti.triggered.connect(self.showMultiForm)
 
-        self.actionSearch = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Show Search Form",
-            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        self.actionSearch = QtWidgets.QAction(QtWidgets.QApplication.translate("DdLabel", "Show Search Form"),
+            self.iface.mainWindow())
         # set a name for the action
         self.actionSearch.setObjectName("DdShowSearchForm")
         # connect the action to the run method
         self.actionSearch.triggered.connect(self.showSearchForm)
 
-        self.actionConfigure = QtGui.QAction(QtGui.QApplication.translate("DdLabel", "Configure Mask",
-            None, QtGui.QApplication.UnicodeUTF8), self.iface.mainWindow())
+        self.actionConfigure = QtWidgets.QAction(QtWidgets.QApplication.translate("DdLabel", "Configure Mask"),
+            self.iface.mainWindow())
         # set a name for the action
         self.actionConfigure.setObjectName("DdConfigureMask")
         # connect the action to the run method
@@ -167,12 +166,12 @@ class DataDrivenInputMask(object):
     def isSuitableLayer(self,  layer):
         '''check if layer is suitable to apply a DataDrivenInputMaskl'''
         if None == layer:
-            DdError(QtGui.QApplication.translate("DdError", "Please activate a layer!", None,
-                                                               QtGui.QApplication.UnicodeUTF8),  iface = self.iface)
+            DdError(QtWidgets.QApplication.translate("DdError", "Please activate a layer!"),
+                iface = self.iface)
         else:
             if 0 != layer.type():   # not a vector layer
-                DdError(QtGui.QApplication.translate("DdError", "Layer is not a vector layer: ", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
+                DdError(QtWidgets.QApplication.translate("DdError", "Layer is not a vector layer: ") +
+                    layer.name(),  iface = self.iface)
             else:
                 return True
 
@@ -217,25 +216,25 @@ class DataDrivenInputMask(object):
 
                 for feature in sel:
                     if counter > 0 and doAskUser:
-                        reply = QtGui.QMessageBox.question(None,
+                        reply = QtWidgets.QMessageBox.question(None,
                             str(len(sel)) + " " + \
-                            QtGui.QApplication.translate("DdInfo",
+                            QtWidgets.QApplication.translate("DdInfo",
                             "features selected"),
                             str(len(sel) - counter) + " " + \
-                            QtGui.QApplication.translate("DdInfo",
+                            QtWidgets.QApplication.translate("DdInfo",
                             "features to go. Show next?"),
-                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.Cancel)
+                            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.YesToAll | QtWidgets.QMessageBox.Cancel)
 
-                        if reply == QtGui.QMessageBox.Cancel:
+                        if reply == QtWidgets.QMessageBox.Cancel:
                             break
-                        elif reply == QtGui.QMessageBox.YesToAll:
+                        elif reply == QtWidgets.QMessageBox.YesToAll:
                             doAskUser = False
 
                     self.app.ddManager.showFeatureForm(layer, feature)
                     counter += 1
             else:
-                DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
-                    QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
+                DdError(QtWidgets.QApplication.translate("DdError", "No selection in layer: ") +
+                    layer.name(), iface = self.iface)
 
     def showMultiForm(self):
         """SLOT: Show the mask for the first selected features in the active layer
@@ -248,8 +247,8 @@ class DataDrivenInputMask(object):
             if len(sel) > 0:
                 self.app.ddManager.showFeatureForm(layer, sel[0], multiEdit = True)
             else:
-                DdError(QtGui.QApplication.translate("DdError", "No selection in layer: ", None,
-                    QtGui.QApplication.UnicodeUTF8) + layer.name(), iface = self.iface)
+                DdError(QtWidgets.QApplication.translate("DdError", "No selection in layer: ") +
+                    layer.name(), iface = self.iface)
 
     def showSearchForm(self):
         """SLOT: Show the search form for the active layer"""

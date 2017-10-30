@@ -32,7 +32,7 @@ from builtins import range
 from .ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
 from .dderror import DdError, DbError
 from qgis.core import *
-from qgis.PyQt import QtCore, QtGui, QtSql
+from qgis.PyQt import QtCore, QtGui, QtSql, QtWidgets
 from .dddialog import DdDialog,  DdSearchDialog
 from .ddattribute import DdDateLayerAttribute
 
@@ -157,11 +157,10 @@ class DdLineEditSlider(DdLineEdit):
         self.inputWidget = self.createInputWidget(self.gbx)
         self.inputWidget.setToolTip(self.attribute.comment)
         hLayout.addWidget(self.inputWidget)
-        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
-                                                           QtGui.QApplication.UnicodeUTF8),  parent)
+        self.chk = QtGui.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),  parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want to save an empty (or null) value.", None,
-                                                           QtGui.QApplication.UnicodeUTF8))
+        self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+            "Check if you want to save an empty (or null) value."))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
@@ -196,8 +195,7 @@ class DdLineEditSlider(DdLineEdit):
             thisValue = None
 
         if thisValue == None:
-            newLabel += ": " + QtGui.QApplication.translate("DdInfo", "Null", None,
-                                                           QtGui.QApplication.UnicodeUTF8)
+            newLabel += ": " + QtWidgets.QApplication.translate("DdInfo", "Null")
         else:
             try:
                 valueLabel = self.valueLabels[thisValue]
@@ -319,8 +317,7 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
         model.sort(0)
 
         # add the empty item
-        self.catalogCbx.insertItem(0, QtGui.QApplication.translate("DdLabel", "Show all", None,
-                                                       QtGui.QApplication.UnicodeUTF8) ,  None)
+        self.catalogCbx.insertItem(0, QtWidgets.QApplication.translate("DdLabel", "Show all") ,  None)
         self.catalogCbx.setCurrentIndex(initialIndex)
 
     def fill(self,  catalogId = None):
@@ -481,9 +478,8 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
                 thisFeature[relationRelatedIdFieldIdx] = relatedId
 
                 if not self.tableLayer.addFeature(thisFeature):
-                    DdError(QtGui.QApplication.translate("DdError",
-                        "Could not add feature to layer:", None,
-                        QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
+                    DdError(QtWidgets.QApplication.translate("DdError",
+                        "Could not add feature to layer: ") + self.tableLayer.name())
                     return None
 
             result = self.parentDialog.ddManager.showFeatureForm(
@@ -518,8 +514,8 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
 
     def saveChanges(self):
         if not self.tableLayer.commitChanges():
-            DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
-                                               QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
+            DdError(QtWidgets.QApplication.translate("DdError",
+                "Could not save changes for layer: ") + self.tableLayer.name())
         else:
             self.tableLayer.startEditing()
 
@@ -570,11 +566,9 @@ class DdRelatedComboBox(DdComboBox):
             if self.mode == 1: # searchFeature
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
-                self.chk.setText(QtGui.QApplication.translate("DdInfo",
-                    "Ignore", None, QtGui.QApplication.UnicodeUTF8))
-                self.chk.setToolTip(QtGui.QApplication.translate("DdInfo",
-                    "Check if you want this field to be ignored in the search.", None,
-                    QtGui.QApplication.UnicodeUTF8))
+                self.chk.setText(QtWidgets.QApplication.translate("DdInfo", "Ignore"))
+                self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+                    "Check if you want this field to be ignored in the search."))
                 self.searchCbx.setVisible(True)
             else:
                 self.listenToCombo.inputWidget.currentIndexChanged.connect(self.listenToComboChanged)
