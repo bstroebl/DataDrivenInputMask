@@ -24,12 +24,13 @@ collection of routines needed throughout the plugin
  *                                                                         *
  ***************************************************************************/
 """
+from __future__ import absolute_import
 # Import the PyQt and QGIS libraries
-from PyQt4 import QtSql, QtCore, QtGui
+from qgis.PyQt import QtSql, QtCore, QtGui
 from qgis.core import *
 from qgis.gui import *
-from dderror import DdError,  DbError
-from ddattribute import *
+from .dderror import DbError
+from .ddattribute import *
 
 def getOid(thisTable,  db):
     ''' query the DB to get a table's oid'''
