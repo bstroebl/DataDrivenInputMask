@@ -29,7 +29,7 @@ from builtins import str
 from builtins import range
 from builtins import object
 # Import the PyQt and QGIS libraries
-from qgis.PyQt import QtCore,  QtGui,  QtSql
+from qgis.PyQt import QtCore,  QtGui,  QtSql, QtWidgets
 from qgis.core import *
 from .dderror import DdError,  DbError
 from .ddattribute import *
@@ -1184,12 +1184,12 @@ class DdDialogWidget(DdWidget):
             if doSave:
                 hasChanges = True
                 if not aLayer.commitChanges():
-                    DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
-                                                       QtGui.QApplication.UnicodeUTF8) + " " + aLayer.name())
+                    DdError(QtWidgets.QApplication.translate("DdError", "Could not save changes for layer: ") +
+                        aLayer.name())
             else:
                 if not aLayer.rollBack():
-                    DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                               QtGui.QApplication.UnicodeUTF8) + " " + aLayer.name())
+                    DdError(QtWidgets.QApplication.translate("DdError", "Could not discard changes for layer: ") +
+                        aLayer.name())
 
         layer.startEditing()
         return hasChanges
@@ -1261,8 +1261,8 @@ class DdFormWidget(DdWidget):
             ok = self.layer.startEditing()
 
             if not ok:
-                DdError(QtGui.QApplication.translate("DdWarning", "Layer cannot be put in editing mode:", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + self.layer.name())
+                DdError(QtWidgets.QApplication.translate("DdWarning", "Layer cannot be put in editing mode: ") +
+                    self.layer.name())
 
         return ok
 
@@ -1444,8 +1444,8 @@ class DdFormWidget(DdWidget):
                 for anInputWidget in self.inputWidgets:
                     anInputWidget.discard()
                 if not self.layer.rollBack():
-                    DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + " "+ self.layer.name())
+                    DdError(QtWidgets.QApplication.translate("DdError", "Could not discard changes for layer: ") +
+                        self.layer.name())
                 if self.wasEditable:
                     self.layer.startEditing()
 
@@ -1562,11 +1562,9 @@ class DdInputWidget(DdWidget):
             thisString = "NULL"
         else:
             if thisValue:
-                thisString = QtGui.QApplication.translate(
-                    "DdLabel", "Yes", None, QtGui.QApplication.UnicodeUTF8)
+                thisString = QtWidgets.QApplication.translate("DdLabel", "Yes")
             else:
-                thisString = QtGui.QApplication.translate(
-                    "DdLabel", "No", None, QtGui.QApplication.UnicodeUTF8)
+                thisString = QtWidgets.QApplication.translate("DdLabel", "No")
 
         return thisString
 
@@ -1751,11 +1749,10 @@ class DdLineEdit(DdInputWidget):
             self.betweenWidget.setVisible(False)
             hLayout.addWidget(self.betweenWidget)
 
-        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
-                                                           QtGui.QApplication.UnicodeUTF8),  parent)
+        self.chk = QtGui.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),  parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want to save an empty (or null) value.", None,
-                                                           QtGui.QApplication.UnicodeUTF8))
+        self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+            "Check if you want to save an empty (or null) value."))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
@@ -1801,10 +1798,9 @@ class DdLineEdit(DdInputWidget):
             if self.mode == 1: # searchFeature
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
-                self.chk.setText(QtGui.QApplication.translate("DdInfo", "Ignore", None,
-                                                               QtGui.QApplication.UnicodeUTF8))
-                self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want this field to be ignored in the search.", None,
-                                                               QtGui.QApplication.UnicodeUTF8))
+                self.chk.setText(QtWidgets.QApplication.translate("DdInfo", "Ignore"))
+                self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+                    "Check if you want this field to be ignored in the search."))
                 self.searchCbx.setVisible(True)
             else:
                 self.searchCbx.setVisible(False)
@@ -1828,10 +1824,8 @@ class DdLineEdit(DdInputWidget):
                         if showMsg:
                             QtGui.QMessageBox.warning(
                                 None, self.label.text(),
-                                QtGui.QApplication.translate(
-                                    "DdWarning", "Field value is too small! Minimum is ",
-                                    None, QtGui.QApplication.UnicodeUTF8
-                                ) + self.toString(self.attribute.min))
+                                QtWidgets.QApplication.translate("DdWarning", "Field value is too small! Minimum is ") +
+                                    self.toString(self.attribute.min))
                             msgShown = True
                         accepted = False
 
@@ -1841,10 +1835,9 @@ class DdLineEdit(DdInputWidget):
                             if showMsg:
                                 QtGui.QMessageBox.warning(
                                     None, self.label.text(),
-                                    QtGui.QApplication.translate(
-                                        "DdWarning", "Field value is too large! Maximum is ",
-                                        None, QtGui.QApplication.UnicodeUTF8
-                                    ) + self.toString(self.attribute.max))
+                                    QtWidgets.QApplication.translate(
+                                        "DdWarning", "Field value is too large! Maximum is ") +
+                                            self.toString(self.attribute.max))
                                 msgShown = True
                             accepted = False
             else:
@@ -1859,9 +1852,7 @@ class DdLineEdit(DdInputWidget):
 
         if self.attribute.notNull and thisValue == None:
             QtGui.QMessageBox.warning(None,
-                self.label.text(), QtGui.QApplication.translate(
-                    "DdWarning", "Field must not be empty!", None,
-                    QtGui.QApplication.UnicodeUTF8) )
+                self.label.text(), QtWidgets.QApplication.translate("DdWarning", "Field must not be empty!"))
             return False
         else:
             if self.getFeatureValue(layer,  feature) == thisValue:
@@ -1872,10 +1863,8 @@ class DdLineEdit(DdInputWidget):
 
                 if not accepted and not msgShown:
                     QtGui.QMessageBox.warning(None,
-                        self.label.text(), QtGui.QApplication.translate(
-                            "DdWarning", "Input is not valid! Field type is %s", None,
-                            QtGui.QApplication.UnicodeUTF8
-                        )  % str(self.attribute.type) )
+                        self.label.text(), QtWidgets.QApplication.translate("DdWarning",
+                            "Input is not valid! Field type is %s")  % str(self.attribute.type) )
 
                 return accepted
 
@@ -1887,10 +1876,9 @@ class DdLineEdit(DdInputWidget):
             fieldIndex = self.attribute.num
 
         if fieldIndex == -1:
-            DdError(QtGui.QApplication.translate(
-                    "DdError", "Field not found in layer: ", None,
-                    QtGui.QApplication.UnicodeUTF8
-                ) + layer.name() + "." + self.attribute.name)
+            DdError(QtWidgets.QApplication.translate(
+                "DdError", "Field not found in layer: ") +
+                layer.name() + "." + self.attribute.name)
         return fieldIndex
 
     def save(self,  layer,  feature,  db):
@@ -2406,13 +2394,13 @@ class DdLineEditChar(DdLineEdit):
             size = thisValue.size()
 
             if size > self.attribute.length:
-                QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input in Field is too long! ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) )
+                QtGui.QMessageBox.warning(None, self.label.text(),
+                    QtWidgets.QApplication.translate("DdWarning", "Input in Field is too long!"))
                 return False
 
             if self.attribute.type == "char" and size != self.attribute.length:
-                QtGui.QMessageBox.warning(None, self.label.text(),  QtGui.QApplication.translate("DdWarning", "Input in Field is too short!", None,
-                                                           QtGui.QApplication.UnicodeUTF8) )
+                QtGui.QMessageBox.warning(None, self.label.text(),
+                    QtWidgets.QApplication.translate("DdWarning", "Input in Field is too short!"))
                 return False
 
         return ok
@@ -2763,8 +2751,7 @@ class DdLineEditBoolean(DdLineEdit):
         yesEventFilter = DdEventFilter(self.inputWidgetYes)
         self.inputWidgetYes.installEventFilter(yesEventFilter)
         yesEventFilter.doubleClicked.connect(self.onDoubleClick)
-        labelYes = QtGui.QLabel(QtGui.QApplication.translate(
-            "DdLabel", "Yes", None, QtGui.QApplication.UnicodeUTF8),
+        labelYes = QtGui.QLabel(QtWidgets.QApplication.translate("DdLabel", "Yes"),
             inputWidget)
         labelYes.setObjectName("lblYes" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(labelYes)
@@ -2775,8 +2762,7 @@ class DdLineEditBoolean(DdLineEdit):
         noEventFilter = DdEventFilter(self.inputWidgetNo)
         self.inputWidgetNo.installEventFilter(noEventFilter)
         noEventFilter.doubleClicked.connect(self.onDoubleClick)
-        labelNo = QtGui.QLabel(QtGui.QApplication.translate(
-            "DdLabel", "No", None, QtGui.QApplication.UnicodeUTF8),
+        labelNo = QtGui.QLabel(QtWidgets.QApplication.translate("DdLabel", "No"),
             inputWidget)
         labelNo.setObjectName("lblNo" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(labelNo)
@@ -2810,11 +2796,11 @@ class DdLineEditBoolean(DdLineEdit):
         self.eventFilter.doubleClicked.connect(self.onDoubleClick)
         self.inputWidget.setToolTip(self.attribute.comment)
         hLayout.addWidget(self.inputWidget)
-        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo", "Null", None,
-                                                           QtGui.QApplication.UnicodeUTF8),  parent)
+        self.chk = QtGui.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),
+            parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        self.chk.setToolTip(QtGui.QApplication.translate("DdInfo", "Check if you want to save an empty (or null) value.", None,
-                                                           QtGui.QApplication.UnicodeUTF8))
+        self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+            "Check if you want to save an empty (or null) value."))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addItem(QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum))
@@ -2954,9 +2940,7 @@ class DdN2mWidget(DdInputWidget):
         filterIcon = QtGui.QIcon(":/filter.png")
         self.filterButton.setIcon(filterIcon)
         self.filterButton.setToolTip(
-            QtGui.QApplication.translate("DdInfo",
-            "Apply filter", None,
-            QtGui.QApplication.UnicodeUTF8))
+            QtWidgets.QApplication.translate("DdInfo","Apply filter"))
         self.filterButton.clicked.connect(self.filter)
         self.filterButton.setEnabled(False)
         hLayout.addWidget(self.filterButton)
@@ -2966,9 +2950,7 @@ class DdN2mWidget(DdInputWidget):
         removeFilterIcon = QtGui.QIcon(":/remove_filter.png")
         self.removeFilterButton.setIcon(removeFilterIcon)
         self.removeFilterButton.setToolTip(
-            QtGui.QApplication.translate("DdInfo",
-            "Remove filter", None,
-            QtGui.QApplication.UnicodeUTF8))
+            QtWidgets.QApplication.translate("DdInfo", "Remove filter"))
         self.removeFilterButton.clicked.connect(self.removeFilter)
         self.removeFilterButton.setEnabled(False)
         hLayout.addWidget(self.removeFilterButton)
@@ -2976,9 +2958,7 @@ class DdN2mWidget(DdInputWidget):
         self.filterText.setObjectName("txl" + parent.objectName() + \
             self.attribute.name + "_filter")
         self.filterText.setToolTip(
-            QtGui.QApplication.translate("DdInfo",
-            "Enter filter expression", None,
-            QtGui.QApplication.UnicodeUTF8))
+            QtWidgets.QApplication.translate("DdInfo", "Enter filter expression"))
         self.filterText.textChanged.connect(self.filterTxlChanged)
         self.filterText.returnPressed.connect(self.filter)
         hLayout.addWidget(self.filterText)
@@ -3091,8 +3071,8 @@ class DdN2mWidget(DdInputWidget):
                     self.forEdit = self.tableLayer.startEditing()
 
                     if not self.forEdit:
-                        DdError(QtGui.QApplication.translate("DdInfo", "Layer cannot be edited: ", None,
-                           QtGui.QApplication.UnicodeUTF8) + self.tableLayer.name(),  showInLog = True)
+                        DdError(QtWidgets.QApplication.translate("DdInfo", "Layer cannot be edited: ") +
+                            self.tableLayer.name(),  showInLog = True)
 
     def keyForChild(self, parentId):
         return self.childs[parentId][0].lower()
@@ -3157,8 +3137,8 @@ class DdN2mWidget(DdInputWidget):
                         if self.tableLayer.commitChanges():
                             return True
                         else:
-                            DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
-                                                                       QtGui.QApplication.UnicodeUTF8)  + " " + self.tableLayer.name())
+                            DdError(QtWidgets.QApplication.translate("DdError", "Could not save changes for layer: ") +
+                                self.tableLayer.name())
                             self.discard()
                     else:
                         self.discard()
@@ -3171,8 +3151,8 @@ class DdN2mWidget(DdInputWidget):
         self.reset()
         if self.tableLayer.isEditable():
             if not self.tableLayer.rollBack():
-                DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                                   QtGui.QApplication.UnicodeUTF8) + " " + self.tableLayer.name())
+                DdError(QtWidgets.QApplication.translate("DdError", "Could not discard changes for layer: ") +
+                    self.tableLayer.name())
                 return None
 
 class DdN2mListWidget(DdN2mWidget):
@@ -3833,10 +3813,10 @@ class DdN2mTableWidget(DdN2mWidget):
         hLayout.addWidget(label)
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
-        self.addButton = QtGui.QPushButton(QtGui.QApplication.translate("DdInput", "Add", None,
-                                                           QtGui.QApplication.UnicodeUTF8) ,  frame)
-        self.removeButton = QtGui.QPushButton(QtGui.QApplication.translate("DdInput", "Remove", None,
-                                                           QtGui.QApplication.UnicodeUTF8) ,  frame)
+        self.addButton = QtGui.QPushButton(QtWidgets.QApplication.translate(
+            "DdInput", "Add") ,  frame)
+        self.removeButton = QtGui.QPushButton(QtWidgets.QApplication.translate(
+            "DdInput", "Remove") ,  frame)
         self.addButton.clicked.connect(self.add)
         self.removeButton.clicked.connect(self.remove)
         self.removeButton.setEnabled(False)
@@ -4232,17 +4212,10 @@ class DdArrayTableWidget(DdLineEdit):
         if feature == None:
             self.manageChk(None)
         else:
-            logicHeader = QtGui.QApplication.translate(
-                "DdInfo", "logical", None,
-                QtGui.QApplication.UnicodeUTF8)
-            operatorHeader = QtGui.QApplication.translate(
-                "DdInfo", "operator", None,
-                QtGui.QApplication.UnicodeUTF8)
-            valueHeader = QtGui.QApplication.translate(
-                "DdInfo", "value", None,
-                QtGui.QApplication.UnicodeUTF8)
-            nullHeader = QtGui.QApplication.translate("DdInfo",
-                "Null", None, QtGui.QApplication.UnicodeUTF8)
+            logicHeader = QtWidgets.QApplication.translate("DdInfo", "logical")
+            operatorHeader = QtWidgets.QApplication.translate("DdInfo", "operator")
+            valueHeader = QtWidgets.QApplication.translate("DdInfo", "value")
+            nullHeader = QtWidgets.QApplication.translate("DdInfo", "Null")
 
             if self.mode == 1: # searchFeature
                 self.inputWidget.setColumnCount(4)
@@ -4251,12 +4224,9 @@ class DdArrayTableWidget(DdLineEdit):
                     logicHeader, valueHeader, operatorHeader])
                 self.chk.setChecked(True)
                 self.chk.setVisible(True)
-                self.chk.setText(QtGui.QApplication.translate(
-                    "DdInfo", "Ignore", None,
-                    QtGui.QApplication.UnicodeUTF8))
-                self.chk.setToolTip(QtGui.QApplication.translate(
-                    "DdInfo", "Check if you want this field to be ignored in the search.",
-                    None, QtGui.QApplication.UnicodeUTF8))
+                self.chk.setText(QtWidgets.QApplication.translate("DdInfo", "Ignore"))
+                self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+                    "Check if you want this field to be ignored in the search."))
                 self.valueColumnIndex = 1
             else:
                 self.inputWidget.setHorizontalHeaderLabels(
@@ -4292,14 +4262,11 @@ class DdArrayTableWidget(DdLineEdit):
                                 if showMsg:
                                     QtGui.QMessageBox.warning(
                                         None, self.getLabel(),
+                                        QtWidgets.QApplication.translate("DdWarning", "Value ") +
+                                        self.toString(aValue) +
                                         QtGui.QApplication.translate(
-                                            "DdWarning", "Value ",
-                                            None, QtGui.QApplication.UnicodeUTF8
-                                        ) + self.toString(aValue) +
-                                        QtGui.QApplication.translate(
-                                            "DdWarning", " is too small! Minimum is ",
-                                            None, QtGui.QApplication.UnicodeUTF8
-                                            ) + self.toString(self.attribute.min))
+                                        "DdWarning", " is too small! Minimum is ") +
+                                        self.toString(self.attribute.min))
                                     msgShown = True
                                 accepted = False
                                 break
@@ -4308,14 +4275,11 @@ class DdArrayTableWidget(DdLineEdit):
                                 if showMsg:
                                     QtGui.QMessageBox.warning(
                                         None, self.getLabel(),
-                                       QtGui.QApplication.translate(
-                                            "DdWarning", "Value ",
-                                            None, QtGui.QApplication.UnicodeUTF8
-                                        ) + self.toString(aValue) +
-                                        QtGui.QApplication.translate(
-                                            "DdWarning", " is too large! Maximum is ",
-                                            None, QtGui.QApplication.UnicodeUTF8
-                                        ) + self.toString(self.attribute.max))
+                                        QtWidgets.QApplication.translate("DdWarning", "Value ") +
+                                        self.toString(aValue) +
+                                        QtWidgets.QApplication.translate(
+                                        "DdWarning", " is too large! Maximum is ") +
+                                        self.toString(self.attribute.max))
                                     msgShown = True
                                 accepted = False
                                 break
@@ -4452,23 +4416,19 @@ class DdArrayTableWidget(DdLineEdit):
             QtGui.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
         self.addButton = QtGui.QPushButton(
-            QtGui.QApplication.translate("DdInput", "Add", None,
-            QtGui.QApplication.UnicodeUTF8), frame)
+            QtWidgets.QApplication.translate("DdInput", "Add"), frame)
         self.removeButton = QtGui.QPushButton(
-            QtGui.QApplication.translate("DdInput", "Remove", None,
-            QtGui.QApplication.UnicodeUTF8) ,  frame)
+            QtWidgets.QApplication.translate("DdInput", "Remove") ,  frame)
         self.addButton.clicked.connect(self.add)
         self.addButton.setEnabled(self.attribute.enableWidget)
         self.removeButton.clicked.connect(self.remove)
         self.removeButton.setEnabled(False)
         hLayout.addWidget(self.addButton)
         hLayout.addWidget(self.removeButton)
-        self.chk = QtGui.QCheckBox(QtGui.QApplication.translate("DdInfo",
-            "Null", None, QtGui.QApplication.UnicodeUTF8), parent)
+        self.chk = QtWidgets.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"), parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
-        self.chk.setToolTip(QtGui.QApplication.translate(
-            "DdInfo", "Check if you want to save an empty (or null) value.", None,
-            QtGui.QApplication.UnicodeUTF8))
+        self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
+            "Check if you want to save an empty (or null) value."))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
@@ -5026,15 +4986,13 @@ class DdLineEditGeometry(DdLineEditInt):
             area = geom.area()
 
             if area > 0:
-                self.label.setText(QtGui.QApplication.translate(
-                    "DdInfo", "GIS area", None, QtGui.QApplication.UnicodeUTF8))
+                self.label.setText(QtWidgets.QApplication.translate("DdInfo", "GIS area"))
                 return int(round(area))
             else:
                 length = int(geom.length())
 
                 if length > 0:
-                    self.label.setText(QtGui.QApplication.translate(
-                        "DdInfo", "GIS length", None, QtGui.QApplication.UnicodeUTF8))
+                    self.label.setText(QtWidgets.QApplication.translate("DdInfo", "GIS length"))
                     return round(length)
                 else:
                     self.inputWidget.setVisible(False)

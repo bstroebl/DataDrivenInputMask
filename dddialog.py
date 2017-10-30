@@ -68,15 +68,12 @@ class DdDialog(QtWidgets.QDialog):
             title += " - "
 
             if self.mode == 2:
-                title += QtGui.QApplication.translate("DdInfo", "%s selected features",
-                    None, QtGui.QApplication.UnicodeUTF8) % str(self.layer.selectedFeatureCount())
+                title += QtWidgets.QApplication.translate("DdInfo", "%s selected features") % str(self.layer.selectedFeatureCount())
             else:
                 if self.feature.id() < 0:
-                    title += QtGui.QApplication.translate("DdInfo", "New Feature",
-                        None, QtGui.QApplication.UnicodeUTF8)
+                    title += QtWidgets.QApplication.translate("DdInfo", "New Feature")
                 else:
-                    title += QtGui.QApplication.translate("DdInfo", "Feature",
-                        None, QtGui.QApplication.UnicodeUTF8) + " " + str(self.feature.id())
+                    title += QtWidgets.QApplication.translate("DdInfo", "Feature" )  + str(self.feature.id())
 
         self.setWindowTitle(title)
 
@@ -101,7 +98,7 @@ class DdDialog(QtWidgets.QDialog):
         self.done(0)
 
     def helpRequested(self):
-        dlg = QtGui.QDialog(None)
+        dlg = QtWidgets.QDialog(None)
         layout = QtGui.QVBoxLayout(dlg)
         layout.setObjectName("layout")
         dlg.setObjectName("Help")
@@ -119,8 +116,7 @@ class DdDialog(QtWidgets.QDialog):
         layout.addWidget(buttonBox)
         buttonBox.rejected.connect(dlg.reject)
         dlg.setLayout(layout)
-        dlg.setWindowTitle(QtGui.QApplication.translate("DdInfo", "Help", None,
-                                                       QtGui.QApplication.UnicodeUTF8))
+        dlg.setWindowTitle(QtWidgets.QApplication.translate("DdInfo", "Help"))
         dlg.exec_()
 
 class DdSearchDialog(QtWidgets.QDialog):
@@ -163,8 +159,7 @@ class DdSearchDialog(QtWidgets.QDialog):
         title = self.layer.name()
         title += " - "
 
-        title += QtGui.QApplication.translate("DdInfo", "Search",
-                 None, QtGui.QApplication.UnicodeUTF8)
+        title += QtWidgets.QApplication.translate("DdInfo", "Search")
 
         self.setWindowTitle(title)
 
@@ -208,8 +203,8 @@ class DdSearchDialog(QtWidgets.QDialog):
             selFids = self.layer.selectedFeaturesIds()
 
             if self.layer.selectedFeatureCount() == 0:
-                QtGui.QMessageBox.information(None,  "", QtGui.QApplication.translate("DdInfo", "No matches found", None,
-                                                                   QtGui.QApplication.UnicodeUTF8))
+                QtWidgets.QMessageBox.information(None,  "",
+                    QtWidgets.QApplication.translate("DdInfo", "No matches found"))
                 return None
             else:
                 if self.layer.geometryType() != 4: # layer with geometry
@@ -232,7 +227,7 @@ class DdSearchDialog(QtWidgets.QDialog):
 
     def saveSearch(self):
         path = self.ddManager.getSearchPath()
-        title = QtGui.QApplication.translate("DdLabel", "Save search as", None, QtGui.QApplication.UnicodeUTF8)
+        title = QtWidgets.QApplication.translate("DdLabel", "Save search as")
         filter = "DdXML (*.ddsx)"
 
         if os.name == "posix":
@@ -261,8 +256,9 @@ class DdSearchDialog(QtWidgets.QDialog):
 
     def loadSearch(self):
         path = self.ddManager.getSearchPath()
-        loadThis = QtGui.QFileDialog.getOpenFileName(None,  QtGui.QApplication.translate("DdLabel", "Load search", None,
-                                                           QtGui.QApplication.UnicodeUTF8),  path, "DdXML (*.ddsx)")
+        loadThis = QtWidgets.QFileDialog.getOpenFileName(None,
+            QtWidgets.QApplication.translate("DdLabel", "Load search"),
+            path, "DdXML (*.ddsx)")
 
         if loadThis != u"":
             tree = ET.parse(loadThis)

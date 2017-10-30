@@ -25,7 +25,7 @@ Error classes
  ***************************************************************************/
 """
 from builtins import object
-from qgis.PyQt import QtGui
+from qgis.PyQt import QtWidgets
 from qgis.gui import QgsMessageBar
 from qgis.core import QgsMessageLog
 
@@ -45,7 +45,7 @@ class DdError(object):
                         value, level=QgsMessageBar.CRITICAL,
                         duration = 10)
                 else:
-                    QtGui.QMessageBox.warning(None, "DdError",  value)
+                    QtWidgets.QMessageBox.warning(None, "DdError",  value)
 
     def __str__(self):
         return repr(self.value)
@@ -54,9 +54,8 @@ class DbError(object):
     '''error querying the DB'''
     def __init__(self,  query,  fatal = True):
         self.query = query
-        QtGui.QMessageBox.warning(None, "DBError",  QtGui.QApplication.translate("DBError", "Database Error:", None,
-                                                               QtGui.QApplication.UnicodeUTF8) + \
-                                                               "%(error)s \n %(query)s" % {"error": query.lastError().text(),  "query": query.lastQuery()})
+        QtWidgets.QMessageBox.warning(None, "DBError",  QtWidgets.QApplication.translate("DBError", "Database Error:") + \
+           "%(error)s \n %(query)s" % {"error": query.lastError().text(),  "query": query.lastQuery()})
         if fatal:
             raise FatalError("DBError exiting")
     def __str__(self):

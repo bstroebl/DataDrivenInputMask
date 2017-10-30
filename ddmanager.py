@@ -30,15 +30,15 @@ from builtins import str
 from builtins import range
 from builtins import object
 # Import the PyQt and QGIS libraries
-from qgis.PyQt import QtCore, QtGui
+from qgis.PyQt import QtCore, QtGui, QtWidgets
 from .dderror import DdError,  DbError
 
 try:
     from qgis.PyQt import QtSql
 except:
-    DdError(QtGui.QApplication.translate(
-        "DdError", "QtSql cannot be located on your system. Please install and try again.",
-        None, QtGui.QApplication.UnicodeUTF8), fatal = True)
+    DdError(QtWidgets.QApplication.translate(
+        "DdError", "QtSql cannot be located on your system. Please install and try again."),
+         fatal = True)
 from qgis.core import *
 from qgis.gui import *
 import qgis.core
@@ -160,8 +160,8 @@ class DdManager(object):
             searchMask = False # do not make one but use the one provided
 
         if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
-            DdError(QtGui.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ", None,
-                                                           QtGui.QApplication.UnicodeUTF8) + layer.name(),  iface = self.iface)
+            DdError(QtWidgets.QApplication.translate("DdError", "Layer is not a PostgreSQL layer: ") +
+                layer.name(),  iface = self.iface)
             return False
         else:
             if db == None:
@@ -184,9 +184,8 @@ class DdManager(object):
 
                     if not readConfigTables:
                         if self.showConfigInfo:
-                            self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
-                                "Config tables either not found or not accessible, loading default mask", None,
-                                QtGui.QApplication.UnicodeUTF8))
+                            self.iface.messageBar().pushMessage(QtWidgets.QApplication.translate("DdInfo",
+                                "Config tables either not found or not accessible, loading default mask"))
                             self.showConfigInfo = False
 
                     # we want at least one automatically created mask
@@ -254,10 +253,9 @@ class DdManager(object):
 
         if not self.__isTable(thisTable,  db):
             DdError(
-                QtGui.QApplication.translate("DdError",
-                    "Layer is not a PostgreSQL table: ", None,
-                    QtGui.QApplication.UnicodeUTF8
-                ) + schemaName + "." + tableName, iface = self.iface,
+                QtWidgets.QApplication.translate("DdError",
+                    "Layer is not a PostgreSQL table: ") +
+                    schemaName + "." + tableName, iface = self.iface,
                 showInLog = True)
             return None
         else:
@@ -267,20 +265,18 @@ class DdManager(object):
         '''make a DdTable object from the passed in layer, returns None, if layer is not suitable'''
         if 0 != layer.type():   # not a vector layer
             DdError(
-                QtGui.QApplication.translate("DdError",
-                    "Layer is not a vector layer: ", None,
-                    QtGui.QApplication.UnicodeUTF8
-                ) + layer.name(), iface = self.iface,
-                showInLog = True)
+                QtWidgets.QApplication.translate("DdError",
+                    "Layer is not a vector layer: ") +
+                    layer.name(), iface = self.iface,
+                    showInLog = True)
             return None
         else:
             if u'PostgreSQL' != layer.dataProvider().storageType()[0:10] :
                 DdError(
-                    QtGui.QApplication.translate("DdError",
-                        "Layer is not a PostgreSQL layer: ", None,
-                        QtGui.QApplication.UnicodeUTF8
-                    ) + layer.name(), iface = self.iface,
-                    showInLog = True)
+                    QtWidgets.QApplication.translate("DdError",
+                        "Layer is not a PostgreSQL layer: ") +
+                        layer.name(), iface = self.iface,
+                        showInLog = True)
                 return None
             else:
                 layerSrc = self.__analyzeSource(layer)
@@ -303,11 +299,10 @@ class DdManager(object):
 
                 if not self.__isTable(thisTable,  db):
                     DdError(
-                        QtGui.QApplication.translate("DdError",
-                            "Layer is not a PostgreSQL table: ", None,
-                            QtGui.QApplication.UnicodeUTF8
-                        ) + layer.name(), iface = self.iface,
-                        showInLog = True)
+                        QtWidgets.QApplication.translate("DdError",
+                            "Layer is not a PostgreSQL table: ") +
+                            layer.name(), iface = self.iface,
+                            showInLog = True)
                     return None
                 else:
                     return thisTable
@@ -315,8 +310,7 @@ class DdManager(object):
     def addAction(self, layer, actionName = u'showDdForm', ddManagerName = "ddManager"):
         '''api method to add an action to the layer with a self defined name'''
 
-        defaultName = QtGui.QApplication.translate("DdLabel", "Show Input Form",
-                None, QtGui.QApplication.UnicodeUTF8)
+        defaultName = QtWidgets.QApplication.translate("DdLabel", "Show Input Form")
 
         if actionName == u'showDdForm':
             actionName = defaultName
@@ -395,27 +389,26 @@ class DdManager(object):
             if wasEditable:
                 if layer.isModified() and askForSave:
                     #ask user to save or discard changes
-                    reply = QtGui.QMessageBox.question(None, QtGui.QApplication.translate("DdInfo", "Unsaved changes", None,
-                        QtGui.QApplication.UnicodeUTF8),
-                        QtGui.QApplication.translate("DdInfo", "Do you want to save the changes to layer ", None,
-                        QtGui.QApplication.UnicodeUTF8) + layer.name() + "?",
-                        QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel | QtGui.QMessageBox.Save)
+                    reply = QtWidgets.QMessageBox.question(None, QtWidgets.QApplication.translate("DdInfo", "Unsaved changes"),
+                        QtWidgets.QApplication.translate("DdInfo", "Do you want to save the changes to layer ") +
+                        layer.name() + "?",
+                        QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel | QtWidgets.QMessageBox.Save)
 
-                    if reply == QtGui.QMessageBox.Cancel:
+                    if reply == QtWidgets.QMessageBox.Cancel:
                         result = 0
                     else:
-                        if reply == QtGui.QMessageBox.Discard:
+                        if reply == QtWidgets.QMessageBox.Discard:
                             if not layer.rollBack():
-                                DdError(QtGui.QApplication.translate("DdError", "Could not discard changes for layer:", None,
-                                   QtGui.QApplication.UnicodeUTF8) + " "+ layer.name(),  iface = self.iface)
+                                DdError(QtWidgets.QApplication.translate("DdError", "Could not discard changes for layer: ") +
+                                layer.name(),  iface = self.iface)
                                 result = 0
                             else:
                                 if feature.id() <= 0: # new feature discarded
                                     result = 0
-                        elif reply == QtGui.QMessageBox.Save:
+                        elif reply == QtWidgets.QMessageBox.Save:
                             if not layer.commitChanges():
-                                DdError(QtGui.QApplication.translate("DdError", "Could not save changes for layer:", None,
-                                    QtGui.QApplication.UnicodeUTF8)  + " " + layer.name(),  iface = self.iface)
+                                DdError(QtWidgets.QApplication.translate("DdError", "Could not save changes for layer: ")  +
+                                layer.name(),  iface = self.iface)
                                 result = 0
 
                         if result == 1:
@@ -745,8 +738,8 @@ class DdManager(object):
         intoDdGroup = True):
 
         if not self.isAccessible(db,  ddTable):
-            DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
-                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
+            DdError(QtWidgets.QApplication.translate("DdError", "Cannot not load table: ")+
+            ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
         if not displayName:
             displayName = ddTable.schemaName + "." + ddTable.tableName
@@ -806,8 +799,8 @@ class DdManager(object):
         vlayer = QgsVectorLayer(layerUri, displayName, "postgres",  False)
         # double check if layer is valid
         if not vlayer.dataProvider().isValid():
-            DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
-                QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
+            DdError(QtWidgets.QApplication.translate("DdError", "Cannot not load table: ") +
+            ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
         QgsMapLayerRegistry.instance().addMapLayer(vlayer)
 
@@ -976,8 +969,8 @@ class DdManager(object):
         ok = db.open()
 
         if not ok:
-            DdError(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None,
-                                                 QtGui.QApplication.UnicodeUTF8) + database,  iface = self.iface)
+            DdError(QtWidgets.QApplication.translate("DdError", "Could not connect to PostgreSQL database: ") +
+            database,  iface = self.iface)
             return None
         else:
             return db
@@ -991,8 +984,8 @@ class DdManager(object):
         ok = db.open()
 
         if not ok:
-            DdError(QtGui.QApplication.translate("DdError", "Could not connect to PostgreSQL database:", None,
-                                                 QtGui.QApplication.UnicodeUTF8) + database,  iface = self.iface)
+            DdError(QtWidgets.QApplication.translate("DdError", "Could not connect to PostgreSQL database: ") +
+            database,  iface = self.iface)
             return None
         else:
             return db
@@ -1023,10 +1016,10 @@ class DdManager(object):
             try:
                 user = layerSrc["user"]
             except KeyError:
-                user, ok = QtGui.QInputDialog.getText(None,
-                    QtGui.QApplication.translate("DdWarning", "Username missing"),
-                    QtGui.QApplication.translate("DdWarning", "Enter username for ", None,
-                    QtGui.QApplication.UnicodeUTF8) + dbname + "." + host)
+                user, ok = QtWidgets.QInputDialog.getText(None,
+                    QtWidgets.QApplication.translate("DdWarning", "Username missing"),
+                    QtWidgets.QApplication.translate("DdWarning", "Enter username for ") +
+                    dbname + "." + host)
 
                 if not ok:
                     return None
@@ -1035,10 +1028,10 @@ class DdManager(object):
                 password = layerSrc["password"]
             except KeyError:
                 password, ok = QtGui.QInputDialog.getText(None,
-                    QtGui.QApplication.translate("DdWarning", "Password missing"),
-                    QtGui.QApplication.translate("DdWarning", "Enter password for ", None,
-                    QtGui.QApplication.UnicodeUTF8) + user + u"@" + dbname + host,
-                    QtGui.QLineEdit.Password)
+                    QtWidgets.QApplication.translate("DdWarning", "Password missing"),
+                    QtWidgets.QApplication.translate("DdWarning", "Enter password for ") +
+                    user + u"@" + dbname + host,
+                    QtWidgets.QLineEdit.Password)
 
                 if not ok:
                     return None
@@ -1283,9 +1276,8 @@ class DdManager(object):
 
         if query != None:
             query.finish()
-            self.iface.messageBar().pushMessage(QtGui.QApplication.translate("DdInfo",
-                    "Config tables created! SELECT has been granted to \"public\".", None,
-                    QtGui.QApplication.UnicodeUTF8))
+            self.iface.messageBar().pushMessage(QtWidgets.QApplication.translate("DdInfo",
+                    "Config tables created! SELECT has been granted to \"public\"."))
             return True
         else:
             return False
