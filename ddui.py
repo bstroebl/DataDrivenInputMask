@@ -4,6 +4,7 @@ ddui
 --------
 Classes that make up or steer the DataDrivenUI
 """
+from __future__ import absolute_import
 """
 /***************************************************************************
  DataDrivenInputMask
@@ -24,7 +25,6 @@ Classes that make up or steer the DataDrivenUI
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
 from builtins import str
 from builtins import range
 from builtins import object

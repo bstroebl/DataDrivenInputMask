@@ -4,6 +4,7 @@ ddtools
 --------
 collection of routines needed throughout the plugin
 """
+from __future__ import absolute_import
 """
 /***************************************************************************
  DataDrivenInputMask
@@ -24,7 +25,7 @@ collection of routines needed throughout the plugin
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 # Import the PyQt and QGIS libraries
 from qgis.PyQt import QtSql, QtCore, QtGui
 from qgis.core import *

@@ -26,18 +26,18 @@ dddialog
 
 from builtins import str
 
-from qgis.PyQt import QtGui, QtCore
+from qgis.PyQt import QtGui, QtCore, QtWidgets
 from qgis.core import *
 from qgis.gui import *
 import xml.etree.ElementTree as ET
 import os
 
 # create the dialog
-class DdDialog(QtGui.QDialog):
+class DdDialog(QtWidgets.QDialog):
     '''Each mask is a DdDialog instance, thus a child of QDialog'''
     def __init__(self, ddManager, ui, layer, feature, db, multiEdit = False,
             parent = None, title = None):
-        QtGui.QDialog.__init__(self,  parent)
+        super().__init__(self,  parent)
         # Set up the user interface from Designer.
         self.ddManager = ddManager
         self.ui = ui
@@ -123,10 +123,10 @@ class DdDialog(QtGui.QDialog):
                                                        QtGui.QApplication.UnicodeUTF8))
         dlg.exec_()
 
-class DdSearchDialog(QtGui.QDialog):
+class DdSearchDialog(QtWidgets.QDialog):
     '''Each searchDialog is a child of QDialog'''
     def __init__(self, ui, layer, db, parent = None,  root = None):
-        QtGui.QDialog.__init__(self, parent)
+        super().__init__(self, parent)
         self.ddManager = QgsApplication.instance().ddManager
         self.ui = ui
         self.layer = layer

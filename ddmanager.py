@@ -4,6 +4,7 @@ ddmanager
 --------
 Class that steers the DataDrivenUI
 """
+from __future__ import absolute_import
 """
 /***************************************************************************
  DataDrivenInputMask
@@ -24,7 +25,7 @@ Class that steers the DataDrivenUI
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 from builtins import str
 from builtins import range
 from builtins import object
