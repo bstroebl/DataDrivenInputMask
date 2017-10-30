@@ -26,13 +26,15 @@ to be used in subclasses of DataDrivenUi
  ***************************************************************************/
 """
 
-
-from ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
-from dderror import DdError, DbError
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from .ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
+from .dderror import DdError, DbError
 from qgis.core import *
-from PyQt4 import QtCore, QtGui, QtSql
-from dddialog import DdDialog,  DdSearchDialog
-from ddattribute import DdDateLayerAttribute
+from qgis.PyQt import QtCore, QtGui, QtSql
+from .dddialog import DdDialog,  DdSearchDialog
+from .ddattribute import DdDateLayerAttribute
 
 class DdPushButton(DdInputWidget):
     '''abstract class needs subclassing'''
@@ -114,7 +116,7 @@ class DdLineEditSlider(DdLineEdit):
     def setValue(self,  thisValue):
         '''sets the slider to thisValue'''
 
-        if isinstance(thisValue,  unicode) or isinstance(thisValue,  str):
+        if isinstance(thisValue,  str):
             try:
                 thisValue = int(thisValue)
             except ValueError:
@@ -368,10 +370,10 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
         if self.relatedLayer.setSubsetString(oldSubsetString):
             self.relatedLayer.reload()
 
-        for key, val in checkedRelatedValues.items():
+        for key, val in list(checkedRelatedValues.items()):
             self.appendRow(valueDict[key], val)
 
-        for key, val in relatedValues.items():
+        for key, val in list(relatedValues.items()):
             self.appendRow(valueDict[key], val)
 
     def fillRow(self, thisRow, passedValues, thisValue):
@@ -595,7 +597,7 @@ class DdRelatedComboBox(DdComboBox):
             while query.next(): # returns false when all records are done
                 sValue = query.value(0)
 
-                if not isinstance(sValue, unicode):
+                if not isinstance(sValue, str):
                     sValue = str(sValue)
 
                 keyValue = query.value(1)
@@ -614,7 +616,7 @@ class DdRelatedComboBox(DdComboBox):
         else:
             completerList = []
 
-            for keyValue, valueArray in self.values.iteritems():
+            for keyValue, valueArray in list(self.values.items()):
                 if valueArray[1] == listenId:
                     completerList.append(valueArray[0])
 
@@ -631,7 +633,7 @@ class DdRelatedComboBox(DdComboBox):
             if listenId == None:
                 DdComboBox.fill(self)
             else:
-                for keyValue, valueArray in self.values.iteritems():
+                for keyValue, valueArray in list(self.values.items()):
                     if valueArray[1] == listenId:
                         sValue = valueArray[0]
                         self.inputWidget.addItem(sValue, keyValue)
