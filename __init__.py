@@ -21,7 +21,9 @@
  This script initializes the plugin, making it known to QGIS.
 """
 
+from __future__ import absolute_import
+
 def classFactory(iface):
     # load DataDrivenInputMask class from file DataDrivenInputMask
-    from datadriveninputmask import DataDrivenInputMask
+    from .datadriveninputmask import DataDrivenInputMask
     return DataDrivenInputMask(iface)
