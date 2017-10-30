@@ -319,10 +319,9 @@ class DdManager(object):
         actionToRemove = ""
 
         #check if the action is already attached
-        for i in range(layer.actions().size()):
-            act = layer.actions().at(i)
+        for act in layer.actions().actions():
 
-            if act.action().find(";ddManager.showDdForm([% $id %]);") != -1:
+            if act.command().find(";ddManager.showDdForm([% $id %]);") != -1:
                 thisName = act.name()
 
                 if thisName == actionName: # the action exists with the given name
@@ -348,8 +347,7 @@ class DdManager(object):
 
         actionToRemove = -9999
 
-        for i in range(layer.actions().size()):
-            act = layer.actions().at(i)
+        for act in layer.actions().actions():
 
             if act.name() == actionName:
                 actionToRemove = i
