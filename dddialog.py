@@ -24,7 +24,9 @@ dddialog
  ***************************************************************************/
 """
 
-from PyQt4 import QtGui,  QtCore
+from builtins import str
+
+from qgis.PyQt import QtGui, QtCore
 from qgis.core import *
 from qgis.gui import *
 import xml.etree.ElementTree as ET
