@@ -442,7 +442,7 @@ class DdManager(object):
                 result = dlg.exec_()
 
                 if result == 1:
-                    layer.emit(QtCore.SIGNAL('layerModified()'))
+                    layer.layerModified.emit()
                 # store size
                 thisSize = dlg.size()
                 self.ddLayers[layer.id()][5] = thisSize
