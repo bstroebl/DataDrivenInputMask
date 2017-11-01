@@ -27,7 +27,7 @@ from __future__ import absolute_import
 """
 
 # Import the PyQt and QGIS libraries
-from qgis.PyQt import QtSql, QtCore, QtGui
+from qgis.PyQt import QtSql, QtCore, QtGui, QtWidgets
 from qgis.core import *
 from qgis.gui import *
 from .dderror import DbError
@@ -68,18 +68,24 @@ def getIntValidator(parent, attribute, min = None, max = None):
     # integer attributes always have a min and max corresponding to the min/max values of the pg data type
 
     if min != None:
-        if isinstance(min,  int):
-            if min < thisMin:
-                thisMin = min
-                # make sure current value is allowed although attribute's min might be different
+        if thisMin != None:
+            if isinstance(min, int):
+                if min < thisMin:
+                    thisMin = min
+                    # make sure current value is allowed although attribute's min might be different
+        else:
+            thisMin = min
 
     thisMax = attribute.max
 
     if max != None:
-        if isinstance(max,  int):
-            if max > thisMax:
-                thisMax = max
-                # make sure current value is allowed although attribute's max might be different
+        if thisMax != None:
+            if isinstance(max, int):
+                if max > thisMax:
+                    thisMax = max
+                    # make sure current value is allowed although attribute's max might be different
+        else:
+            thisMax = max
 
     validator = QtGui.QIntValidator(parent)
     loc = QtCore.QLocale.system()
