@@ -791,7 +791,6 @@ class DdManager(object):
         if intoDdGroup:
             layerTreeRoot = QgsProject.instance().layerTreeRoot()
             ddGroup = layerTreeRoot.findGroup("DataDrivenInputMask")
-            legendIface= self.iface.legendInterface()
 
             if ddGroup == None:
                 ddGroup = layerTreeRoot.addGroup("DataDrivenInputMask")
