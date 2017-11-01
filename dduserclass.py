@@ -47,10 +47,10 @@ class DdPushButton(DdInputWidget):
 
     def setupUi(self,  parent,  db):
         self.label = self.getLabel()
-        self.inputWidget = QtGui.QPushButton(self.label,  parent)
+        self.inputWidget = QtWidgets.QPushButton(self.label,  parent)
         self.inputWidget.setToolTip(self.attribute.comment)
         self.inputWidget.clicked.connect(self.clicked)
-        hLayout = QtGui.QHBoxLayout()
+        hLayout = QtWidgets.QHBoxLayout()
         hLayout.addStretch()
         hLayout.addWidget(self.inputWidget)
         hLayout.addStretch()
@@ -66,7 +66,7 @@ class DdPushButton(DdInputWidget):
                 break
 
     def clicked(self):
-        QtGui.QMessageBox.information(None,  "",  self.label + " has been clicked")
+        QtWidgets.QMessageBox.information(None,  "",  self.label + " has been clicked")
 
     def initialize(self, layer, feature, db, mode = 0):
         '''must be implemented in child class'''
@@ -87,9 +87,9 @@ class DdLineEditSlider(DdLineEdit):
         return "<dduserclass.DdLineEditSlider %s>" % str(self.attribute.name)
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QSlider(parent) # defaultInputWidget
+        inputWidget = QtWidgets.QSlider(parent) # defaultInputWidget
         inputWidget.setObjectName("slid" + parent.objectName() + self.attribute.name)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(inputWidget.sizePolicy().hasHeightForWidth())
@@ -107,7 +107,7 @@ class DdLineEditSlider(DdLineEdit):
         inputWidget.setMinimum(min)
         inputWidget.setMaximum(max)
         inputWidget.setOrientation(QtCore.Qt.Horizontal)
-        inputWidget.setTickPosition(QtGui.QSlider.TicksAbove)
+        inputWidget.setTickPosition(QtWidgets.QSlider.TicksAbove)
         inputWidget.setTickInterval(1)
         inputWidget.valueChanged.connect(self.onValueChanged)
 
@@ -142,11 +142,11 @@ class DdLineEditSlider(DdLineEdit):
 
     def setupUi(self,  parent,  db):
         '''setup the group box and add it to the parent's formLayout'''
-        self.gbx = QtGui.QGroupBox(parent)
+        self.gbx = QtWidgets.QGroupBox(parent)
         self.gbx.setTitle(self.getLabel())
         self.gbx.setObjectName("gbx" + parent.objectName() + self.attribute.name)
-        hLayout = QtGui.QHBoxLayout(self.gbx)
-        self.searchCbx = QtGui.QComboBox(self.gbx)
+        hLayout = QtWidgets.QHBoxLayout(self.gbx)
+        self.searchCbx = QtWidgets.QComboBox(self.gbx)
         searchItems = ["=",  "!=", ">",  "<",  ">=",  "<="]
 
         if not self.attribute.notNull:
@@ -157,7 +157,7 @@ class DdLineEditSlider(DdLineEdit):
         self.inputWidget = self.createInputWidget(self.gbx)
         self.inputWidget.setToolTip(self.attribute.comment)
         hLayout.addWidget(self.inputWidget)
-        self.chk = QtGui.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),  parent)
+        self.chk = QtWidgets.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),  parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
         self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
             "Check if you want to save an empty (or null) value."))
@@ -165,7 +165,7 @@ class DdLineEditSlider(DdLineEdit):
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, self.gbx)
+        parent.layout().setWidget(newRow, QtWidgets.QFormLayout.SpanningRole, self.gbx)
 
     def setNull(self,  setnull):
         '''Set this inputWidget to NULL'''
@@ -228,7 +228,7 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
             self.attribute.catalogIdField != None and self.attribute.catalogDisplayField != None)
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QTableWidget(parent)
+        inputWidget = QtWidgets.QTableWidget(parent)
         inputWidget.setColumnCount(len(self.attribute.attributes) + 1)
         horizontalHeaders =  [""]
 
@@ -236,10 +236,10 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
             horizontalHeaders.append(anAtt.getLabel())
 
         inputWidget.setHorizontalHeaderLabels(horizontalHeaders)
-        inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-        inputWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        #inputWidget.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
-        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        inputWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        #inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked)
+        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         inputWidget.cellDoubleClicked.connect(self.doubleClick)
         inputWidget.cellClicked.connect(self.click)
         inputWidget.setSortingEnabled(True)
@@ -311,7 +311,7 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
 
         #sort the comboBox
         model = self.catalogCbx.model()
-        proxy = QtGui.QSortFilterProxyModel(self.catalogCbx)
+        proxy = QtCore.QSortFilterProxyModel(self.catalogCbx)
         proxy.setSourceModel(model)
         model.setParent(proxy)
         model.sort(0)
@@ -380,7 +380,7 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
 
         relatedId = passedValues[0]
         values = passedValues[1]
-        chkItem = QtGui.QTableWidgetItem("")
+        chkItem = QtWidgets.QTableWidgetItem("")
 
         if len(passedValues) == 3:
             chkItem.setCheckState(QtCore.Qt.Checked)
@@ -410,32 +410,32 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
 
     def setupUi(self,  parent,  db):
         if self.hasCatalog():
-            frame = QtGui.QFrame(parent)
-            frame.setFrameShape(QtGui.QFrame.StyledPanel)
-            frame.setFrameShadow(QtGui.QFrame.Raised)
+            frame = QtWidgets.QFrame(parent)
+            frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+            frame.setFrameShadow(QtWidgets.QFrame.Raised)
             frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
             label = self.createLabel(frame)
             self.inputWidget = self.createInputWidget(frame)
             self.setSizeMax(frame)
             self.inputWidget.setToolTip(self.attribute.comment)
-            verticalLayout = QtGui.QVBoxLayout(frame)
+            verticalLayout = QtWidgets.QVBoxLayout(frame)
             verticalLayout.setObjectName("vlayout" + parent.objectName() + self.attribute.name)
             verticalLayout.addWidget(label)
-            formLayout = QtGui.QFormLayout( )
+            formLayout = QtWidgets.QFormLayout( )
             formLayout.setObjectName("formlayout" + parent.objectName() + self.attribute.name)
-            #spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-            self.catalogCbx = QtGui.QComboBox(frame)
+            #spacerItem = QtWidgets.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+            self.catalogCbx = QtWidgets.QComboBox(frame)
             self.catalogCbx.setObjectName("cbx" + parent.objectName() + self.attribute.catalogTable.tableName)
             self.catalogCbx.setToolTip(self.attribute.catalogTable.comment)
             #self.catalogCbx.setEditable(True)
             self.catalogCbx.currentIndexChanged.connect(self.catalogChanged)
-            cbxLabel = QtGui.QLabel(self.attribute.catalogLabel,  frame)
+            cbxLabel = QtWidgets.QLabel(self.attribute.catalogLabel,  frame)
             cbxLabel.setObjectName("lbl" + parent.objectName() + self.attribute.catalogTable.tableName)
             formLayout.addRow(cbxLabel,  self.catalogCbx)
             verticalLayout.addLayout(formLayout)
             verticalLayout.addWidget(self.inputWidget)
             newRow = parent.layout().rowCount() + 1
-            parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, frame)
+            parent.layout().setWidget(newRow, QtWidgets.QFormLayout.SpanningRole, frame)
             pParent = parent
 
             while (True):
@@ -614,7 +614,7 @@ class DdRelatedComboBox(DdComboBox):
                 if valueArray[1] == listenId:
                     completerList.append(valueArray[0])
 
-            self.completer = QtGui.QCompleter(completerList)
+            self.completer = QtWidgets.QCompleter(completerList)
             #values method of dict class
             self.completer.setCaseSensitivity(0)
             self.inputWidget.setCompleter(self.completer)
@@ -634,7 +634,7 @@ class DdRelatedComboBox(DdComboBox):
 
                 #sort the comboBox
                 model = self.inputWidget.model()
-                proxy = QtGui.QSortFilterProxyModel(self.inputWidget)
+                proxy = QtCore.QSortFilterProxyModel(self.inputWidget)
                 proxy.setSourceModel(model)
                 model.setParent(proxy)
                 model.sort(0)
