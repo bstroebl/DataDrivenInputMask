@@ -721,27 +721,27 @@ class DdManager(object):
         if not displayName:
             displayName = ddTable.schemaName + "." + ddTable.tableName
 
-        uri = QgsDataSourceURI()
+        uri = QgsDataSourceUri()
         thisPort = db.port()
 
         #these numbers are best guesses from the enumeration
         if hasattr(db, "sslmode"):
             if db.sslMode == "prefer":
-                sslMode = QgsDataSourceURI.SSLprefer
+                sslMode = QgsDataSourceUri.SslPprefer
             elif db.sslMode == "disable":
-                sslMode = QgsDataSourceURI.SSLdisable
+                sslMode = QgsDataSourceUri.SslDisable
             elif db.sslMode == "allow":
-                sslMode = QgsDataSourceURI.SSLallow
+                sslMode = QgsDataSourceUri.SslAllow
             elif db.sslMode == "require":
-                sslMode = QgsDataSourceURI.SSLrequire
+                sslMode = QgsDataSourceUri.SslRequire
             elif db.sslMode == "verifyCA":
-                sslMode = QgsDataSourceURI.SSLverifyCA
+                sslMode = QgsDataSourceUri.SslVerifyCA
             elif db.sslMode == "verifyFull":
-                sslMode = QgsDataSourceURI.SSLverifyFull
+                sslMode = QgsDataSourceUri.SslVerifyFull
             else:
-                sslMode = QgsDataSourceURI.SSLprefer # default anyway
+                sslMode = QgsDataSourceUri.SslPrefer # default anyway
         else:
-            sslMode = QgsDataSourceURI.SSLprefer
+            sslMode = QgsDataSourceUri.SslPrefer
 
         if thisPort == -1:
             thisPort = 5432
