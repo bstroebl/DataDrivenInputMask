@@ -3042,7 +3042,7 @@ class DdN2mWidget(DdInputWidget):
         # find the layer in the project
         self.tableLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.table)
 
-        if not self.tableLayer:
+        if self.tableLayer == None:
             # load the layer into the project
             self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
 

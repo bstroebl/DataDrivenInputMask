@@ -675,6 +675,7 @@ class DdManager(object):
 
         for aTreeLayer in QgsProject.instance().layerTreeRoot().findLayers():
             layer = aTreeLayer.layer()
+
             if 0 == layer.type(): # vectorLayer
                 src = layer.source()
 
@@ -778,8 +779,6 @@ class DdManager(object):
         if not vlayer.dataProvider().isValid():
             DdError(QtWidgets.QApplication.translate("DdError", "Cannot not load table: ") +
             ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
-
-        #QgsMapLayerRegistry.instance().addMapLayers([vlayer])
 
         if intoDdGroup:
             layerTreeRoot = QgsProject.instance().layerTreeRoot()
