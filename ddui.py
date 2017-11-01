@@ -1030,13 +1030,12 @@ class DdWidget(object):
         QgsMessageLog.logMessage(msg)
 
     def getPk(self, feature, layer):
-        '''only relevant for QGIS 2.16 and newer:
-        read the pk-id value either from the feature itself or, in case
+        '''read the pk-id value either from the feature itself or, in case
         of a bigint pk field from the field'''
 
         thisId = feature.id()
 
-        if thisId > 0 and QGis.QGIS_VERSION_INT >= 21600:
+        if thisId > 0:
             #not for newly created features
             uri = QgsDataSourceURI(layer.dataProvider().dataSourceUri())
             pkFieldName = uri.keyColumn()
