@@ -1037,7 +1037,7 @@ class DdWidget(object):
 
         if thisId > 0:
             #not for newly created features
-            uri = QgsDataSourceURI(layer.dataProvider().dataSourceUri())
+            uri = QgsDataSourceUri(layer.dataProvider().dataSourceUri())
             pkFieldName = uri.keyColumn()
             pkFieldIndex = layer.fields().lookupField(pkFieldName.replace("\"",""))
             pkField = layer.fields()[pkFieldIndex]
