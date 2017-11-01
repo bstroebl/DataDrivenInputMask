@@ -675,6 +675,7 @@ class DdManager(object):
 
         for aTreeLayer in QgsProject.instance().layerTreeRoot().findLayers():
             layer = aTreeLayer.layer()
+
             if 0 == layer.type(): # vectorLayer
                 src = layer.source()
 
