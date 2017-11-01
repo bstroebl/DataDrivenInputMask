@@ -53,7 +53,7 @@ class DdDialog(QtWidgets.QDialog):
 
         self.forEdit = self.layer.isEditable()
         self.ui.setupUi(self,  self.db)
-        okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
+        okBtn = self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
         okBtn.setEnabled(self.forEdit)
         okBtn.setVisible(self.forEdit)
         self.setTitle(title)
@@ -99,19 +99,19 @@ class DdDialog(QtWidgets.QDialog):
 
     def helpRequested(self):
         dlg = QtWidgets.QDialog(None)
-        layout = QtGui.QVBoxLayout(dlg)
+        layout = QtWidgets.QVBoxLayout(dlg)
         layout.setObjectName("layout")
         dlg.setObjectName("Help")
         dlg.setWindowModality(QtCore.Qt.ApplicationModal)
-        textBrowser = QtGui.QTextBrowser(dlg)
+        textBrowser = QtWidgets.QTextBrowser(dlg)
         textBrowser.setReadOnly(True)
         textBrowser.setText(self.ui.helpText)
         textBrowser.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
         textBrowser.setOpenExternalLinks(True)
         layout.addWidget(textBrowser)
-        buttonBox = QtGui.QDialogButtonBox(dlg)
+        buttonBox = QtWidgets.QDialogButtonBox(dlg)
         buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Close)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Close)
         buttonBox.setObjectName("buttonBox")
         layout.addWidget(buttonBox)
         buttonBox.rejected.connect(dlg.reject)
@@ -135,10 +135,10 @@ class DdSearchDialog(QtWidgets.QDialog):
         self.ui.buttonBox.accepted.disconnect(self.accept)
         self.ui.buttonBox.rejected.disconnect(self.reject)
         self.ui.buttonBox.clicked.connect(self.clicked)
-        self.ui.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel| \
-                                             QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Save| \
-                                             QtGui.QDialogButtonBox.Open|QtGui.QDialogButtonBox.Reset)
-        okBtn = self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok)
+        self.ui.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel| \
+                                             QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Save| \
+                                             QtWidgets.QDialogButtonBox.Open|QtWidgets.QDialogButtonBox.Reset)
+        okBtn = self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
         okBtn.setEnabled(True)
         self.forwardReturn = True # use return pressed to accept self
         self.setTitle()
@@ -170,20 +170,20 @@ class DdSearchDialog(QtWidgets.QDialog):
         self.forwardReturn = doForward
 
     def clicked(self,  thisButton):
-        if thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Ok):
+        if thisButton == self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Ok):
             if self.forwardReturn:
                 root = self.createSearch()
 
                 if self.ddManager.setLastSearch(self.layer,  root):
                     self.accept()
-        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Cancel):
+        elif thisButton == self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel):
             self.reject()
-        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Save):
+        elif thisButton == self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Save):
             self.saveSearch()
-        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Open):
+        elif thisButton == self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Open):
             root = self.loadSearch()
             self.applySearch(root)
-        elif thisButton == self.ui.buttonBox.button(QtGui.QDialogButtonBox.Reset):
+        elif thisButton == self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.Reset):
             self.initialize()
 
     def accept(self):
@@ -231,9 +231,9 @@ class DdSearchDialog(QtWidgets.QDialog):
         filter = "DdXML (*.ddsx)"
 
         if os.name == "posix":
-            fd = QtGui.QFileDialog(None,  title,  path,  filter)
+            fd = QtWidgets.QFileDialog(None,  title,  path,  filter)
             fd.setDefaultSuffix("ddsx")
-            fd.setAcceptMode(QtGui.QFileDialog.AcceptSave)
+            fd.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
 
             if fd.exec_() == 1:
                 saveAs = fd.selectedFiles()[0]
@@ -241,7 +241,7 @@ class DdSearchDialog(QtWidgets.QDialog):
                 saveAs = ""
 
         else:
-            saveAs = QtGui.QFileDialog.getSaveFileName(None,  title,  path, filter)
+            saveAs = QtWidgets.QFileDialog.getSaveFileName(None,  title,  path, filter)
 
         if saveAs != "":
             root = self.createSearch()

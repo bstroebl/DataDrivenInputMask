@@ -46,14 +46,14 @@ class DdFormHelper(object):
 
         for aLayer in lIface.layers():
             if aLayer.id() == layerId:
-                #QtGui.QMessageBox.information(None,  "", aLayer.name())
+                #QtWidgets.QMessageBox.information(None,  "", aLayer.name())
                 #thisDialog.hide()
                 feat = QgsFeature()
                 featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(featureId).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
 
                 if featureFound:
                     result = ddManager.showFeatureForm(aLayer,  feat)
-                    #QtGui.QMessageBox.information(None,  "", str(thisDialog))
+                    #QtWidgets.QMessageBox.information(None,  "", str(thisDialog))
                     thisDialog.setVisible(False)
                     if result == 1:
                         thisDialog.accept()
@@ -1040,7 +1040,7 @@ class DdWidget(object):
             #not for newly created features
             uri = QgsDataSourceURI(layer.dataProvider().dataSourceUri())
             pkFieldName = uri.keyColumn()
-            pkFieldIndex = layer.fieldNameIndex(pkFieldName.replace("\"",""))
+            pkFieldIndex = layer.fields().lookupField(pkFieldName.replace("\"",""))
             pkField = layer.fields()[pkFieldIndex]
             pkFieldType = pkField.typeName()
 
@@ -1062,17 +1062,17 @@ class DdDialogWidget(DdWidget):
     def setupUi(self,  ddDialog,  db): # ddDialog is a child of QDialog
         ddDialog.setObjectName("DataDrivenInputMask")
         ddDialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        verticalLayout = QtGui.QVBoxLayout(ddDialog)
+        verticalLayout = QtWidgets.QVBoxLayout(ddDialog)
         verticalLayout.setObjectName("DataDrivenInputMask_horizontalLayout")
-        self.scrollArea = QtGui.QScrollArea()
+        self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("DataDrivenInputMask_scrollArea")
         verticalLayout.addWidget(self.scrollArea)
-        self.scrollAreaWidgetContents = QtGui.QWidget(ddDialog)
+        self.scrollAreaWidgetContents = QtWidgets.QWidget(ddDialog)
         self.scrollAreaWidgetContents.setObjectName("DataDrivenInputMask_scrollAreaWidgetContents")
-        self.scrollAreaLayout = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
+        self.scrollAreaLayout = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.scrollAreaLayout.setObjectName("DataDrivenInputMask_scrollAreaLayout")
-        self.mainTab = QtGui.QTabWidget(self.scrollAreaWidgetContents)
+        self.mainTab = QtWidgets.QTabWidget(self.scrollAreaWidgetContents)
         self.mainTab.setObjectName("DataDrivenInputMask_mainTab")
 
         # remove forms without widgets (e.g. if the form only has one widget
@@ -1090,10 +1090,10 @@ class DdDialogWidget(DdWidget):
         self.forms.reverse()
 
         for i in range(len(self.forms)):
-            aTab = QtGui.QWidget(self.mainTab)
+            aTab = QtWidgets.QWidget(self.mainTab)
             aTab.setObjectName("tab" + str(i))
             aForm = self.forms[i]
-            tabLayout = QtGui.QFormLayout(aTab)
+            tabLayout = QtWidgets.QFormLayout(aTab)
             tabLayout.setObjectName("tabLayout" + str(i))
             aForm.setupUi(aTab,  db)
 
@@ -1110,17 +1110,17 @@ class DdDialogWidget(DdWidget):
         self.mainTab.setCurrentIndex(0)
         self.scrollAreaLayout.addWidget(self.mainTab)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.buttonBox = QtGui.QDialogButtonBox(ddDialog)
+        self.buttonBox = QtWidgets.QDialogButtonBox(ddDialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setObjectName("buttonBox")
         self.buttonBox.accepted.connect(ddDialog.accept)
         self.buttonBox.rejected.connect(ddDialog.reject)
 
         if self.helpText != "":
-            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok|QtGui.QDialogButtonBox.Help)
+            self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Help)
             self.buttonBox.helpRequested.connect(ddDialog.helpRequested)
         else:
-            self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+            self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
 
         verticalLayout.addWidget(self.buttonBox)
 
@@ -1525,7 +1525,7 @@ class DdInputWidget(DdWidget):
     def createLabel(self,  parent):
         '''creates a QLabel object'''
         labelString = self.getLabel()
-        label = QtGui.QLabel(labelString,  parent)
+        label = QtWidgets.QLabel(labelString,  parent)
         label.setObjectName("lbl" + parent.objectName() + self.attribute.name)
         label.setToolTip(self.attribute.comment)
         return label
@@ -1632,15 +1632,15 @@ class DdLineEdit(DdInputWidget):
         return thisValue
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QLineEdit(parent) # defaultInputWidget
+        inputWidget = QtWidgets.QLineEdit(parent) # defaultInputWidget
         inputWidget.setObjectName("txl" + parent.objectName() + self.attribute.name)
         inputWidget.textChanged.connect(self.registerChange)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(inputWidget.sizePolicy().hasHeightForWidth())
         inputWidget.setSizePolicy(sizePolicy)
-        betweenWidget = QtGui.QLineEdit(parent) # defaultInputWidget
+        betweenWidget = QtWidgets.QLineEdit(parent) # defaultInputWidget
         betweenWidget.setObjectName("txl" + parent.objectName() + self.attribute.name + "between")
         betweenWidget.textChanged.connect(self.registerChange)
         return [inputWidget,  betweenWidget]
@@ -1709,10 +1709,10 @@ class DdLineEdit(DdInputWidget):
         '''setup the label and add the inputWidget to parents formLayout'''
 
         self.label = self.createLabel(parent)
-        hLayout = QtGui.QHBoxLayout()
+        hLayout = QtWidgets.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
-        self.searchCbx = QtGui.QComboBox(parent)
+        self.searchCbx = QtWidgets.QComboBox(parent)
         self.searchEventFilter = DdEventFilter(self.searchCbx)
         self.searchCbx.installEventFilter(self.searchEventFilter)
         self.searchEventFilter.doubleClicked.connect(self.onDoubleClick)
@@ -1748,7 +1748,7 @@ class DdLineEdit(DdInputWidget):
             self.betweenWidget.setVisible(False)
             hLayout.addWidget(self.betweenWidget)
 
-        self.chk = QtGui.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),  parent)
+        self.chk = QtWidgets.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),  parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
         self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
             "Check if you want to save an empty (or null) value."))
@@ -1756,8 +1756,8 @@ class DdLineEdit(DdInputWidget):
         self.chk.setVisible(not self.attribute.notNull)
         hLayout.addWidget(self.chk)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setWidget(newRow, QtGui.QFormLayout.LabelRole, self.label)
-        parent.layout().setLayout(newRow, QtGui.QFormLayout.FieldRole, hLayout)
+        parent.layout().setWidget(newRow, QtWidgets.QFormLayout.LabelRole, self.label)
+        parent.layout().setLayout(newRow, QtWidgets.QFormLayout.FieldRole, hLayout)
 
     def setEnabled(self,  enable):
         if self.inputWidget != None:
@@ -1821,7 +1821,7 @@ class DdLineEdit(DdInputWidget):
                 if self.attribute.min != None:
                     if thisValue < self.attribute.min:
                         if showMsg:
-                            QtGui.QMessageBox.warning(
+                            QtWidgets.QMessageBox.warning(
                                 None, self.label.text(),
                                 QtWidgets.QApplication.translate("DdWarning", "Field value is too small! Minimum is ") +
                                     self.toString(self.attribute.min))
@@ -1832,7 +1832,7 @@ class DdLineEdit(DdInputWidget):
                     if self.attribute.max != None:
                         if thisValue > self.attribute.max:
                             if showMsg:
-                                QtGui.QMessageBox.warning(
+                                QtWidgets.QMessageBox.warning(
                                     None, self.label.text(),
                                     QtWidgets.QApplication.translate(
                                         "DdWarning", "Field value is too large! Maximum is ") +
@@ -1850,7 +1850,7 @@ class DdLineEdit(DdInputWidget):
         thisValue = self.getValue()
 
         if self.attribute.notNull and thisValue == None:
-            QtGui.QMessageBox.warning(None,
+            QtWidgets.QMessageBox.warning(None,
                 self.label.text(), QtWidgets.QApplication.translate("DdWarning", "Field must not be empty!"))
             return False
         else:
@@ -1861,7 +1861,7 @@ class DdLineEdit(DdInputWidget):
                 accepted, msgShown = self.validate(thisValue, layer, feature)
 
                 if not accepted and not msgShown:
-                    QtGui.QMessageBox.warning(None,
+                    QtWidgets.QMessageBox.warning(None,
                         self.label.text(), QtWidgets.QApplication.translate("DdWarning",
                             "Input is not valid! Field type is %s")  % str(self.attribute.type) )
 
@@ -1870,7 +1870,7 @@ class DdLineEdit(DdInputWidget):
     def getFieldIndex(self,  layer):
         '''return the field index for this DdInputWidget's attribute's name in this layer'''
         if layer:
-            fieldIndex = layer.fieldNameIndex(self.attribute.name)
+            fieldIndex = layer.fields().lookupField(self.attribute.name)
         else:
             fieldIndex = self.attribute.num
 
@@ -2393,12 +2393,12 @@ class DdLineEditChar(DdLineEdit):
             size = thisValue.size()
 
             if size > self.attribute.length:
-                QtGui.QMessageBox.warning(None, self.label.text(),
+                QtWidgets.QMessageBox.warning(None, self.label.text(),
                     QtWidgets.QApplication.translate("DdWarning", "Input in Field is too long!"))
                 return False
 
             if self.attribute.type == "char" and size != self.attribute.length:
-                QtGui.QMessageBox.warning(None, self.label.text(),
+                QtWidgets.QMessageBox.warning(None, self.label.text(),
                     QtWidgets.QApplication.translate("DdWarning", "Input in Field is too short!"))
                 return False
 
@@ -2437,11 +2437,11 @@ class DdComboBox(DdLineEdit):
         return thisValue
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QComboBox(parent) # defaultInputWidget
+        inputWidget = QtWidgets.QComboBox(parent) # defaultInputWidget
         inputWidget.setObjectName("cbx" + parent.objectName() + self.attribute.name)
         inputWidget.setEditable(True)
         inputWidget.currentIndexChanged.connect(self.registerChange)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(inputWidget.sizePolicy().hasHeightForWidth())
@@ -2482,7 +2482,7 @@ class DdComboBox(DdLineEdit):
 
             #sort the comboBox
             model = self.inputWidget.model()
-            proxy = QtGui.QSortFilterProxyModel(self.inputWidget)
+            proxy = QtCore.QSortFilterProxyModel(self.inputWidget)
             proxy.setSourceModel(model)
             model.setParent(proxy)
             model.sort(0)
@@ -2495,7 +2495,7 @@ class DdComboBox(DdLineEdit):
         for keyValue, valueArray in list(self.values.items()):
             completerList.append(valueArray[0])
 
-        self.completer = QtGui.QCompleter(completerList)
+        self.completer = QtWidgets.QCompleter(completerList)
         #values method of dict class
         self.completer.setCaseSensitivity(0)
         self.inputWidget.setCompleter(self.completer)
@@ -2615,19 +2615,19 @@ class DdDateEdit(DdLineEdit):
         return thisValue
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QDateEdit(parent)
+        inputWidget = QtWidgets.QDateEdit(parent)
         inputWidget.setCalendarPopup(True)
         loc = QtCore.QLocale.system()
         inputWidget.setDisplayFormat(loc.dateFormat())
         inputWidget.setObjectName("dat" + parent.objectName() + self.attribute.name)
         inputWidget.setToolTip(self.attribute.comment)
         inputWidget.dateChanged.connect(self.registerChange)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(inputWidget.sizePolicy().hasHeightForWidth())
         inputWidget.setSizePolicy(sizePolicy)
-        betweenWidget = QtGui.QDateEdit(parent)
+        betweenWidget = QtWidgets.QDateEdit(parent)
         betweenWidget.setCalendarPopup(True)
         betweenWidget.setDisplayFormat(loc.dateFormat())
         betweenWidget.setObjectName("dat" + parent.objectName() + self.attribute.name + "between")
@@ -2741,27 +2741,27 @@ class DdLineEditBoolean(DdLineEdit):
         return thisValue
 
     def createInputWidget(self, parent):
-        inputWidget = QtGui.QWidget(parent)
-        hLayout = QtGui.QHBoxLayout(inputWidget)
+        inputWidget = QtWidgets.QWidget(parent)
+        hLayout = QtWidgets.QHBoxLayout(inputWidget)
         inputWidget.setObjectName("frm" + parent.objectName() + self.attribute.name)
-        self.inputWidgetYes = QtGui.QRadioButton(inputWidget)
+        self.inputWidgetYes = QtWidgets.QRadioButton(inputWidget)
         self.inputWidgetYes.setObjectName("radYes" + parent.objectName() + self.attribute.name)
         self.inputWidgetYes.toggled.connect(self.registerChange)
         yesEventFilter = DdEventFilter(self.inputWidgetYes)
         self.inputWidgetYes.installEventFilter(yesEventFilter)
         yesEventFilter.doubleClicked.connect(self.onDoubleClick)
-        labelYes = QtGui.QLabel(QtWidgets.QApplication.translate("DdLabel", "Yes"),
+        labelYes = QtWidgets.QLabel(QtWidgets.QApplication.translate("DdLabel", "Yes"),
             inputWidget)
         labelYes.setObjectName("lblYes" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(labelYes)
         hLayout.addWidget(self.inputWidgetYes)
-        self.inputWidgetNo = QtGui.QRadioButton(inputWidget)
+        self.inputWidgetNo = QtWidgets.QRadioButton(inputWidget)
         self.inputWidgetNo.setObjectName("radNo" + parent.objectName() + self.attribute.name)
         self.inputWidgetNo.toggled.connect(self.registerChange)
         noEventFilter = DdEventFilter(self.inputWidgetNo)
         self.inputWidgetNo.installEventFilter(noEventFilter)
         noEventFilter.doubleClicked.connect(self.onDoubleClick)
-        labelNo = QtGui.QLabel(QtWidgets.QApplication.translate("DdLabel", "No"),
+        labelNo = QtWidgets.QLabel(QtWidgets.QApplication.translate("DdLabel", "No"),
             inputWidget)
         labelNo.setObjectName("lblNo" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(labelNo)
@@ -2773,10 +2773,10 @@ class DdLineEditBoolean(DdLineEdit):
 
         self.label = self.createLabel(parent)
         self.label.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft)
-        hLayout = QtGui.QHBoxLayout()
+        hLayout = QtWidgets.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
-        self.searchCbx = QtGui.QComboBox(parent)
+        self.searchCbx = QtWidgets.QComboBox(parent)
         self.searchEventFilter = DdEventFilter(self.searchCbx)
         self.searchCbx.installEventFilter(self.searchEventFilter)
         self.searchEventFilter.doubleClicked.connect(self.onDoubleClick)
@@ -2795,18 +2795,18 @@ class DdLineEditBoolean(DdLineEdit):
         self.eventFilter.doubleClicked.connect(self.onDoubleClick)
         self.inputWidget.setToolTip(self.attribute.comment)
         hLayout.addWidget(self.inputWidget)
-        self.chk = QtGui.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),
+        self.chk = QtWidgets.QCheckBox(QtWidgets.QApplication.translate("DdInfo", "Null"),
             parent)
         self.chk.setObjectName("chk" + parent.objectName() + self.attribute.name)
         self.chk.setToolTip(QtWidgets.QApplication.translate("DdInfo",
             "Check if you want to save an empty (or null) value."))
         self.chk.stateChanged.connect(self.chkStateChanged)
         self.chk.setVisible(not self.attribute.notNull)
-        hLayout.addItem(QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum))
+        hLayout.addItem(QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         hLayout.addWidget(self.chk)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setWidget(newRow, QtGui.QFormLayout.LabelRole, self.label)
-        parent.layout().setLayout(newRow, QtGui.QFormLayout.FieldRole, hLayout)
+        parent.layout().setWidget(newRow, QtWidgets.QFormLayout.LabelRole, self.label)
+        parent.layout().setLayout(newRow, QtWidgets.QFormLayout.FieldRole, hLayout)
 
     def setNull(self, setnull):
         '''Set this inputWidget to NULL'''
@@ -2869,7 +2869,7 @@ class DdTextEdit(DdLineEdit):
         self.hasChanges = True
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QPlainTextEdit(parent)
+        inputWidget = QtWidgets.QPlainTextEdit(parent)
         inputWidget.setTabChangesFocus(True)
         inputWidget.setObjectName("txt" + parent.objectName() + self.attribute.name)
         inputWidget.textChanged.connect(self.registerChange)
@@ -2910,50 +2910,50 @@ class DdN2mWidget(DdInputWidget):
         self.columnWidths = [] # for tables store width of columns
 
     def setSizeMax(self,  widget):
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(1)
         sizePolicy.setHeightForWidth(widget.sizePolicy().hasHeightForWidth())
         widget.setSizePolicy(sizePolicy)
 
     def setupUi(self,  parent,  db):
-        frame = QtGui.QFrame(parent)
-        frame.setFrameShape(QtGui.QFrame.NoFrame) #make it invisible
-        frame.setFrameShadow(QtGui.QFrame.Raised)
+        frame = QtWidgets.QFrame(parent)
+        frame.setFrameShape(QtWidgets.QFrame.NoFrame) #make it invisible
+        frame.setFrameShadow(QtWidgets.QFrame.Raised)
         frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
         label = self.createLabel(frame)
         inputWidgets = self.createInputWidget(frame)
         self.inputWidget = inputWidgets[0]
         self.setSizeMax(frame)
         self.inputWidget.setToolTip(self.attribute.comment)
-        vLayout = QtGui.QVBoxLayout(frame)
-        hLayout = QtGui.QHBoxLayout()
+        vLayout = QtWidgets.QVBoxLayout(frame)
+        hLayout = QtWidgets.QHBoxLayout()
         vLayout.setObjectName(
             "vLayout" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(label)
-        spacerItem = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
-        self.filterButton = QtGui.QPushButton(frame)
+        self.filterButton = QtWidgets.QPushButton(frame)
         self.filterButton.setObjectName("btn" + parent.objectName() + \
             self.attribute.name + "_filterButton")
-        filterIcon = QtGui.QIcon(":/filter.png")
+        filterIcon = QtWidgets.QIcon(":/filter.png")
         self.filterButton.setIcon(filterIcon)
         self.filterButton.setToolTip(
             QtWidgets.QApplication.translate("DdInfo","Apply filter"))
         self.filterButton.clicked.connect(self.filter)
         self.filterButton.setEnabled(False)
         hLayout.addWidget(self.filterButton)
-        self.removeFilterButton = QtGui.QPushButton(frame)
+        self.removeFilterButton = QtWidgets.QPushButton(frame)
         self.removeFilterButton.setObjectName("btn" + parent.objectName() + \
             self.attribute.name + "_removeFilterButton")
-        removeFilterIcon = QtGui.QIcon(":/remove_filter.png")
+        removeFilterIcon = QtWidgets.QIcon(":/remove_filter.png")
         self.removeFilterButton.setIcon(removeFilterIcon)
         self.removeFilterButton.setToolTip(
             QtWidgets.QApplication.translate("DdInfo", "Remove filter"))
         self.removeFilterButton.clicked.connect(self.removeFilter)
         self.removeFilterButton.setEnabled(False)
         hLayout.addWidget(self.removeFilterButton)
-        self.filterText = QtGui.QLineEdit(frame)
+        self.filterText = QtWidgets.QLineEdit(frame)
         self.filterText.setObjectName("txl" + parent.objectName() + \
             self.attribute.name + "_filter")
         self.filterText.setToolTip(
@@ -2964,7 +2964,7 @@ class DdN2mWidget(DdInputWidget):
         vLayout.addLayout(hLayout)
         vLayout.addWidget(self.inputWidget)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, frame)
+        parent.layout().setWidget(newRow, QtWidgets.QFormLayout.SpanningRole, frame)
         pParent = parent
 
         while (True):
@@ -3165,8 +3165,8 @@ class DdN2mListWidget(DdN2mWidget):
 
     def registerChange(self,  thisItem):
         if self.forEdit:
-            featureIdField = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
-            relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
+            featureIdField = self.tableLayer.fields().lookupField(self.attribute.relationFeatureIdField)
+            relatedIdField = self.tableLayer.fields().lookupField(self.attribute.relationRelatedIdField)
             itemId = thisItem.id
 
             if itemId in self.uncheckedItems:
@@ -3211,7 +3211,7 @@ class DdN2mListWidget(DdN2mWidget):
             self.inputWidget.itemChanged.connect(self.registerChange)
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QListWidget(parent) # defaultInputWidget
+        inputWidget = QtWidgets.QListWidget(parent) # defaultInputWidget
         inputWidget.setObjectName("lst" + parent.objectName() + self.attribute.name)
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
@@ -3256,7 +3256,7 @@ class DdN2mListWidget(DdN2mWidget):
                 DbError(query)
 
     def createWidgetItem(self, parentId, parent):
-        parentItem = QtGui.QListWidgetItem(parent, self.inputWidget)
+        parentItem = QtWidgets.QListWidgetItem(parent, self.inputWidget)
         parentItem.id = parentId
 
         return parentItem
@@ -3363,8 +3363,8 @@ class DdN2mTreeWidget(DdN2mWidget):
     def registerChange(self,  thisItem,  thisColumn):
         if thisColumn == 0:
             if self.forEdit:
-                featureIdField = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
-                relatedIdField = self.tableLayer.fieldNameIndex(self.attribute.relationRelatedIdField)
+                featureIdField = self.tableLayer.fields().lookupField(self.attribute.relationFeatureIdField)
+                relatedIdField = self.tableLayer.fields().lookupField(self.attribute.relationRelatedIdField)
                 itemId = thisItem.id
 
                 if itemId in self.uncheckedItems:
@@ -3408,8 +3408,8 @@ class DdN2mTreeWidget(DdN2mWidget):
                 self.inputWidget.itemChanged.connect(self.registerChange)
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QTreeWidget(parent)
-        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget = QtWidgets.QTreeWidget(parent)
+        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         inputWidget.setHeaderHidden(True)
         inputWidget.setColumnCount(1)
         inputWidget.setObjectName("tre" + parent.objectName() + self.attribute.name)
@@ -3464,14 +3464,14 @@ class DdN2mTreeWidget(DdN2mWidget):
                 DbError(query)
 
     def createWidgetItem(self, parentId, childs):
-        parentItem = QtGui.QTreeWidgetItem(self.inputWidget)
+        parentItem = QtWidgets.QTreeWidgetItem(self.inputWidget)
         parentItem.id = parentId
         parent = childs[0]
         parentItem.setText(0, parent)
 
         for i in range(1, len(childs)):
             val = childs[i]
-            childItem = QtGui.QTreeWidgetItem(parentItem)
+            childItem = QtWidgets.QTreeWidgetItem(parentItem)
             childItem.setText(0, val)
             parentItem.addChild(childItem)
 
@@ -3580,8 +3580,8 @@ class DdN2mTableWidget(DdN2mWidget):
         return "<ddui.DdN2mTableWidget %s>" % str(self.attribute.name)
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QTableWidget(parent)
-        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget = QtWidgets.QTableWidget(parent)
+        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         inputWidget.setColumnCount(len(self.attribute.attributes))
         fieldNames =  []
 
@@ -3590,9 +3590,9 @@ class DdN2mTableWidget(DdN2mWidget):
         horizontalHeaders = fieldNames
 
         inputWidget.setHorizontalHeaderLabels(horizontalHeaders)
-        inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-        inputWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        inputWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        inputWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        inputWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         inputWidget.setSortingEnabled(True)
         inputWidget.cellDoubleClicked.connect(self.doubleClick)
         inputWidget.itemSelectionChanged.connect(self.selectionChanged)
@@ -3656,7 +3656,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
                                     searchString = operator + " " + aValue
 
-                                thisFeature[self.tableLayer.fieldNameIndex(attName)] =  searchString
+                                thisFeature[self.tableLayer.fields().lookupField(attName)] =  searchString
                                 break
 
                     self.appendRow(thisFeature)
@@ -3727,7 +3727,7 @@ class DdN2mTableWidget(DdN2mWidget):
         for i in range(len(self.attribute.attributes)):
             anAtt = self.attribute.attributes[i]
             try:
-                aValue = thisFeature[self.tableLayer.fieldNameIndex(anAtt.name)]
+                aValue = thisFeature[self.tableLayer.fields().lookupField(anAtt.name)]
             except:
                 DdError("Field " + anAtt.name + " not found!")
                 continue
@@ -3759,7 +3759,7 @@ class DdN2mTableWidget(DdN2mWidget):
 
     def createTableWidgetItem(self,  aValue):
         if isinstance(aValue, int) or isinstance(aValue, float):
-            item = QtGui.QTableWidgetItem()
+            item = QtWidgets.QTableWidgetItem()
             item.setData(QtCore.Qt.DisplayRole, aValue)
         else:
             if isinstance(aValue, QtCore.QDate):
@@ -3769,7 +3769,7 @@ class DdN2mTableWidget(DdN2mWidget):
             else:
                 aValue = str(aValue)
 
-            item = QtGui.QTableWidgetItem(aValue)
+            item = QtWidgets.QTableWidgetItem(aValue)
 
         return item
 
@@ -3793,27 +3793,27 @@ class DdN2mTableWidget(DdN2mWidget):
         self.fillRow(thisRow, thisFeature)
 
     def setupUi(self,  parent,  db):
-        frame = QtGui.QFrame(parent)
-        frame.setFrameShape(QtGui.QFrame.StyledPanel)
-        frame.setFrameShadow(QtGui.QFrame.Raised)
+        frame = QtWidgets.QFrame(parent)
+        frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        frame.setFrameShadow(QtWidgets.QFrame.Raised)
         frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
         label = self.createLabel(frame)
         inputWidgets = self.createInputWidget(frame)
         self.inputWidget = inputWidgets[0]
         self.setSizeMax(frame)
         self.inputWidget.setToolTip(self.attribute.comment)
-        vLayout = QtGui.QVBoxLayout(frame)
+        vLayout = QtWidgets.QVBoxLayout(frame)
         vLayout.setObjectName(
             "vLayout" + parent.objectName() + self.attribute.name)
-        hLayout = QtGui.QHBoxLayout()
+        hLayout = QtWidgets.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(label)
-        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
-        self.addButton = QtGui.QPushButton(QtWidgets.QApplication.translate(
+        self.addButton = QtWidgets.QPushButton(QtWidgets.QApplication.translate(
             "DdInput", "Add") ,  frame)
-        self.removeButton = QtGui.QPushButton(QtWidgets.QApplication.translate(
+        self.removeButton = QtWidgets.QPushButton(QtWidgets.QApplication.translate(
             "DdInput", "Remove") ,  frame)
         self.addButton.clicked.connect(self.add)
         self.removeButton.clicked.connect(self.remove)
@@ -3823,7 +3823,7 @@ class DdN2mTableWidget(DdN2mWidget):
         vLayout.addLayout(hLayout)
         vLayout.addWidget(self.inputWidget)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, frame)
+        parent.layout().setWidget(newRow, QtWidgets.QFormLayout.SpanningRole, frame)
         pParent = parent
 
         while (True):
@@ -3980,7 +3980,7 @@ class DdN2mTableWidget(DdN2mWidget):
         elif self.mode == 0:
             thisFeature = self.createFeature()
             # set the parentFeature's id
-            relationFeatFldIdx = self.tableLayer.fieldNameIndex(self.attribute.relationFeatureIdField)
+            relationFeatFldIdx = self.tableLayer.fields().lookupField(self.attribute.relationFeatureIdField)
             thisFeature[relationFeatFldIdx] = self.featureId[0]
 
             if self.tableLayer.addFeature(thisFeature):
@@ -4023,7 +4023,7 @@ class DdArrayTableWidget(DdLineEdit):
         return "<ddui.DdArrayTableWidget %s>" % str(self.attribute.name)
 
     def setSizeMax(self,  widget):
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(1)
         sizePolicy.setHeightForWidth(widget.sizePolicy().hasHeightForWidth())
@@ -4189,13 +4189,13 @@ class DdArrayTableWidget(DdLineEdit):
         return self.hasChanges
 
     def createInputWidget(self,  parent):
-        inputWidget = QtGui.QTableWidget(parent)
+        inputWidget = QtWidgets.QTableWidget(parent)
         inputWidget.setColumnCount(2)
         self.valueColumnIndex = 0
-        inputWidget.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-        inputWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        inputWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        inputWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         #inputWidget.horizontalHeader().setVisible(False)
-        inputWidget.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
+        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked)
         inputWidget.setSortingEnabled(True)
         inputWidget.cellChanged.connect(self.cellChanged)
         #inputWidget.cellDoubleClicked.connect(self.cellDoubleClicked)
@@ -4258,11 +4258,11 @@ class DdArrayTableWidget(DdLineEdit):
                         if self.attribute.min != None:
                             if aValue < self.attribute.min:
                                 if showMsg:
-                                    QtGui.QMessageBox.warning(
+                                    QtWidgets.QMessageBox.warning(
                                         None, self.getLabel(),
                                         QtWidgets.QApplication.translate("DdWarning", "Value ") +
                                         self.toString(aValue) +
-                                        QtGui.QApplication.translate(
+                                        QtWidgets.QApplication.translate(
                                         "DdWarning", " is too small! Minimum is ") +
                                         self.toString(self.attribute.min))
                                     msgShown = True
@@ -4271,7 +4271,7 @@ class DdArrayTableWidget(DdLineEdit):
                         if self.attribute.max != None:
                             if aValue > self.attribute.max:
                                 if showMsg:
-                                    QtGui.QMessageBox.warning(
+                                    QtWidgets.QMessageBox.warning(
                                         None, self.getLabel(),
                                         QtWidgets.QApplication.translate("DdWarning", "Value ") +
                                         self.toString(aValue) +
@@ -4291,7 +4291,7 @@ class DdArrayTableWidget(DdLineEdit):
     def setSearchCombo(self, thisRow, link = None, operator = None):
         '''sets combo boxes for searching to columns 0 and 1'''
 
-        combo = QtGui.QComboBox()
+        combo = QtWidgets.QComboBox()
         searchItems = ["=",  "!="]
 
         if self.attribute.isTypeChar():
@@ -4320,7 +4320,7 @@ class DdArrayTableWidget(DdLineEdit):
 
         if thisRow > 0:
             li2 = ["AND", "OR"]
-            combo2 = QtGui.QComboBox()
+            combo2 = QtWidgets.QComboBox()
             combo2.addItems(li2)
 
             if link != None:
@@ -4335,7 +4335,7 @@ class DdArrayTableWidget(DdLineEdit):
 
     def setCellWidget(self, thisRow, aValue):
         '''replace the QTableWidget item with an appropriate QWidget'''
-        lineEdit = QtGui.QLineEdit(self.inputWidget)
+        lineEdit = QtWidgets.QLineEdit(self.inputWidget)
 
         if aValue == None:
             lineEdit.setText(self.getDefaultItemValue())
@@ -4354,14 +4354,14 @@ class DdArrayTableWidget(DdLineEdit):
         '''
 
         if aValue == None:
-            item = QtGui.QTableWidgetItem("")
+            item = QtWidgets.QTableWidgetItem("")
         else:
-            item = QtGui.QTableWidgetItem(self.toString(aValue))
+            item = QtWidgets.QTableWidgetItem(self.toString(aValue))
 
         self.inputWidget.setItem(thisRow,
             self.valueColumnIndex, item)
 
-        nullChk = QtGui.QCheckBox()
+        nullChk = QtWidgets.QCheckBox()
         nullChk.setChecked(aValue == None and checkIfNon)
         nullChk.stateChanged.connect(self.nullChkStateChanged)
         self.inputWidget.setCellWidget(thisRow,
@@ -4394,28 +4394,28 @@ class DdArrayTableWidget(DdLineEdit):
         return thisRow
 
     def setupUi(self, parent, db):
-        frame = QtGui.QFrame(parent)
-        frame.setFrameShape(QtGui.QFrame.StyledPanel)
-        frame.setFrameShadow(QtGui.QFrame.Raised)
+        frame = QtWidgets.QFrame(parent)
+        frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        frame.setFrameShadow(QtWidgets.QFrame.Raised)
         frame.setObjectName("frame" + parent.objectName() + self.attribute.name)
         label = self.createLabel(frame)
         inputWidgets = self.createInputWidget(frame)
         self.inputWidget = inputWidgets[0]
         self.setSizeMax(frame)
         self.inputWidget.setToolTip(self.attribute.comment)
-        vLayout = QtGui.QVBoxLayout(frame)
+        vLayout = QtWidgets.QVBoxLayout(frame)
         vLayout.setObjectName(
             "vLayout" + parent.objectName() + self.attribute.name)
-        hLayout = QtGui.QHBoxLayout()
+        hLayout = QtWidgets.QHBoxLayout()
         hLayout.setObjectName(
             "hLayout" + parent.objectName() + self.attribute.name)
         hLayout.addWidget(label)
-        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding,
-            QtGui.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
-        self.addButton = QtGui.QPushButton(
+        self.addButton = QtWidgets.QPushButton(
             QtWidgets.QApplication.translate("DdInput", "Add"), frame)
-        self.removeButton = QtGui.QPushButton(
+        self.removeButton = QtWidgets.QPushButton(
             QtWidgets.QApplication.translate("DdInput", "Remove") ,  frame)
         self.addButton.clicked.connect(self.add)
         self.addButton.setEnabled(self.attribute.enableWidget)
@@ -4433,7 +4433,7 @@ class DdArrayTableWidget(DdLineEdit):
         vLayout.addLayout(hLayout)
         vLayout.addWidget(self.inputWidget)
         newRow = parent.layout().rowCount() + 1
-        parent.layout().setWidget(newRow, QtGui.QFormLayout.SpanningRole, frame)
+        parent.layout().setWidget(newRow, QtWidgets.QFormLayout.SpanningRole, frame)
 
     def toSqlString(self, aValue):
         '''
@@ -4713,7 +4713,7 @@ class DdArrayTableWidgetInt(DdArrayTableWidget):
             return 0
 
     def setCellWidget(self, thisRow, aValue):
-        lineEdit = QtGui.QLineEdit(self.inputWidget)
+        lineEdit = QtWidgets.QLineEdit(self.inputWidget)
 
         if aValue == None:
             lineEdit.setText(self.toString(self.getDefaultItemValue()))
@@ -4747,7 +4747,7 @@ class DdArrayTableWidgetDouble(DdArrayTableWidget):
             return 0
 
     def setCellWidget(self, thisRow, aValue):
-        lineEdit = QtGui.QLineEdit(self.inputWidget)
+        lineEdit = QtWidgets.QLineEdit(self.inputWidget)
 
         if aValue == None:
             lineEdit.setText(self.toString(self.getDefaultItemValue()))
@@ -4802,7 +4802,7 @@ class DdArrayTableWidgetBool(DdArrayTableWidget):
         return False
 
     def setCellWidget(self, thisRow, aValue):
-        chk = QtGui.QCheckBox(self.inputWidget)
+        chk = QtWidgets.QCheckBox(self.inputWidget)
 
         if aValue == None:
             chk.setChecked(self.getDefaultItemValue())
@@ -4879,7 +4879,7 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
             return QtCore.QDate.currentDate()
 
     def setCellWidget(self, thisRow, aValue):
-        date = QtGui.QDateEdit(self.inputWidget)
+        date = QtWidgets.QDateEdit(self.inputWidget)
         date.setCalendarPopup(True)
         loc = QtCore.QLocale.system()
         date.setDisplayFormat(loc.dateFormat())

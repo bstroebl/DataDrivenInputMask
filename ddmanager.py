@@ -671,11 +671,11 @@ class DdManager(object):
             self.ddLayers[layer.id()] = [thisTable,  db,  ui,  searchUi,  showParents,  thisSize,  None]
 
     def findPostgresLayer(self, db,  ddTable):
-        layerList = self.iface.legendInterface().layers()
         procLayer = None # ini
 
-        for layer in layerList:
-            if isinstance(layer, QgsVectorLayer):
+        for aTreeLayer in QgsProject.instance().layerTreeRoot().findLayers():
+            layer = aTreeLayer.layer()
+            if 0 == layer.type(): # vectorLayer
                 src = layer.source()
 
                 if ("table=\"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\"" in src) and \
@@ -685,18 +685,6 @@ class DdManager(object):
                     break
 
         return procLayer
-
-    def getGroupIndex(self,  groupName):
-        '''Find the index for groupName in the legend'''
-        retValue = -1
-        groups = self.iface.legendInterface().groups()
-
-        for i in range(len(groups)):
-            if groups[i] == groupName:
-                retValue = i
-                break
-
-        return retValue
 
     def isEditable(self,  layer):
         '''check if data provider allows editing of table'''
@@ -791,16 +779,17 @@ class DdManager(object):
             DdError(QtWidgets.QApplication.translate("DdError", "Cannot not load table: ") +
             ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
-        tLayer = QgsMapLayerRegistry.instance().addMapLayers([vlayer])
+        #QgsMapLayerRegistry.instance().addMapLayers([vlayer])
 
         if intoDdGroup:
-            groupIdx = self.getGroupIndex("DataDrivenInputMask")
+            layerTreeRoot = QgsProject.instance().layerTreeRoot()
+            ddGroup = layerTreeRoot.findGroup("DataDrivenInputMask")
             legendIface= self.iface.legendInterface()
 
-            if groupIdx == -1:
-                groupIdx = legendIface.addGroup("DataDrivenInputMask",  False)
+            if ddGroup == None:
+                ddGroup = layerTreeRoot.addGroup("DataDrivenInputMask")
 
-            legendIface.moveLayer(vlayer,  groupIdx)
+            ddGroup.addLayer(vlayer)
 
         return vlayer
 
@@ -1022,7 +1011,7 @@ class DdManager(object):
             try:
                 password = layerSrc["password"]
             except KeyError:
-                password, ok = QtGui.QInputDialog.getText(None,
+                password, ok = QtWidgets.QInputDialog.getText(None,
                     QtWidgets.QApplication.translate("DdWarning", "Password missing"),
                     QtWidgets.QApplication.translate("DdWarning", "Enter password for ") +
                     user + u"@" + dbname + host,
