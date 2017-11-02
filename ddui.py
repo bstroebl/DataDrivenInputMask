@@ -2846,15 +2846,6 @@ class DdLineEditBoolean(DdLineEdit):
 
         return thisValue
 
-# class DdCheckBox is deprecated and replaced by DdLineEditBoolean
-class DdCheckBox(DdLineEditBoolean):
-    '''subclass DdLineEditBoolean to issue a deprecation warning'''
-    def __init__(self, attribute):
-        from warnings import warn
-        warn("The 'DdCheckBox' class was renamed to 'DdLineEditBoolean'",
-                      DeprecationWarning)
-        DdLineEditBoolean.__init__(self, attribute)
-
 class DdTextEdit(DdLineEdit):
     '''input widget (QTextEdit) for a text field'''
 
