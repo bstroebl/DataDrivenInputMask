@@ -3732,10 +3732,10 @@ class DdN2mTableWidget(DdN2mWidget):
                 continue
 
             if self.mode == 1:
-                if isinstance(aValue,  QtCore.QPyNullVariant):
+                if aValue == None:
                     aValue = ""
             else:
-                if isinstance(aValue,  QtCore.QPyNullVariant):
+                if aValue == None:
                     aValue = 'NULL'
                 else:
                     if anAtt.isFK and len(self.fkValues) > 0:
