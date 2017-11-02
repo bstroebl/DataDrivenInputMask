@@ -1051,7 +1051,7 @@ class DdWidget(object):
 class DdDialogWidget(DdWidget):
     '''This is the mask ui'''
     def __init__(self):
-        DdWidget.__init__(self)
+        super().__init__()
         self.forms = []
         self.helpText = ""
 
@@ -1226,7 +1226,7 @@ class DdFormWidget(DdWidget):
     A form can represent a (parent) layer with the corresponding (parent) feature'''
 
     def __init__(self,  ddTable, hasToolBox = False,  layer = None):
-        DdWidget.__init__(self)
+        super().__init__()
         self.ddTable = ddTable
         self.hasToolBox = hasToolBox
         self.layer = layer
@@ -1497,7 +1497,7 @@ class DdInputWidget(DdWidget):
     '''abstract super class for any input widget, corresponds to a DdAttribute'''
 
     def __init__(self,  ddAttribute):
-        DdWidget.__init__(self)
+        super().__init__()
         self.attribute = ddAttribute
         self.hasChanges = False
         self.inputWidget = None
@@ -1588,7 +1588,7 @@ class DdLineEdit(DdInputWidget):
     and a label to a QFormLayout.'''
 
     def __init__(self,  attribute):
-        DdInputWidget.__init__(self,  attribute)
+        super().__init__(attribute)
         self.chk = None
         self.betweenWidget = None
         self.inputWidget = None
@@ -2112,7 +2112,7 @@ class DdLineEditInt(DdLineEdit):
     '''input widget (QLineEdit) for an IntegerValue'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdLineEditInt %s>" % str(self.attribute.name)
@@ -2276,7 +2276,7 @@ class DdLineEditDouble(DdLineEdit):
     '''input widget (QLineEdit) for a DoubleValue'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdLineEditDouble %s>" % str(self.attribute.name)
@@ -2380,7 +2380,7 @@ class DdLineEditChar(DdLineEdit):
     '''input widget (QLineEdit) for a char or varchar'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdLineEditChar %s>" % str(self.attribute.name)
@@ -2408,7 +2408,7 @@ class DdComboBox(DdLineEdit):
     '''input widget (QComboBox) for a foreign key'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
         self.values = {}
 
     def __str__(self):
@@ -2556,7 +2556,7 @@ class DdDateEdit(DdLineEdit):
     '''input widget (QDateEdit) for a date field'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdDateEdit %s>" % str(self.attribute.name)
@@ -2708,7 +2708,7 @@ class DdLineEditBoolean(DdLineEdit):
     '''input widget Radio Buttons labeld with yes/no for a boolean field'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
         self.inputWidgetYes = None
         self.inputWidgetNo = None
 
@@ -2860,7 +2860,7 @@ class DdTextEdit(DdLineEdit):
     '''input widget (QTextEdit) for a text field'''
 
     def __init__(self,  attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdTextEdit %s>" % str(self.attribute.name)
@@ -2896,7 +2896,7 @@ class DdTextEdit(DdLineEdit):
 class DdN2mWidget(DdInputWidget):
     '''abstract class for any n-to-m relation'''
     def __init__(self,  attribute):
-        DdInputWidget.__init__(self,  attribute)
+        super().__init__(attribute)
         self.tableLayer = None
         self.oldSubsetString = ""
         self.featureId = []
@@ -3159,7 +3159,7 @@ class DdN2mListWidget(DdN2mWidget):
     #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
-        DdN2mWidget.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdN2mListWidget %s>" % str(self.attribute.name)
@@ -3356,7 +3356,7 @@ class DdN2mTreeWidget(DdN2mWidget):
     #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
-        DdN2mWidget.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdN2mTreeWidget %s>" % str(self.attribute.name)
@@ -3572,7 +3572,7 @@ class DdN2mTableWidget(DdN2mWidget):
     #TODO: implement multi-edit mode
 
     def __init__(self,  attribute):
-        DdN2mWidget.__init__(self,  attribute)
+        super().__init__(attribute)
         self.fkValues = {}
         self.root = ET.Element('DdSearch')
         self.ddManager = QgsApplication.instance().ddManager
@@ -4018,7 +4018,7 @@ class DdN2mTableWidget(DdN2mWidget):
 class DdArrayTableWidget(DdLineEdit):
     '''a table widget to show/edit values of an array field'''
     def __init__(self, attribute):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdArrayTableWidget %s>" % str(self.attribute.name)
@@ -4679,7 +4679,7 @@ class DdArrayTableWidget(DdLineEdit):
 class DdArrayTableWidgetInt(DdArrayTableWidget):
     '''a table widget to show/edit values of an integer array field'''
     def __init__(self, attribute):
-        DdArrayTableWidget.__init__(self, attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdArrayTableWidgetInt %s>" % str(self.attribute.name)
@@ -4736,7 +4736,7 @@ class DdArrayTableWidgetInt(DdArrayTableWidget):
 class DdArrayTableWidgetDouble(DdArrayTableWidget):
     '''a table widget to show/edit values of an integer array field'''
     def __init__(self, attribute):
-        DdArrayTableWidget.__init__(self, attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdArrayTableWidgetDouble %s>" % str(self.attribute.name)
@@ -4790,7 +4790,7 @@ class DdArrayTableWidgetDouble(DdArrayTableWidget):
 class DdArrayTableWidgetBool(DdArrayTableWidget):
     '''a table widget to show/edit values of a boolean array field'''
     def __init__(self, attribute):
-        DdArrayTableWidget.__init__(self, attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdArrayTableWidgetBool %s>" % str(self.attribute.name)
@@ -4864,7 +4864,7 @@ class DdArrayTableWidgetBool(DdArrayTableWidget):
 class DdArrayTableWidgetDate(DdArrayTableWidget):
     '''a table widget to show/edit values of a date array field'''
     def __init__(self, attribute):
-        DdArrayTableWidget.__init__(self, attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdArrayTableWidgetBool %s>" % str(self.attribute.name)
@@ -4966,7 +4966,7 @@ class DdArrayTableWidgetDate(DdArrayTableWidget):
 class DdLineEditGeometry(DdLineEditInt):
 
     def __init__(self, attribute):
-        DdLineEditInt.__init__(self, attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<ddui.DdLineEditGeometry %s>" % str(self.attribute.name)

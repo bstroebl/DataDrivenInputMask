@@ -138,7 +138,7 @@ class DdLayerAttribute(DdAttribute):
     def __init__(self, table, type, notNull, name, comment, attNum, isPK, isFK,
             default, hasDefault, length, label = None, min = None, max = None,
             enableWidget = True, isArray = False, arrayDelim = ""):
-        DdAttribute.__init__(self, table, type, notNull, name, comment,
+        super().__init__(table, type, notNull, name, comment,
             label, min, max, enableWidget)
         self.isPK = isPK
         self.isFK = isFK
@@ -155,7 +155,7 @@ class DdLayerAttribute(DdAttribute):
 class DdGeometryAttribute(DdLayerAttribute):
     '''a DdAttribute for a geometry field in a QGIS layer'''
     def __init__(self, table, type, name, comment, attNum):
-        DdLayerAttribute.__init__(self, table, type, True, name, comment,
+        super().__init__(table, type, True, name, comment,
             attNum, False, False, None, False, 0, enableWidget = False)
 
     def __str__(self):
@@ -169,7 +169,7 @@ class DdDateLayerAttribute(DdLayerAttribute):
             max = None, dateFormat = "yyyy-MM-dd", enableWidget = True,
             isArray = False, arrayDelim = ""):
         self.dateFormat = dateFormat # set here because DdAttribute calls setMinMax on __init__
-        DdLayerAttribute.__init__(self, table, type, notNull, name,
+        super().__init__(table, type, notNull, name,
             comment, attNum, isPK, isFK, default, hasDefault, length,
             label, min, max, enableWidget, isArray, arrayDelim)
 
@@ -214,7 +214,7 @@ class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK,
             default , hasDefault, queryForCbx, label = None, enableWidget = True):
-        DdLayerAttribute.__init__(self, table, type, notNull, name, comment,
+        super().__init__(table, type, notNull, name, comment,
             attNum, isPK, True, default, hasDefault, -1, label,
             enableWidget = enableWidget)
         self.queryForCbx = queryForCbx
@@ -233,7 +233,7 @@ class DdManyToManyAttribute(DdAttribute):
     '''abstract class for any many2many attribute'''
     def __init__(self, relationTable, type, relationFeatureIdField,
             comment, label, enableWidget = True):
-        DdAttribute.__init__(self, relationTable, type, False,
+        super().__init__(relationTable, type, False,
             relationTable.tableName, comment, label, enableWidget = enableWidget)
 
         self.relationFeatureIdField = relationFeatureIdField
@@ -254,7 +254,7 @@ class DdTableAttribute(DdManyToManyAttribute):
     '''a DdAttribute for a relationTable'''
     def __init__(self, relationTable, comment, label, relationFeatureIdField,
             attributes, maxRows, showParents, pkAttName, enableWidget = True):
-        DdManyToManyAttribute.__init__(self, relationTable, "table",
+        super().__init__(relationTable, "table",
             relationFeatureIdField, comment, label, enableWidget)
 
         self.attributes = attributes # an array with DdAttributes
@@ -278,7 +278,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
             relationFeatureIdField, relationRelatedIdField, relatedIdField,
             relatedDisplayField, fieldList = [], relatedForeignKeys = [],
             enableWidget = True):
-        DdManyToManyAttribute.__init__(self, relationTable, "n2m",
+        super().__init__(relationTable, "n2m",
             relationFeatureIdField, comment, label, enableWidget)
 
         self.subType = subType
@@ -378,7 +378,7 @@ class DdPushButtonAttribute(DdAttribute):
     '''a DdAttribute that draws a pushButton in the mask.
     the button must be implemented as subclass of dduserclass.DdPushButton'''
     def __init__(self, comment , label, enableWidget = True):
-        DdAttribute.__init__(self, None, "pushButton", False, "", comment,
+        super().__init__(None, "pushButton", False, "", comment,
             label, enableWidget = enableWidget)
         pass
 
