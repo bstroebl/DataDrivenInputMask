@@ -764,7 +764,7 @@ class DdManager(object):
         if hasattr(db, "authcfg"):
             authcfg = db.authcfg
 
-            if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
+            if authcfg != None:
                 uri.setConnection(db.hostName(), str(thisPort), db.databaseName(),
                     None, None, sslmode = sslMode, authConfigId = authcfg)
 
@@ -780,7 +780,7 @@ class DdManager(object):
         if keyColumn:
             uri.setKeyColumn(keyColumn)
 
-        if authcfg != None and hasattr(qgis.core,'QgsAuthManager'):
+        if authcfg != None:
             layerUri = uri.uri(False)
         else:
             layerUri = uri.uri()
@@ -999,11 +999,10 @@ class DdManager(object):
 
             dbname = layerSrc["dbname"]
 
-        if hasattr(qgis.core,'QgsAuthManager'):
-            try:
-                authcfg = layerSrc["authcfg"]
-            except KeyError:
-                pass
+        try:
+            authcfg = layerSrc["authcfg"]
+        except KeyError:
+            pass
 
         if authcfg == None:
             try:
@@ -1030,7 +1029,7 @@ class DdManager(object):
                     return None
         else:
             amc = qgis.core.QgsAuthMethodConfig()
-            qgis.core.QgsAuthManager.instance().loadAuthenticationConfig( authcfg, amc, True)
+            QgsApplication.authManager().loadAuthenticationConfig(authcfg, amc, True)
             user = amc.config( "username" )
             password = amc.config( "password" )
 
