@@ -48,6 +48,7 @@ from .ddattribute import *
 from .dddialog import DdDialog,  DdSearchDialog
 from . import ddtools
 import xml.etree.ElementTree as ET
+import os
 
 class DdManager(object):
     """DdManager manages all masks in the current project"""
@@ -341,9 +342,10 @@ class DdManager(object):
                         actionToRemove = thisTitle
 
         if createAction:
+            newIcon = os.path.abspath(os.path.dirname(__file__) + '/datadriveninputmask.png')
             newAction = QgsAction(1,  actionName, # actionType 1: Python
                 "app=QgsApplication.instance();ddManager=app." + ddManagerName +
-                ";ddManager.showDdForm([% $id %]);", "", False, newTitle, {'Field', 'Feature', 'Canvas'})
+                ";ddManager.showDdForm([% $id %]);", newIcon, False, newTitle, {'Field', 'Feature', 'Canvas'})
             layer.actions().addAction(newAction)
 
             if actionToRemove != None:
