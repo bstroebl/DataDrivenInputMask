@@ -310,50 +310,61 @@ class DdManager(object):
     def addAction(self, layer, actionName = u'showDdForm', ddManagerName = "ddManager"):
         '''api method to add an action to the layer with a self defined name'''
 
-        defaultName = QtWidgets.QApplication.translate("DdLabel", "Show Input Form")
+        defaultTitle = QtWidgets.QApplication.translate("DdLabel", "Show Input Form")
 
         if actionName == u'showDdForm':
-            actionName = defaultName
+            newTitle = defaultTitle
+        else:
+            newTitle = actionName
+            actionName = u'showDdForm'
 
         createAction = True
-        actionToRemove = ""
+        actionToRemove = None
 
         #check if the action is already attached
         for act in layer.actions().actions():
-
             if act.command().find(";ddManager.showDdForm([% $id %]);") != -1:
-                thisName = act.name()
+                # action has already been attached
+                thisTitle = act.shortTitle()
 
-                if thisName == actionName: # the action exists with the given name
+                if thisTitle == newTitle: # the action exists with the given title
                     createAction = False
                     break
                 else:
-                    if actionName == defaultName:
-                        # new action with default name is about to replace
-                        # action with "custom" name
+                    if newTitle == defaultTitle:
+                        # action is already in place and we would replace it with an action with default title
+                        # and that's what it is or it has a custom title, so nothing to do
                         createAction = False
                         break
-                    else: # action with default name exists and is to be replaced
-                        # with an action with "custom" name
-                        actionToRemove = thisName
+                    else: # action with default title exists and is to be replaced
+                        # with an action with a custom title
+                        actionToRemove = thisTitle
 
         if createAction:
-            layer.actions().addAction(1,  actionName, # actionType 1: Python
-                "app=QgsApplication.instance();ddManager=app." + ddManagerName + ";ddManager.showDdForm([% $id %]);")
-            self.removeAction(layer, actionToRemove)
+            newAction = QgsAction(1,  actionName, # actionType 1: Python
+                "app=QgsApplication.instance();ddManager=app." + ddManagerName +
+                ";ddManager.showDdForm([% $id %]);", "", False, newTitle, {'Field', 'Feature', 'Canvas'})
+            layer.actions().addAction(newAction)
 
-    def removeAction(self, layer, actionName):
+            if actionToRemove != None:
+                self.removeAction(layer, actionToRemove)
+
+    def removeAction(self, layer, actionName, actionTitle = None):
         '''api method to remove an action from the layer'''
 
-        actionToRemove = -9999
+        actionToRemove = None
 
         for act in layer.actions().actions():
-
             if act.name() == actionName:
-                actionToRemove = i
-                break
+                if actionTitle == None:
+                    actionToRemove = act.id() # no matter which tiltle
+                    break
+                else:
+                    if actionTitle == act.shortTitle:
+                        actionToRemove = act.id()
+                    break
 
-        if actionToRemove >= 0:
+        if actionToRemove != None:
             layer.actions().removeAction(actionToRemove)
 
     def showFeatureForm(self, layer, feature, showParents = True,
