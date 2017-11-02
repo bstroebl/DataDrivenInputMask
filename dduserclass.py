@@ -40,7 +40,7 @@ class DdPushButton(DdInputWidget):
     '''abstract class needs subclassing'''
 
     def __init__(self,  attribute):
-        DdInputWidget.__init__(self,  attribute)
+        super().__init__(attribute)
 
     def __str__(self):
         return "<dduserclass.DdPushButton %s>" % str(self.attribute.name)
@@ -80,7 +80,7 @@ class DdLineEditSlider(DdLineEdit):
     optionally a dict with labels for each slider value can be parsed on initialization'''
 
     def __init__(self,  attribute,  valueLabels = {}):
-        DdLineEdit.__init__(self,  attribute)
+        super().__init__(attribute)
         self.valueLabels = valueLabels
 
     def __str__(self):
@@ -215,7 +215,7 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
     only from related features being in this catalog'''
 
     def __init__(self,  attribute):
-        DdN2mTableWidget.__init__(self, attribute)
+        super().__init__(attribute)
         self.catalogCbx = None
         self.catalogLayer = None
         self.catalogIndex = 0
@@ -547,7 +547,7 @@ class DdRelatedComboBox(DdComboBox):
     '''
 
     def __init__(self, attribute, listenToCombo):
-        DdComboBox.__init__(self, attribute)
+        Dsuper().__init__(attribute)
         self.listenToCombo = listenToCombo
 
     def __str__(self):
