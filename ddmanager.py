@@ -342,14 +342,14 @@ class DdManager(object):
                         actionToRemove = thisTitle
 
         if createAction:
+            if actionToRemove != None:
+                self.removeAction(layer, actionToRemove)
+
             newIcon = os.path.abspath(os.path.dirname(__file__) + '/datadriveninputmask.png')
             newAction = QgsAction(1,  actionName, # actionType 1: Python
                 "app=QgsApplication.instance();ddManager=app." + ddManagerName +
                 ";ddManager.showDdForm([% $id %]);", newIcon, False, newTitle, {'Field', 'Feature', 'Canvas'})
             layer.actions().addAction(newAction)
-
-            if actionToRemove != None:
-                self.removeAction(layer, actionToRemove)
 
     def removeAction(self, layer, actionName, actionTitle = None):
         '''api method to remove an action from the layer'''
