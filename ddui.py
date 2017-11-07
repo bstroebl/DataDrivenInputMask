@@ -1888,7 +1888,7 @@ class DdLineEdit(DdInputWidget):
             if self.mode == 0:
                 layer.changeAttributeValue(feature.id(), fieldIndex, thisValue)
             elif self.mode == 2:
-                for anId in layer.selectedFeaturesIds():
+                for anId in layer.selectedFeatureIds():
                     layer.changeAttributeValue(anId, fieldIndex, thisValue)
 
         return self.hasChanges
@@ -2222,7 +2222,7 @@ class DdLineEditInt(DdLineEdit):
             if self.mode == 0:
                 layer.changeAttributeValue(feature.id(), fieldIndex, thisValue)
             elif self.mode == 2:
-                for anId in layer.selectedFeaturesIds():
+                for anId in layer.selectedFeatureIds():
                     layer.changeAttributeValue(anId, fieldIndex, thisValue)
 
         return self.hasChanges
@@ -3007,7 +3007,7 @@ class DdN2mWidget(DdInputWidget):
             self.featureId = []
 
             if self.mode == 2:
-                for anId in layer.selectedFeaturesIds():
+                for anId in layer.selectedFeatureIds():
                     if anId >= 0:
                         self.featureId.append(anId)
 
@@ -4175,7 +4175,7 @@ class DdArrayTableWidget(DdLineEdit):
             if self.mode == 0:
                 layer.changeAttributeValue(feature.id(), fieldIndex, saveValue)
             elif self.mode == 2:
-                for anId in layer.selectedFeaturesIds():
+                for anId in layer.selectedFeatureIds():
                     layer.changeAttributeValue(anId, fieldIndex, saveValue)
 
         return self.hasChanges
