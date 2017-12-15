@@ -787,7 +787,7 @@ class DdManager(object):
         else:
             layerUri = uri.uri()
 
-        vlayer = QgsVectorLayer(layerUri, displayName, "postgres",  False)
+        vlayer = QgsVectorLayer(layerUri, displayName, "postgres",  QgsVectorLayer.LayerOptions(False,False))
         # double check if layer is valid
         if not vlayer.dataProvider().isValid():
             DdError(QtWidgets.QApplication.translate("DdError", "Cannot not load table: ") +
