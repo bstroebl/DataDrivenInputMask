@@ -1305,7 +1305,7 @@ class DdFormWidget(DdWidget):
                 self.wasEditable = layer.isEditable()
                 enableAll = layer.isEditable()
             else:
-                layerPkList = layer.pendingPkAttributesList()
+                layerPkList = layer.primaryKeyAttributes()
 
                 if len(layerPkList) != 1:
                     self.feature = None # no combined keys
@@ -1334,13 +1334,13 @@ class DdFormWidget(DdWidget):
                             pkValues.append(pkValue)
 
                     if len(pkValues) > 0:
-                        thisPkList = self.layer.pendingPkAttributesList()
+                        thisPkList = self.layer.primaryKeyAttributes()
 
                         if len(thisPkList) != 1:
                             self.feature = None
                         else:
                             #self.oldSubsetString = self.layer.subsetString()
-                            thisPkField = self.layer.pendingFields().field(thisPkList[0])
+                            thisPkField = self.layer.fields().field(thisPkList[0])
                             newSubsetString = "\"" + thisPkField.name() + "\" IN ("
 
                             for i in range(len(pkValues)):
@@ -1411,8 +1411,8 @@ class DdFormWidget(DdWidget):
 
             if searchSql != "":
                 if layer.id() != self.layer.id(): # this is a parent layer
-                    layerPkList = layer.pendingPkAttributesList()
-                    selfLayerPkList = self.layer.pendingPkAttributesList()
+                    layerPkList = layer.primaryKeyAttributes()
+                    selfLayerPkList = self.layer.primaryKeyAttributes()
 
                     if len(layerPkList) == 1 and len(selfLayerPkList) == 1:
                         layerPkName = layer.dataProvider().fields()[layerPkList[0]].name()
@@ -3104,7 +3104,7 @@ class DdN2mWidget(DdInputWidget):
             newFeature = QgsFeature() # gid wird automatisch vergeben
 
         provider = self.tableLayer.dataProvider()
-        fields = self.tableLayer.pendingFields()
+        fields = self.tableLayer.felds()
         newFeature.initAttributes(fields.count())
 
         if self.mode != 1:
@@ -3286,7 +3286,7 @@ class DdN2mListWidget(DdN2mWidget):
         searchSql = ""
 
         if self.hasChanges:
-            layerPkList = layer.pendingPkAttributesList()
+            layerPkList = layer.primaryKeyAttributes()
             ids = ""
 
             for i in range(self.inputWidget.count()):
@@ -3501,7 +3501,7 @@ class DdN2mTreeWidget(DdN2mWidget):
         searchSql = ""
 
         if self.hasChanges:
-            layerPkList = layer.pendingPkAttributesList()
+            layerPkList = layer.primaryKeyAttributes()
             ids = ""
 
             for i in range(self.inputWidget.topLevelItemCount() -1):
