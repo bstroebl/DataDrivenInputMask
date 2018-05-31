@@ -2926,7 +2926,7 @@ class DdN2mWidget(DdInputWidget):
         self.filterButton = QtWidgets.QPushButton(frame)
         self.filterButton.setObjectName("btn" + parent.objectName() + \
             self.attribute.name + "_filterButton")
-        filterIcon = QtWidgets.QIcon(":/filter.png")
+        filterIcon = QtGui.QIcon(":/filter.png")
         self.filterButton.setIcon(filterIcon)
         self.filterButton.setToolTip(
             QtWidgets.QApplication.translate("DdInfo","Apply filter"))
@@ -2936,7 +2936,7 @@ class DdN2mWidget(DdInputWidget):
         self.removeFilterButton = QtWidgets.QPushButton(frame)
         self.removeFilterButton.setObjectName("btn" + parent.objectName() + \
             self.attribute.name + "_removeFilterButton")
-        removeFilterIcon = QtWidgets.QIcon(":/remove_filter.png")
+        removeFilterIcon = QtGui.QIcon(":/remove_filter.png")
         self.removeFilterButton.setIcon(removeFilterIcon)
         self.removeFilterButton.setToolTip(
             QtWidgets.QApplication.translate("DdInfo", "Remove filter"))
