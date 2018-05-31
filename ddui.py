@@ -3102,7 +3102,7 @@ class DdN2mWidget(DdInputWidget):
             newFeature = QgsFeature() # gid wird automatisch vergeben
 
         provider = self.tableLayer.dataProvider()
-        fields = self.tableLayer.felds()
+        fields = self.tableLayer.fields()
         newFeature.initAttributes(fields.count())
 
         if self.mode != 1:
