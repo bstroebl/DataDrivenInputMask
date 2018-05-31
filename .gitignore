@@ -6,4 +6,4 @@ DataDrivenInputMask.zip
 ui*.*
 help/build/
 *.pyc
-icons_rc.py
+icons.py

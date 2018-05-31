@@ -26,7 +26,6 @@ PLUGIN_UPLOAD = $(CURDIR)/plugin_upload.py
 SOURCES = datadriveninputmask.py __init__.py dddialog.py ddui.py ddmanager.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
 TRANSLATIONS = i18n/datadriveninputmask_de.ts
-RESOURCE_FILES = icons_rc.py
 
 # global
 
@@ -38,11 +37,11 @@ EXTRAS = metadata.txt license.txt datadriveninputmask.png
 
 UI_FILES =
 
-COMPILED_RESOURCE_FILES = icons_rc.py
+COMPILED_RESOURCE_FILES = icons.py
 
 HELP = help/build/html
 
-PEP8EXCLUDE=pydev,icons_rc.py,conf.py,third_party,ui
+PEP8EXCLUDE=pydev,icons.py,conf.py,third_party,ui
 
 QGISDIR=.local/share/QGIS/QGIS3/profiles/default
 
@@ -54,7 +53,7 @@ HELP = help/build/html
 
 PLUGIN_UPLOAD = $(c)/plugin_upload.py
 
-RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
+RESOURCE_SRC=$(shell grep '^ *<file' icons.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
 
 default: compile
