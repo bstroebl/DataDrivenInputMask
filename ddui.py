@@ -36,7 +36,7 @@ from .ddattribute import *
 from .dddialog import DdDialog,  DdSearchDialog
 from . import ddtools
 import xml.etree.ElementTree as ET
-#from . import icons_rc
+from . import icons
 
 class DdFormHelper(object):
     def __init__(self, thisDialog, layerId, featureId):
