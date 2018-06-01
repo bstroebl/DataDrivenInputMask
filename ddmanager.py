@@ -444,11 +444,9 @@ class DdManager(object):
 
                 ui = layerValues[2]
                 thisSize = layerValues[5]
-
                 dlg = DdDialog(self, ui, layer, feature, db, multiEdit,
                     title = title)
                 dlg.show()
-
                 if thisSize != None:
                     dlg.resize(thisSize)
 
@@ -460,6 +458,7 @@ class DdManager(object):
                 thisSize = dlg.size()
                 self.ddLayers[layer.id()][5] = thisSize
                 #handle highlightGeom
+
                 if highlightGeom != None:
                     self.iface.mapCanvas().scene().removeItem(highlightGeom)
                     highlightGeom = None
@@ -506,14 +505,9 @@ class DdManager(object):
         aLayer = self.iface.activeLayer()
 
         if aLayer != None:
-            feat = QgsFeature()
+            feat = aLayer.getFeature(fid)
 
-            if aLayer.geometryType() <= 2: # has geometry
-                featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(fid)).nextFeature(feat)
-            else:
-                featureFound = aLayer.getFeatures(QgsFeatureRequest().setFilterFid(fid).setFlags(QgsFeatureRequest.NoGeometry)).nextFeature(feat)
-
-            if featureFound:
+            if feat != None:
                 self.showFeatureForm(aLayer,  feat)
 
     def setUi(self,  layer,  ui,  searchUi = None,  showParents = None,  thisSize = None):
