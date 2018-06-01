@@ -4033,24 +4033,20 @@ class DdArrayTableWidget(DdLineEdit):
             return None
 
         fieldIndex = self.getFieldIndex(layer)
-        thisValue = feature[fieldIndex]
+        thisValue = feature[fieldIndex] # this is already an array
         retValue = None
 
-        if thisValue != None:
+        if thisValue != NULL:
             if self.attribute.isTypeChar():
-                thisValue = thisValue.replace("\"", "")
-                # QGIS adds " if string contains spaces
-                thisValue = thisValue.replace("NULL", "\'\'")
-                thisValue = thisValue.replace("{\'", "").replace("\'}", "")
-                thisValue = thisValue.split("\'" + self.attribute.arrayDelim + "\'")
+                retValue = []
+
+                for i in range(len(thisValue)):
+                    aVal = thisValue[i]
+                    aVal = aVal.replace("\'","")
+                    aVal = aVal.replace("NULL", "")
+                    retValue.append(aVal)
             else:
-                thisValue = thisValue.replace("{", "").replace("}", "")
-                thisValue = thisValue.split(self.attribute.arrayDelim)
-
-            retValue = []
-
-            for aValue in thisValue:
-                retValue.append(self.fromString(aValue))
+                retValue = thisValue
 
         if feature.id() < 0 and thisValue == None: # new feature
             if self.mode != 1: # no return value for search feature
