@@ -283,7 +283,9 @@ class DataDrivenInputMask:
                             return None
 
                     #load the config table into the project
-                    configLayer = self.app.ddManager.loadPostGISLayer(db, ddConfigTable, keyColumn = "id")
+                    configLayer = self.app.ddManager.loadPostGISLayer(db, ddConfigTable,
+                        keyColumn = "id", intoDdGroup = False)
+                    self.app.ddManager.moveLayerintoDdGroup(configLayer)
 
                     if not configLayer.dataProvider().isValid():
                         return None

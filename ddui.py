@@ -1244,6 +1244,7 @@ class DdFormWidget(DdWidget):
         if not layer:
             # load the layer into the project
             layer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.ddTable)
+            self.parentDialog.ddManager.moveLayerintoDdGroup(layer)
 
         return layer
 
@@ -3061,7 +3062,8 @@ class DdN2mWidget(DdInputWidget):
 
         if not self.tableLayer:
             # load the layer into the project
-            self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db,  self.attribute.table)
+            self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db, self.attribute.table, intoDdGroup = False)
+            self.parentDialog.ddManager.moveLayerintoDdGroup(self.tableLayer)
 
         if withMask:
             # create a DdUi for the layer without the featureIdField it it has not yet been created

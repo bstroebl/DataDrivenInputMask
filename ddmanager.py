@@ -726,6 +726,15 @@ class DdManager(object):
                 self.showQueryError(query,  True)
             return False
 
+    def moveLayerintoDdGroup(self, layer):
+        groupIdx = self.getGroupIndex("DataDrivenInputMask")
+        legendIface= self.iface.legendInterface()
+
+        if groupIdx == -1:
+            groupIdx = legendIface.addGroup("DataDrivenInputMask",  False)
+
+        legendIface.moveLayer(layer,  groupIdx)
+
     def loadPostGISLayer(self,  db, ddTable, displayName = None,
         geomColumn = None, whereClause = None, keyColumn = None,
         intoDdGroup = True):
@@ -795,16 +804,10 @@ class DdManager(object):
             DdError(QtGui.QApplication.translate("DdError", "Cannot not load table: ", None,
                 QtGui.QApplication.UnicodeUTF8) + ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
-        tLayer = QgsMapLayerRegistry.instance().addMapLayers([vlayer])
+        QgsMapLayerRegistry.instance().addMapLayer(vlayer)
 
         if intoDdGroup:
-            groupIdx = self.getGroupIndex("DataDrivenInputMask")
-            legendIface= self.iface.legendInterface()
-
-            if groupIdx == -1:
-                groupIdx = legendIface.addGroup("DataDrivenInputMask",  False)
-
-            legendIface.moveLayer(vlayer,  groupIdx)
+            self.moveLayerintoDdGroup(vlayer)
 
         return vlayer
 
