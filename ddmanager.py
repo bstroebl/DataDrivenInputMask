@@ -797,13 +797,7 @@ class DdManager(object):
             ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
 
         if intoDdGroup:
-            layerTreeRoot = QgsProject.instance().layerTreeRoot()
-            ddGroup = layerTreeRoot.findGroup("DataDrivenInputMask")
-
-            if ddGroup == None:
-                ddGroup = layerTreeRoot.addGroup("DataDrivenInputMask")
-
-            ddGroup.addLayer(vlayer)
+            self.moveLayerintoDdGroup(vlayer)
 
         return vlayer
 
