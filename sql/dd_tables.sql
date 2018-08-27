@@ -11,7 +11,7 @@ CREATE TABLE  \"public\".\"dd_table\" (
   \"table_help\" TEXT NULL,
   \"with_action\" BOOLEAN NOT NULL DEFAULT \'t\',
   PRIMARY KEY (\"id\"));
-  
+
 COMMENT ON TABLE \"public\".\"dd_table\" IS \'DataDrivenInputMask: contains tables with a configuration for the mask, no need to input tables for which the default data-driven mask is to be shown\';
 COMMENT ON COLUMN \"public\".\"dd_table\".\"table_catalog\" IS \'name of the database\';
 COMMENT ON COLUMN \"public\".\"dd_table\".\"table_schema\" IS \'name of the schema\';
@@ -46,7 +46,7 @@ COMMENT ON COLUMN \"public\".\"dd_tab\".\"tab_tooltip\" IS \'tooltip to be shown
 -- Table \"public\".\"dd_field\"
 -- -----------------------------------------------------
 CREATE TABLE  \"public\".\"dd_field\" (
-  \"id\" SERIAL NULL,
+  \"id\" SERIAL NOT NULL,
   \"dd_tab_id\" INTEGER NOT NULL,
   \"field_name\" VARCHAR(256) NOT NULL,
   \"field_alias\" VARCHAR(256) NULL,
