@@ -2609,17 +2609,20 @@ class DdDateEdit(DdLineEdit):
         if thisValue == QtCore.QDate():
             thisValue = None
 
-        if thisValue == None:
-            if self.mode != 1: # no return value for search feature
+        if self.mode != 1: # no return value for search feature
+            if thisValue == None:
                 if feature.id() < 0 and self.attribute.hasDefault:
-                    thisValue = self.getDefault().toDate()
+                    thisValue = QtCore.QDate.fromString(self.getDefault(), "yyyy-MM-dd")
                 else:
                     if self.attribute.notNull:
                         thisValue = QtCore.QDate.currentDate()
 
-        if isinstance(thisValue,  unicode):
-            if thisValue.find("now") != -1 or thisValue.find("current_date") != -1:
-                thisValue = QtCore.QDate.currentDate()
+            if isinstance(thisValue, unicode) or isinstance(thisValue, str):
+                if thisValue.find("now") != -1 or thisValue.find("current_date") != -1:
+                    thisValue = QtCore.QDate.currentDate()
+                elif thisValue.find("::date") != -1:
+                    thisValue = thisValue.split("::")[0].replace("\'",  "")
+                    thisValue = QtCore.QDate.fromString(thisValue, "yyyy-MM-dd")
 
         return thisValue
 
@@ -2651,8 +2654,11 @@ class DdDateEdit(DdLineEdit):
                 thisValue = self.inputWidget.maximumDate()
         else:
             if self.attribute.hasDefault:
-                thisValue = self.getDefault()
-                thisValue = QtCore.QDate.fromString(thisValue,  self.attribute.dateFormat)
+                if self.mode == 1:
+                    thisValue = QtCore.QDate.currentDate()
+                else:
+                    thisValue = self.getDefault()
+                    thisValue = QtCore.QDate.fromString(thisValue,  self.attribute.dateFormat)
             else:
                 thisValue = None
 
@@ -2661,6 +2667,7 @@ class DdDateEdit(DdLineEdit):
 
     def setSearchValue(self,  thisValue):
         '''sets the search value'''
+
         if thisValue != None:
             if isinstance(thisValue,  unicode) or isinstance(thisValue,  str): # this is the case when derived from XML
                 newDate = QtCore.QDate.fromString(thisValue,  "yyyy-MM-dd")
