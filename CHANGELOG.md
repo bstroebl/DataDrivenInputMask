@@ -7,6 +7,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 - Show search mask for n2mTable
 - Show char (bpchar) fields in mask
 - Manually move layer into DdGroup after loading. Automatic moving resulted in DDIM trying to init non-Postgres layers present in the project.
+- Properly handle default dates
 
 ## 1.3.0 - 2017-09-01
 ### Added
