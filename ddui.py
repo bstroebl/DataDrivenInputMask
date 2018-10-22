@@ -4050,7 +4050,10 @@ class DdArrayTableWidget(DdLineEdit):
                 for i in range(len(thisValue)):
                     aVal = thisValue[i]
                     aVal = aVal.replace("\'","")
-                    aVal = aVal.replace("NULL", "")
+
+                    if aVal == "NULL":
+                        aVal = NULL
+
                     retValue.append(aVal)
             else:
                 retValue = thisValue
