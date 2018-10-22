@@ -1,7 +1,15 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.3.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.0.0...develop)
+
+## [2.0.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.3.0...v2.0.0) - 2018-10-22
+
+### Changed
+- Upgraded to QGIS3
+- Code for QGIS2.* resides in QGIS2 branch
+
+## 1.3.4 - 2018-09-24
 
 ### Fixed
 - Show search mask for n2mTable
