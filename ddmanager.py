@@ -719,13 +719,11 @@ class DdManager(object):
             return False
 
     def moveLayerintoDdGroup(self, layer):
-        groupIdx = self.getGroupIndex("DataDrivenInputMask")
-        legendIface= self.iface.legendInterface()
-
-        if groupIdx == -1:
-            groupIdx = legendIface.addGroup("DataDrivenInputMask",  False)
-
-        legendIface.moveLayer(layer,  groupIdx)
+        layerTreeRoot = QgsProject.instance().layerTreeRoot()
+        ddGroup = layerTreeRoot.findGroup("DataDrivenInputMask")
+        if ddGroup == None:
+            ddGroup = layerTreeRoot.addGroup("DataDrivenInputMask")
+        ddGroup.addLayer(layer)
 
     def loadPostGISLayer(self,  db, ddTable, displayName = None,
         geomColumn = None, whereClause = None, keyColumn = None,
