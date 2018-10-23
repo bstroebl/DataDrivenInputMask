@@ -27,6 +27,16 @@ SOURCES = datadriveninputmask.py __init__.py dddialog.py ddui.py ddmanager.py
 #TRANSLATIONS = i18n/datadriveninputmask_en.ts
 TRANSLATIONS = i18n/datadriveninputmask_de.ts
 
+#Add iso code for any locales you want to support here (space separated)
+# default is no locales
+# LOCALES = af
+LOCALES = datadriveninputmask_de
+
+# If locales are enabled, set the name of the lrelease binary on your system. If
+# you have trouble compiling the translations, you may have to specify the full path to
+# lrelease
+LRELEASE = lrelease
+
 # global
 
 PLUGINNAME = DataDrivenInputMask
