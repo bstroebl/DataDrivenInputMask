@@ -27,7 +27,7 @@ Error classes
 from builtins import object
 from qgis.PyQt import QtWidgets
 from qgis.gui import QgsMessageBar
-from qgis.core import QgsMessageLog
+from qgis.core import QgsMessageLog,  Qgis
 
 class DdError(object):
     '''General error'''
@@ -38,12 +38,11 @@ class DdError(object):
             raise FatalError(value)
         else:
             if showInLog:
-                QgsMessageLog.logMessage("DdError: " + value,  level=QgsMessageLog.CRITICAL)
+                QgsMessageLog.logMessage("DdError: " + value, level=Qgis.Critical)
             else:
                 if iface:
                     iface.messageBar().pushMessage("DdError",
-                        value, level=QgsMessageBar.CRITICAL,
-                        duration = 10)
+                        value, Qgis.Critical, duration = 10)
                 else:
                     QtWidgets.QMessageBox.warning(None, "DdError",  value)
 

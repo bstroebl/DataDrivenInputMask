@@ -1334,10 +1334,13 @@ class DdManager(object):
             return False
 
     def showQueryError(self, query,  withSql = False):
-        self.iface.messageBar().pushMessage("Database Error",  "%(error)s" % {"error": query.lastError().text()}, level=QgsMessageBar.CRITICAL)
+        self.iface.messageBar().pushMessage(
+            "Database Error",  "%(error)s" % {"error": query.lastError().text()},
+            level=Qgis.Critical)
 
         if withSql:
-            self.iface.messageBar().pushMessage("Query",  "%(query)s" % {"query": query.lastQuery()}, level=QgsMessageBar.CRITICAL)
+            self.iface.messageBar().pushMessage("Query",
+                "%(query)s" % {"query": query.lastQuery()},level=Qgis.Critical)
 
     def showError(self,  msg):
         DdError(msg,  iface = self.iface)
