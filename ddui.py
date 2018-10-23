@@ -126,6 +126,8 @@ class DataDrivenUi(object):
             minMax, noSearchFields, db, createAction, helpText, fieldDisable):
         '''read configuration from db'''
 
+        multilineFields = []
+        lookupFields = {}
         #check if config tables exist in db
         configOid = ddtools.getOid(DdTable(schemaName = "public",  tableName = "dd_table"), db)
 
@@ -142,7 +144,9 @@ class DataDrivenUi(object):
                 \"field_search\", \
                 \"field_min\", \
                 \"field_max\", \
-                COALESCE(\"field_enabled\",true)::varchar \
+                COALESCE(\"field_enabled\",true)::varchar, \
+                COALESCE(\"field_multiline\",false)::varchar, \
+                trim(COALESCE(\"lookup_field\",\'\')) \
             FROM \"public\".\"dd_table\" t \
                 LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
                 LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
@@ -172,6 +176,8 @@ class DataDrivenUi(object):
                     fieldMin = query.value(8)
                     fieldMax = query.value(9)
                     fieldEnable = query.value(10)
+                    fieldMultiline = query.value(11)
+                    lookupField = query.value(12)
 
                     if tabAlias != lastTab and not fieldSkip:
                         if tabAlias != "":
@@ -195,23 +201,31 @@ class DataDrivenUi(object):
                     if fieldEnable == "false":
                         if fieldDisable.count(fieldName) == 0:
                             fieldDisable.append(fieldName)
+
+                    if fieldMultiline == "true":
+                        multilineFields.append(fieldName)
+
+                    if lookupField != "":
+                        lookupFields[fieldName] = lookupField
             else:
                 DbError(query)
 
             query.finish()
 
         return [skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields,
-            createAction, helpText, fieldDisable]
+            createAction, helpText, fieldDisable, multilineFields, lookupFields]
 
     def __createForms(self, thisTable, db, skip, labels, fieldOrder,
             fieldGroups, minMax, noSearchFields, showParents,
-            showChildren, readConfigTables, createAction, fieldDisable):
+            showChildren, readConfigTables, createAction, fieldDisable,
+            multilineFields, lookupFields):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
         ddSearchForms = []
         ddAttributes = self.getAttributes(
-            thisTable, db, labels, minMax, fieldDisable = fieldDisable)
+            thisTable, db, labels, minMax, fieldDisable = fieldDisable, \
+            multilineFields = multilineFields, lookupFields = lookupFields)
         # do not pass skip here otherwise pk fields might not be included
 
         for anAtt in ddAttributes:
@@ -239,7 +253,8 @@ class DataDrivenUi(object):
             if nextAtt:
                 continue # skip it
 
-            if anAttribute.type == "text" or anAttribute.type == "n2m" or anAttribute.type == "table":
+            if (anAttribute.type == "text" and anAttribute.multiLine != False) or \
+                anAttribute.type == "n2m" or anAttribute.type == "table":
                 needsToolBox = True
 
             unorderedAttributes.append(anAttribute)
@@ -299,10 +314,7 @@ class DataDrivenUi(object):
                     ddSearchFormWidget = DdFormWidget(aTable,  needsToolBox)
                     break
 
-            if anAttribute.type == "text":
-                ddInputWidget = DdTextEdit(anAttribute)
-            elif anAttribute.type == "n2m":
-
+            if anAttribute.type == "n2m":
                 if anAttribute.subType == "list":
                     ddInputWidget = DdN2mListWidget(anAttribute)
                 elif anAttribute.subType == "tree":
@@ -342,7 +354,10 @@ class DataDrivenUi(object):
                             if anAttribute.isArray:
                                 ddInputWidget = DdArrayTableWidget(anAttribute)
                             else:
-                                if anAttribute.type == "varchar" and anAttribute.length > 256:
+                                if anAttribute.multiLine or \
+                                    ((anAttribute.type == "text" or (\
+                                        anAttribute.type == "varchar" and anAttribute.length > 256))
+                                        and anAttribute.multiLine == None):
                                     ddInputWidget = DdTextEdit(anAttribute)
                                 else:
                                     ddInputWidget = DdLineEdit(anAttribute)
@@ -370,7 +385,9 @@ class DataDrivenUi(object):
             # go recursivly into thisTable's parents
             for aParent in self.getParents(thisTable,  db):
                 if readConfigTables:
-                    pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax, pNoSearchFields, pCreateAction, pHelpText, pFieldDisable = \
+                    pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax, \
+                        pNoSearchFields, pCreateAction, pHelpText, pFieldDisable,  \
+                        pMultilineFields, pLookupFields = \
                         self.configureLayer(aParent, [], {}, [], {}, {}, [], db, createAction, "", [])
 
                     if pSkip == []:
@@ -391,7 +408,7 @@ class DataDrivenUi(object):
                 parentForms, parentSearchForms = self.__createForms(aParent, db,
                     pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax,
                     pNoSearchFields, showParents, False, readConfigTables,
-                    pCreateAction, pFieldDisable)
+                    pCreateAction, pFieldDisable, pLookupFields)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
@@ -407,7 +424,8 @@ class DataDrivenUi(object):
 
         if readConfigTables:
             skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields, \
-            createAction, helpText, fieldDisable = self.configureLayer( \
+            createAction, helpText, fieldDisable, multilineFields, lookupFields \
+                = self.configureLayer( \
                 thisTable, skip, labels, fieldOrder, fieldGroups, minMax, \
                 noSearchFields, db, createAction, \
                 helpText, fieldDisable)
@@ -415,7 +433,8 @@ class DataDrivenUi(object):
         forms, searchForms = self.__createForms(
             thisTable, db, skip, labels, fieldOrder, fieldGroups,
             minMax, noSearchFields, showParents, showChildren,
-            readConfigTables, createAction, fieldDisable)
+            readConfigTables, createAction, fieldDisable, multilineFields,
+            lookupFields)
 
         if  inputMask:
             ui = DdDialogWidget()
@@ -690,8 +709,11 @@ class DataDrivenUi(object):
                     skipThese = configList[0]
                     rLabels = configList[1]
                     rMinMax = configList[4]
+                    multilineFields = configList[9]
+                    lookupFields = configList[10]
                     attributes = self.getAttributes(
-                        ddRelationTable, db, rLabels, rMinMax, skipThese)
+                        ddRelationTable, db, rLabels, rMinMax, skipThese, \
+                        multilineFields = multilineFields, lookupFields = lookupFields)
 
                     attrsToKeep = []
                     for aRelAtt in attributes:
@@ -725,7 +747,8 @@ class DataDrivenUi(object):
 
         return n2mAttributes
 
-    def getAttributes(self, thisTable, db, labels, minMax, skip = [], fieldDisable = []):
+    def getAttributes(self, thisTable, db, labels, minMax, skip = [], fieldDisable = [],
+        multilineFields= [], lookupFields = {}):
         ''' query the DB and create DdAttributes'''
 
         ddAttributes = []
@@ -792,11 +815,25 @@ class DataDrivenUi(object):
                         else:
                             try: # is this attribute a FK
                                 fk = foreignKeys[attName]
+                                queryForCbx = fk[1]
+                                valueField = fk[2]
+
+                                try:
+                                    lookupField = lookupFields[str(attName)]
+                                    queryForCbx = queryForCbx.replace("\"" + valueField + "\" as value",  \
+                                        "\"" + lookupField + "\" as value")
+                                    queryForCbx = queryForCbx.replace(valueField + " as value",  \
+                                        "\"" + lookupField + "\" as value") # we do not know if the field is quoted
+                                except:
+                                    lookupField = None
 
                                 try:
                                     attLabel = labels[str(attName)]
                                 except KeyError:
-                                    attLabel = attName + " (" + fk[2] + ")"
+                                    if lookupField == None:
+                                        attLabel = attName + " (" + valueField + ")"
+                                    else:
+                                        attLabel = attName + " (" + lookupField + ")"
 
                                 try:
                                     fkComment = fk[3]
@@ -811,7 +848,7 @@ class DataDrivenUi(object):
 
                                 ddAtt = DdFkLayerAttribute(
                                     thisTable, attTyp, attNotNull, attName, attComment,
-                                    attNum, isPK, attDefault, attHasDefault, fk[1], attLabel,
+                                    attNum, isPK, attDefault, attHasDefault, queryForCbx, attLabel,
                                     attEnableWidget)
                                 normalAtt = False
                             except KeyError:
@@ -846,10 +883,11 @@ class DataDrivenUi(object):
                             ddAtt = DdGeometryAttribute(
                                 thisTable, attTyp, attName, attComment, attNum)
                         else:
+                            multiLine = multilineFields.count(str(attName)) != 0
                             ddAtt = DdLayerAttribute(
                                 thisTable, attTyp, attNotNull, attName, attComment, attNum,
                                 isPK, False, attDefault, attHasDefault, attLength, attLabel,
-                                thisMin, thisMax, attEnableWidget, isArray, arrayDelim)
+                                thisMin, thisMax, attEnableWidget, isArray, arrayDelim, multiLine)
 
                     ddAttributes.append(ddAtt)
 

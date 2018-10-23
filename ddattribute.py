@@ -137,7 +137,7 @@ class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK, isFK,
             default, hasDefault, length, label = None, min = None, max = None,
-            enableWidget = True, isArray = False, arrayDelim = ""):
+            enableWidget = True, isArray = False, arrayDelim = "", multiLine = None):
         super().__init__(table, type, notNull, name, comment,
             label, min, max, enableWidget)
         self.isPK = isPK
@@ -148,6 +148,7 @@ class DdLayerAttribute(DdAttribute):
         self.num = attNum # number of the attribute in the table pg_attribute.attNum
         self.isArray = isArray
         self.arrayDelim = arrayDelim
+        self.multiLine = multiLine # multiLine == None: use default, i.e. textBox for text and long varchar
 
     def __str__(self):
         return "<ddattribute.DdLayerAttribute %s>" % self.name
