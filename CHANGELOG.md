@@ -3,6 +3,12 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.0.0...develop)
 
+### Added
+- Entries in DdN2mTableWidget can be copied, mask of the copied feature is opened
+
+### Fixed
+- Replace calls to QGIS2 api with calls to QGIS3 api
+
 ## [2.0.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v1.3.0...v2.0.0) - 2018-10-22
 
 ### Changed
