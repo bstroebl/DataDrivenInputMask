@@ -3103,9 +3103,12 @@ class DdN2mWidget(DdInputWidget):
 
         return False
 
-    def createFeature(self, fid = None):
-        '''create a new QgsFeature for the relation table with this fid'''
-        if fid:
+    def createFeature(self, fid = None, sourceFeature = None):
+        '''
+        create a new QgsFeature for the relation table with this fid
+        if sourceFeature != None: retunr a copy of this feature
+        '''
+        if fid != None and sourceFeature == None:
             newFeature = QgsFeature(fid)
         else:
             newFeature = QgsFeature() # gid wird automatisch vergeben
@@ -3116,7 +3119,10 @@ class DdN2mWidget(DdInputWidget):
 
         if self.mode != 1:
             for i in range(fields.count()):
-                newFeature.setAttribute(i,provider.defaultValue(i))
+                if sourceFeature == None:
+                    newFeature.setAttribute(i,provider.defaultValue(i))
+                else:
+                    newFeature.setAttribute(i, sourceFeature[i])
 
         return newFeature
 
@@ -3659,23 +3665,37 @@ class DdN2mTableWidget(DdN2mWidget):
                                 break
 
                     self.appendRow(thisFeature)
-                    self.addButton.setEnabled(False)
-        elif self.mode == 2:
-            self.addButton.setEnabled(False)
-        else:
+        elif self.mode == 0:
             self.applySubsetString(False)
             # display the features in the QTableWidget
             for aFeat in self.tableLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
                 self.appendRow(aFeat)
 
-            if self.forEdit:
-                if self.attribute.maxRows:
-                    self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
-            else:
-                self.addButton.setEnabled(False)
-
             # reset here in case the same table is connected twice
             self.applySubsetString(True)
+
+        self.manageButtons()
+
+    def manageButtons(self):
+        enableAdd = False
+        enableCopy = False
+        enableRemove = False
+
+        if (self.mode == 0 and self.forEdit and self.attribute.enableWidget):
+            enableAdd = True
+            enableCopy = len(self.inputWidget.selectedItems()) > 0
+            enableRemove = len(self.inputWidget.selectedItems()) > 0
+
+            if self.attribute.maxRows:
+                enableAdd = self.inputWidget.rowCount()  < self.attribute.maxRows
+                enableCopy= enableCopy and self.inputWidget.rowCount()  < self.attribute.maxRows
+        elif self.mode == 1:
+            enableAdd = self.inputWidget.rowCount() == 0
+            enableRemove = len(self.inputWidget.selectedItems()) > 0
+
+        self.addButton.setEnabled(enableAdd)
+        self.copyButton.setEnabled(enableCopy)
+        self.removeButton.setEnabled(enableRemove)
 
     def getFkValues(self, db):
         for anAtt in self.attribute.attributes:
@@ -3810,13 +3830,18 @@ class DdN2mTableWidget(DdN2mWidget):
         hLayout.addWidget(label)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         hLayout.addItem(spacerItem)
+        self.copyButton = QtWidgets.QPushButton(QtWidgets.QApplication.translate(
+            "DdInput", "Copy") ,  frame)
         self.addButton = QtWidgets.QPushButton(QtWidgets.QApplication.translate(
             "DdInput", "Add") ,  frame)
         self.removeButton = QtWidgets.QPushButton(QtWidgets.QApplication.translate(
             "DdInput", "Remove") ,  frame)
+        self.copyButton.clicked.connect(self.copy)
+        self.copyButton.setEnabled(False)
         self.addButton.clicked.connect(self.add)
         self.removeButton.clicked.connect(self.remove)
         self.removeButton.setEnabled(False)
+        hLayout.addWidget(self.copyButton)
         hLayout.addWidget(self.addButton)
         hLayout.addWidget(self.removeButton)
         vLayout.addLayout(hLayout)
@@ -3934,9 +3959,7 @@ class DdN2mTableWidget(DdN2mWidget):
     def selectionChanged(self):
         '''slot to be called when the QTableWidget's selection has changed'''
         if self.forEdit:
-            self.removeButton.setEnabled(
-                len(self.inputWidget.selectedItems()) > 0 and \
-                self.attribute.enableWidget)
+            self.manageButtons()
 
     def doubleClick(self,  thisRow,  thisColumn):
         '''slot to be called when the user double clicks on the QTableWidget'''
@@ -3968,6 +3991,22 @@ class DdN2mTableWidget(DdN2mWidget):
                     self.fillRow(thisRow,  thisFeature)
                     self.hasChanges = True
 
+    def copy(self):
+        '''slot to be called when user clicks on copy button'''
+
+        thisRow = self.inputWidget.currentRow()
+
+        if self.mode == 0:
+            featureItem = self.inputWidget.takeItem(thisRow, 0)
+            thisFeature = featureItem.feature
+            newFeature = self.createFeature(sourceFeature = thisFeature)
+
+            if self.tableLayer.addFeature(newFeature):
+                result = self.ddManager.showFeatureForm(self.tableLayer,  newFeature,  askForSave = False)
+
+                #if result == 1: # user clicked OK
+                self.fill()
+
     def add(self):
         '''slot to be called when the user clicks on the add button'''
         if self.mode == 1:
@@ -3994,7 +4033,6 @@ class DdN2mTableWidget(DdN2mWidget):
 
         if self.mode == 1:
             self.inputWidget.removeRow(thisRow)
-            self.addButton.setEnabled(True)
             self.root = ET.Element('DdSearch')
         elif self.mode == 0:
             featureItem = self.inputWidget.takeItem(thisRow, 0)
@@ -4003,8 +4041,7 @@ class DdN2mTableWidget(DdN2mWidget):
             self.inputWidget.removeRow(thisRow)
             self.hasChanges = True
 
-            if self.attribute.maxRows:
-                self.addButton.setEnabled(self.inputWidget.rowCount()  < self.attribute.maxRows)
+        self.manageButtons()
 
     def enableAccordingToDdAttribute(self):
         if self.attribute.enableWidget:
