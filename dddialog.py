@@ -129,7 +129,7 @@ class DdSearchDialog(QtWidgets.QDialog):
         self.db = db
         self.mode = 1
         self.feature = QgsFeature(-3333)
-        fields = self.layer.pendingFields()
+        fields = self.layer.fields()
         self.feature.initAttributes(fields.count())
         self.ui.setupUi(self,  self.db)
         self.ui.buttonBox.accepted.disconnect(self.accept)
@@ -200,7 +200,7 @@ class DdSearchDialog(QtWidgets.QDialog):
             self.layer.setSubsetString(newSubsetString)
             self.layer.reload()
             self.layer.selectAll()
-            selFids = self.layer.selectedFeaturesIds()
+            selFids = self.layer.selectedFeatureIds()
 
             if self.layer.selectedFeatureCount() == 0:
                 QtWidgets.QMessageBox.information(None,  "",
@@ -215,7 +215,7 @@ class DdSearchDialog(QtWidgets.QDialog):
 
             self.layer.setSubsetString(oldSubsetString)
             self.layer.reload()
-            self.layer.setSelectedFeatures(selFids)
+            self.layer.selectByIds(selFids)
             self.done(1)
         else:
             self.done(0)
