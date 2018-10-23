@@ -1,10 +1,14 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.0.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.1.0...develop)
+
+## [2.1.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.0.0...v2.1.0) - 2018-10-23
 
 ### Added
-- Entries in DdN2mTableWidget can be copied, mask of the copied feature is opened
+- Entries in DdN2mTableWidget can be copied, the DDIM of the copied feature is opened
+- Configure, if a textBox or a textLine should be used for text or varchar fields, implements #8
+- Make lookup field for combo box configurable, implements #10
 
 ### Fixed
 - Replace calls to QGIS2 api with calls to QGIS3 api
