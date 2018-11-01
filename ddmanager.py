@@ -48,7 +48,7 @@ from .ddattribute import *
 from .dddialog import DdDialog,  DdSearchDialog
 from . import ddtools
 import xml.etree.ElementTree as ET
-import os
+import os, re
 
 class DdManager(object):
     """DdManager manages all masks in the current project"""
@@ -906,8 +906,15 @@ class DdManager(object):
     def __analyzeSource(self,  layer):
         '''Split the layer's source information and return them as a dict'''
         src = layer.source()
-        srcList = src.split(' ')
         result = dict()
+
+        # allow spaces in dbname
+        p = re.match('(dbname=\'(?P<name>[^\']*)\' *)+', src)
+
+        if p != None:
+            result["dbname"] = p.groups()[1]
+
+        srcList = src.split(' ')
 
         for anElement in srcList:
             aPair = anElement.replace("'",  "").split("=")
@@ -921,7 +928,10 @@ class DdManager(object):
                 else: # if value element contains "=", e.g. in passwords
                     value += "=" + aPair[i]
 
-                result[key] = value
+                if key == "dbname" and p != None:
+                    continue
+                else:
+                    result[key] = value
 
         return result
 
