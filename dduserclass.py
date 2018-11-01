@@ -5,6 +5,7 @@ userClass
 user classes are not instantiated by the plugin but are
 to be used in subclasses of DataDrivenUi
 """
+from __future__ import absolute_import
 """
 /***************************************************************************
  DataDrivenInputMask
@@ -25,8 +26,6 @@ to be used in subclasses of DataDrivenUi
  *                                                                         *
  ***************************************************************************/
 """
-
-from __future__ import absolute_import
 from builtins import str
 from builtins import range
 from .ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
