@@ -4,6 +4,8 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.1.0...develop)
 ### Fixed
 - Allow spaces in database name
+- Replace outdated api call fixes #15
+- Fix field descriptions of field_multiline and lookup_field
 
 ## [2.1.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.0.0...v2.1.0) - 2018-10-23
 
