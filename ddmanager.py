@@ -1229,7 +1229,7 @@ class DdManager(object):
                 return False
 
             sQuery = "COMMENT ON COLUMN \"public\".\"dd_field\".\"field_multiline\" \
-                IS \'If the field contains a FK to a lookup table, input the name of the field containing the values to be displayed in the combo box\';"
+            IS \'If the field is a char field, make it multiline\';"
             query = self.__executeConfigQuery(db, sQuery)
 
             if query != None:
@@ -1247,7 +1247,7 @@ class DdManager(object):
                 return False
 
             sQuery = "COMMENT ON COLUMN  \"public\".\"dd_field\".\"lookup_field\" \
-                IS \'If the field is a char field, make it multiline\';"
+            IS \'If the field contains a foreign key to a lookup table, input the name of the field in the lookup table containing the values to be displayed in the combo box.\';"
             query = self.__executeConfigQuery(db, sQuery)
 
             if query != None:
@@ -1327,8 +1327,8 @@ class DdManager(object):
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_min\" IS \'min value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the min date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_enabled\" IS \'Enable or disable this field in the input mask\';\
-        COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_multiline\" IS \'If the field contains a FK to a lookup table, input the name of the field containing the values to be displayed in the combo box\';\
-        COMMENT ON COLUMN  \"public\".\"dd_field\".\"lookup_field\" IS \'If the field is a char field, make it multiline\';\
+        COMMENT ON COLUMN \"public\".\"dd_field\".\"field_multiline\" IS \'If the field is a char field, make it multiline\';\
+        COMMENT ON COLUMN \"public\".\"dd_field\".\"lookup_field\" IS \'If the field contains a foreign key to a lookup table, input the name of the field in the lookup table containing the values to be displayed in the combo box.\';\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"
