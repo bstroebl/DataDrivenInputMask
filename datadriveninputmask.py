@@ -155,7 +155,7 @@ class DataDrivenInputMask(object):
         newFeature = QgsFeature()
 
         provider = layer.dataProvider()
-        fields = layer.pendingFields()
+        fields = layer.fields()
         newFeature.initAttributes(fields.count())
 
         for i in range(fields.count()):
