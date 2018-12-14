@@ -304,6 +304,7 @@ class DataDrivenInputMask(object):
                     forFeature = self.createFeature(configLayer)
                     forFeature[configLayer.fields().lookupField("table_schema")] = ddLayerTable.schemaName
                     forFeature[configLayer.fields().lookupField("table_name")] = ddLayerTable.tableName
+                    forFeature[configLayer.fields().lookupField("table_action")] = 'true'
                     configLayer.addFeature(forFeature)
 
                     if not configLayer.commitChanges():
