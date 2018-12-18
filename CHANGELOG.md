@@ -7,6 +7,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 - Replace outdated api calls fixes #15, #17
 - Fix field descriptions of field_multiline and lookup_field
 - Set table_action to true because default is not applied in db, fixes #18
+- Properly create parent forms
 
 ## [2.1.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.0.0...v2.1.0) - 2018-10-23
 
