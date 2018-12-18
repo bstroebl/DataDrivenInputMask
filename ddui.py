@@ -408,7 +408,7 @@ class DataDrivenUi(object):
                 parentForms, parentSearchForms = self.__createForms(aParent, db,
                     pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax,
                     pNoSearchFields, showParents, False, readConfigTables,
-                    pCreateAction, pFieldDisable, pLookupFields)
+                    pCreateAction, pFieldDisable, pMultilineFields, pLookupFields)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
