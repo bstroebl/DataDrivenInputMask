@@ -1238,7 +1238,7 @@ class DdManager(object):
                 return False
 
             sQuery = "ALTER TABLE \"public\".\"dd_field\" \
-                ADD COLUMN \"lookup_field\" VARCHAR(32);"
+                ADD COLUMN \"lookup_field\" VARCHAR(256);"
             query = self.__executeConfigQuery(db, sQuery)
 
             if query != None:
@@ -1308,7 +1308,7 @@ class DdManager(object):
             \"field_max\" VARCHAR(32) NULL,\
             \"field_enabled\" BOOLEAN NOT NULL DEFAULT \'t\',\
             \"field_multiline\" BOOLEAN NULL DEFAULT \'f\',\
-            \"lookup_field\" VARCHAR(32) NULL,\
+            \"lookup_field\" VARCHAR(256) NULL,\
             PRIMARY KEY (\"id\"),\
             CONSTRAINT \"fk_dd_field_dd_tab\"\
                 FOREIGN KEY (\"dd_tab_id\")\
