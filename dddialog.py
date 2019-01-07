@@ -73,7 +73,7 @@ class DdDialog(QtWidgets.QDialog):
                 if self.feature.id() < 0:
                     title += QtWidgets.QApplication.translate("DdInfo", "New Feature")
                 else:
-                    title += QtWidgets.QApplication.translate("DdInfo", "Feature" )  + str(self.feature.id())
+                    title += QtWidgets.QApplication.translate("DdInfo", "Feature " )  + str(self.feature.id())
 
         self.setWindowTitle(title)
 
