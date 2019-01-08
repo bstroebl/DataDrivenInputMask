@@ -691,15 +691,20 @@ class DataDrivenUi(object):
                             subType = "table"
                             maxRows = None
                             showParents = False
+
+                    try:
+                        attLabel = labels[str(relationTable)]
+                    except KeyError:
+                        attLabel = None
                 else: # 1:n relation
                     subType = "table"
                     maxRows = None
                     showParents = True
 
-                try:
-                    attLabel = labels[str(relationTable)]
-                except KeyError:
-                    attLabel = None
+                    try:
+                        attLabel = labels[str(relationTable) + " (" + str(relationFeatureIdField) + ")"]
+                    except KeyError:
+                        attLabel = str(relationTable) + " (" + str(relationFeatureIdField) + ")"
 
                 attEnableWidget = fieldDisable.count(ddRelationTable.tableName) == 0
 
