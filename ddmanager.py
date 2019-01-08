@@ -1255,6 +1255,55 @@ class DdManager(object):
             else:
                 return False
 
+        changeToVersion220 = False
+
+        sQuery = "SELECT \"lookup_expression\" FROM \"public\".\"dd_field\";"
+
+        query = QtSql.QSqlQuery(db)
+        query.exec_(sQuery)
+
+        if not query.isActive():
+            changeToVersion220 = True
+
+        query.finish()
+
+        if changeToVersion220:
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" \
+                ADD COLUMN \"lookup_expression\" TEXT;"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "COMMENT ON COLUMN  \"public\".\"dd_field\".\"lookup_expression\" \
+            IS \'If the field contains a foreign key to a lookup table, input an expression containing the values to be displayed in the combo box. The most simple expression is the name of a field.\';"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "UPDATE \"public\".\"dd_field\" \
+                SET \"lookup_expression\" = \'\"\' || lookup_field || \'\"\';"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
+            sQuery = "ALTER TABLE \"public\".\"dd_field\" \
+                DROP COLUMN \"lookup_field\";"
+            query = self.__executeConfigQuery(db, sQuery)
+
+            if query != None:
+                query.finish()
+            else:
+                return False
+
         return True
 
     def createConfigTables(self,  db):
@@ -1308,7 +1357,7 @@ class DdManager(object):
             \"field_max\" VARCHAR(32) NULL,\
             \"field_enabled\" BOOLEAN NOT NULL DEFAULT \'t\',\
             \"field_multiline\" BOOLEAN NULL DEFAULT \'f\',\
-            \"lookup_field\" VARCHAR(256) NULL,\
+            \"lookup_expression\" TEXT NULL,\
             PRIMARY KEY (\"id\"),\
             CONSTRAINT \"fk_dd_field_dd_tab\"\
                 FOREIGN KEY (\"dd_tab_id\")\
@@ -1328,7 +1377,7 @@ class DdManager(object):
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_max\" IS \'max value of the field (only for numeric and date fields). Use point as decimal seperator, format date as \"yyyy-MM-dd\", insert \"today\" to set the max date on the current date or \"today +/- num_days\" for a certain day relative to the current date.\';\
         COMMENT ON COLUMN  \"public\".\"dd_field\".\"field_enabled\" IS \'Enable or disable this field in the input mask\';\
         COMMENT ON COLUMN \"public\".\"dd_field\".\"field_multiline\" IS \'If the field is a char field, make it multiline\';\
-        COMMENT ON COLUMN \"public\".\"dd_field\".\"lookup_field\" IS \'If the field contains a foreign key to a lookup table, input the name of the field in the lookup table containing the values to be displayed in the combo box.\';\
+        COMMENT ON COLUMN \"public\".\"dd_field\".\"lookup_expression\" IS \'If the field contains a foreign key to a lookup table, input an expression containing the values to be displayed in the combo box. The most simple expression is the name of a field.\'; \
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(1, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(2, \'id\', \'t\');\
         INSERT INTO \"public\".\"dd_field\" (\"dd_tab_id\", \"field_name\", \"field_skip\") VALUES(3, \'id\', \'t\');"

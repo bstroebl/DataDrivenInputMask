@@ -146,7 +146,7 @@ class DataDrivenUi(object):
                 \"field_max\", \
                 COALESCE(\"field_enabled\",true)::varchar, \
                 COALESCE(\"field_multiline\",false)::varchar, \
-                trim(COALESCE(\"lookup_field\",\'\')) \
+                trim(COALESCE(\"lookup_expression\",\'\')) \
             FROM \"public\".\"dd_table\" t \
                 LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
                 LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
@@ -819,21 +819,21 @@ class DataDrivenUi(object):
                                 valueField = fk[2]
 
                                 try:
-                                    lookupField = lookupFields[str(attName)]
+                                    lookupExpression = lookupFields[str(attName)]
                                     queryForCbx = queryForCbx.replace("\"" + valueField + "\" as value",  \
-                                        "\"" + lookupField + "\" as value")
+                                        lookupExpression + " as value")
                                     queryForCbx = queryForCbx.replace(valueField + " as value",  \
-                                        "\"" + lookupField + "\" as value") # we do not know if the field is quoted
+                                        lookupExpression + " as value") # we do not know if the field is quoted
                                 except:
-                                    lookupField = None
+                                    lookupExpression = None
 
                                 try:
                                     attLabel = labels[str(attName)]
                                 except KeyError:
-                                    if lookupField == None:
+                                    if lookupExpression == None:
                                         attLabel = attName + " (" + valueField + ")"
                                     else:
-                                        attLabel = attName + " (" + lookupField + ")"
+                                        attLabel = attName + " (" + lookupExpression + ")"
 
                                 try:
                                     fkComment = fk[3]
