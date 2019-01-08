@@ -5,6 +5,7 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ### Added
 - Allow any expression as lookup field in combo, implements #21
+- Show referencing field of 1:n realation in label, implements #20
 
 ### Fixed
 - Allow spaces in database name
