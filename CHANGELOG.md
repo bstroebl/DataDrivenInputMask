@@ -3,9 +3,11 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.1.0...develop)
 
+## [2.2.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.1.0...v2.2.0) - 2019-01-17
 ### Added
 - Allow any expression as lookup field in combo, implements #21
 - Show referencing field of 1:n realation in label, implements #20
+- Establish configurable filter option for lookup tables (DdComboBox)
 
 ### Fixed
 - Allow spaces in database name
