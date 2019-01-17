@@ -214,11 +214,16 @@ class DdDateLayerAttribute(DdLayerAttribute):
 class DdFkLayerAttribute(DdLayerAttribute):
     '''a DdAttribute for field in a QGIS layer that represents a foreign key'''
     def __init__(self, table, type, notNull, name, comment, attNum, isPK,
-            default , hasDefault, queryForCbx, label = None, enableWidget = True):
+            default , hasDefault, queryForCbx, label = None, enableWidget = True,
+            whereClause = ""):
         super().__init__(table, type, notNull, name, comment,
             attNum, isPK, True, default, hasDefault, -1, label,
             enableWidget = enableWidget)
-        self.queryForCbx = queryForCbx
+
+        if whereClause == "":
+            self.setQueryForCbx(queryForCbx)
+        else:
+            self.setQueryForCbx(queryForCbx.replace(";", " WHERE " + whereClause + ";"))
 
     def __str__(self):
         return "<ddattribute.DdFkLayerAttribute %s>" % self.name
@@ -228,7 +233,6 @@ class DdFkLayerAttribute(DdLayerAttribute):
 
     def setQueryForCbx(self, newQuery):
         self.queryForCbx = newQuery
-
 
 class DdManyToManyAttribute(DdAttribute):
     '''abstract class for any many2many attribute'''

@@ -128,6 +128,7 @@ class DataDrivenUi(object):
 
         multilineFields = []
         lookupFields = {}
+        whereClauses = {}
         #check if config tables exist in db
         configOid = ddtools.getOid(DdTable(schemaName = "public",  tableName = "dd_table"), db)
 
@@ -146,7 +147,8 @@ class DataDrivenUi(object):
                 \"field_max\", \
                 COALESCE(\"field_enabled\",true)::varchar, \
                 COALESCE(\"field_multiline\",false)::varchar, \
-                trim(COALESCE(\"lookup_expression\",\'\')) \
+                trim(COALESCE(\"lookup_expression\",\'\')), \
+                trim(COALESCE(\"where_clause\",\'\')) \
             FROM \"public\".\"dd_table\" t \
                 LEFT JOIN \"public\".\"dd_tab\" tb ON t.id = tb.\"dd_table_id\" \
                 LEFT JOIN \"public\".\"dd_field\" f ON tb.id = f.\"dd_tab_id\" \
@@ -178,6 +180,7 @@ class DataDrivenUi(object):
                     fieldEnable = query.value(10)
                     fieldMultiline = query.value(11)
                     lookupField = query.value(12)
+                    whereClause = query.value(13)
 
                     if tabAlias != lastTab and not fieldSkip:
                         if tabAlias != "":
@@ -207,25 +210,30 @@ class DataDrivenUi(object):
 
                     if lookupField != "":
                         lookupFields[fieldName] = lookupField
+
+                    if whereClause != "":
+                        whereClauses[fieldName] = whereClause
             else:
                 DbError(query)
 
             query.finish()
 
         return [skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields,
-            createAction, helpText, fieldDisable, multilineFields, lookupFields]
+            createAction, helpText, fieldDisable, multilineFields, lookupFields,
+            whereClauses]
 
     def __createForms(self, thisTable, db, skip, labels, fieldOrder,
             fieldGroups, minMax, noSearchFields, showParents,
             showChildren, readConfigTables, createAction, fieldDisable,
-            multilineFields, lookupFields):
+            multilineFields, lookupFields, whereClauses):
         """create the forms (DdFom instances) shown in the tabs of the Dialog (DdDialog instance)"""
 
         ddForms = []
         ddSearchForms = []
         ddAttributes = self.getAttributes(
             thisTable, db, labels, minMax, fieldDisable = fieldDisable, \
-            multilineFields = multilineFields, lookupFields = lookupFields)
+            multilineFields = multilineFields, lookupFields = lookupFields,
+            whereClauses = whereClauses)
         # do not pass skip here otherwise pk fields might not be included
 
         for anAtt in ddAttributes:
@@ -387,7 +395,7 @@ class DataDrivenUi(object):
                 if readConfigTables:
                     pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax, \
                         pNoSearchFields, pCreateAction, pHelpText, pFieldDisable,  \
-                        pMultilineFields, pLookupFields = \
+                        pMultilineFields, pLookupFields, pWhereClauses = \
                         self.configureLayer(aParent, [], {}, [], {}, {}, [], db, createAction, "", [])
 
                     if pSkip == []:
@@ -408,7 +416,7 @@ class DataDrivenUi(object):
                 parentForms, parentSearchForms = self.__createForms(aParent, db,
                     pSkip, pLabels, pFieldOrder, pFieldGroups, pMinMax,
                     pNoSearchFields, showParents, False, readConfigTables,
-                    pCreateAction, pFieldDisable, pMultilineFields, pLookupFields)
+                    pCreateAction, pFieldDisable, pMultilineFields, pLookupFields, pWhereClauses)
                 ddForms = ddForms + parentForms
                 ddSearchForms = ddSearchForms + parentSearchForms
 
@@ -424,7 +432,8 @@ class DataDrivenUi(object):
 
         if readConfigTables:
             skip, labels, fieldOrder, fieldGroups, minMax, noSearchFields, \
-            createAction, helpText, fieldDisable, multilineFields, lookupFields \
+            createAction, helpText, fieldDisable, multilineFields, lookupFields, \
+            whereClauses \
                 = self.configureLayer( \
                 thisTable, skip, labels, fieldOrder, fieldGroups, minMax, \
                 noSearchFields, db, createAction, \
@@ -434,7 +443,7 @@ class DataDrivenUi(object):
             thisTable, db, skip, labels, fieldOrder, fieldGroups,
             minMax, noSearchFields, showParents, showChildren,
             readConfigTables, createAction, fieldDisable, multilineFields,
-            lookupFields)
+            lookupFields, whereClauses)
 
         if  inputMask:
             ui = DdDialogWidget()
@@ -716,9 +725,11 @@ class DataDrivenUi(object):
                     rMinMax = configList[4]
                     multilineFields = configList[9]
                     lookupFields = configList[10]
+                    whereClauses = configList[11]
                     attributes = self.getAttributes(
                         ddRelationTable, db, rLabels, rMinMax, skipThese, \
-                        multilineFields = multilineFields, lookupFields = lookupFields)
+                        multilineFields = multilineFields, lookupFields = lookupFields,
+                        whereClauses = whereClauses)
 
                     attrsToKeep = []
                     for aRelAtt in attributes:
@@ -753,7 +764,7 @@ class DataDrivenUi(object):
         return n2mAttributes
 
     def getAttributes(self, thisTable, db, labels, minMax, skip = [], fieldDisable = [],
-        multilineFields= [], lookupFields = {}):
+        multilineFields= [], lookupFields = {}, whereClauses = {}):
         ''' query the DB and create DdAttributes'''
 
         ddAttributes = []
@@ -841,6 +852,11 @@ class DataDrivenUi(object):
                                         attLabel = attName + " (" + lookupExpression + ")"
 
                                 try:
+                                    whereClause = whereClauses[str(attName)]
+                                except:
+                                    whereClause = ""
+
+                                try:
                                     fkComment = fk[3]
                                 except IndexError:
                                     fkComment = ""
@@ -854,7 +870,7 @@ class DataDrivenUi(object):
                                 ddAtt = DdFkLayerAttribute(
                                     thisTable, attTyp, attNotNull, attName, attComment,
                                     attNum, isPK, attDefault, attHasDefault, queryForCbx, attLabel,
-                                    attEnableWidget)
+                                    attEnableWidget, whereClause)
                                 normalAtt = False
                             except KeyError:
                                 # no fk defined
