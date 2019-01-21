@@ -390,21 +390,17 @@ class DdPushButtonAttribute(DdAttribute):
     def __str__(self):
         return "<ddattribute.DdPushButtonAttribute %s>" % self.name
 
-class DdCheckableTableAttribute(DdN2mAttribute, DdTableAttribute):
+class DdCheckableTableAttribute(DdN2mAttribute):
     def __init__(self, relationTable, relatedTable, comment, label,
             relationFeatureIdField, relationRelatedIdField,
             relatedIdField, relatedDisplayField, attributes,
             catalogTable = None, relatedCatalogIdField = None,
             catalogIdField = None, catalogDisplayField = None,
             catalogLabel = None, enableWidget = True):
-        DdN2mAttribute.__init__(self, relationTable, relatedTable,
+        super().__init__(relationTable, relatedTable,
             "default", comment, label, relationFeatureIdField,
             relationRelatedIdField, relatedIdField, relatedDisplayField,
-            fieldList = [], relatedForeignKeys = [],
             enableWidget = enableWidget)
-        DdTableAttribute.__init__(self, relationTable, comment, label,
-            relationFeatureIdField, attributes, maxRows = None,
-            showParents = False, pkAttName = None)
 
         self.type = "checkableTable"
         self.catalogTable = catalogTable
@@ -412,10 +408,22 @@ class DdCheckableTableAttribute(DdN2mAttribute, DdTableAttribute):
         self.catalogIdField = catalogIdField
         self.catalogDisplayField = catalogDisplayField
         self.catalogLabel = catalogLabel
+        self.attributes = attributes # an array with DdAttributes
+        self.pkAttName = None
+
+        for anAtt in self.attributes:
+
+            #if relationTable.tableName == "auslegungsStartDatum":
+                #QtGui.QMessageBox.information(None, "", anAtt.name + " " + self.relationFeatureIdField)
+            if anAtt.name == self.relationFeatureIdField:
+                self.attributes.remove(anAtt)
+                break
+
+        self.maxRows = None
+        self.showParents = False
 
         if self.catalogLabel == None:
             self.catalogLabel = self.catalogDisplayField
-
 
     def __str__(self):
         return "<ddattribute.DdCheckableTableAttribute %s>" % str(self.name)
