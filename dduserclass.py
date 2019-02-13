@@ -31,7 +31,7 @@ from builtins import range
 from .ddui import DdInputWidget, DdN2mWidget, DdN2mTableWidget, DdLineEdit, DdComboBox
 from .dderror import DdError, DbError
 from qgis.core import *
-from qgis.PyQt import QtCore, QtGui, QtSql, QtWidgets
+from qgis.PyQt import QtCore, QtSql, QtWidgets
 from .dddialog import DdDialog,  DdSearchDialog
 from .ddattribute import DdDateLayerAttribute
 
@@ -300,8 +300,8 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
         use catalogId as initial value
         '''
         self.catalogCbx.clear()
-        idField = self.catalogLayer.fieldNameIndex(self.attribute.catalogIdField)
-        displayField = self.catalogLayer.fieldNameIndex(self.attribute.catalogDisplayField)
+        idField = self.catalogLayer.fields().lookupField(self.attribute.catalogIdField)
+        displayField = self.catalogLayer.fields().lookupField(self.attribute.catalogDisplayField)
 
         for catalogFeature in self.catalogLayer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             sValue = catalogFeature[displayField]
@@ -341,14 +341,14 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
                 QgsFeatureRequest().setFlags(
                 QgsFeatureRequest.NoGeometry)):
             relatedId = self.getPk(relatedFeature, self.relatedLayer)
-            relatedValue = relatedFeature[self.relatedLayer.fieldNameIndex(
+            relatedValue = relatedFeature[self.relatedLayer.fields().lookupField(
                 self.attribute.relatedDisplayField)]
             isChecked = False
 
             for thisFeature in self.tableLayer.getFeatures(
                     QgsFeatureRequest().setFlags(
                     QgsFeatureRequest.NoGeometry)):
-                if relatedId == thisFeature[self.tableLayer.fieldNameIndex(
+                if relatedId == thisFeature[self.tableLayer.fields().lookupField(
                         self.attribute.relationRelatedIdField)]:
                     isChecked = True
                     break
@@ -465,9 +465,9 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
             relatedId = relatedItem.id
             thisValue = relatedItem.text()
             doAddFeature = False
-            relationFeatureIdFieldIdx = self.tableLayer.fieldNameIndex(
+            relationFeatureIdFieldIdx = self.tableLayer.fields().lookupField(
                 self.attribute.relationFeatureIdField)
-            relationRelatedIdFieldIdx = self.tableLayer.fieldNameIndex(
+            relationRelatedIdFieldIdx = self.tableLayer.fields().lookupField(
                     self.attribute.relationRelatedIdField)
 
             if thisFeature == None:
