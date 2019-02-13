@@ -2,6 +2,7 @@
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...develop)
+- Establish configurable filter option for values being displayed in DdN2mTableWidget and DdN2mTreeWidget
 
 ## [2.2.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.1.0...v2.2.0) - 2019-01-17
 ### Added
