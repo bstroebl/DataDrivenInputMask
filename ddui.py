@@ -239,7 +239,7 @@ class DataDrivenUi(object):
         for anAtt in ddAttributes:
             if anAtt.isPK:
                 n2mAttributes = self.getN2mAttributes(db, thisTable, anAtt.name,
-                    anAtt.num, labels, showChildren, skip, fieldDisable)
+                    anAtt.num, labels, showChildren, skip, fieldDisable, whereClauses)
                 ddAttributes = ddAttributes + n2mAttributes
 
         #check if we need a QToolBox
@@ -544,7 +544,7 @@ class DataDrivenUi(object):
         return parents
 
     def getN2mAttributes(self, db, thisTable, attName, attNum, labels,
-            showChildren, skip = [], fieldDisable = []):
+            showChildren, skip = [], fieldDisable = [], whereClauses = {}):
         '''find those tables (n2mtable) where our pk is a fk'''
 
         n2mAttributes = []
@@ -742,11 +742,16 @@ class DataDrivenUi(object):
                 else:
                     relatedForeignKeys = self.getForeignKeys(ddRelatedTable,  db)
 
+                    try:
+                        whereClause = whereClauses[ddRelationTable.tableName]
+                    except:
+                        whereClause = ""
+
                     ddAtt = DdN2mAttribute(
                         ddRelationTable, ddRelatedTable, subType, relationComment,
                         attLabel, relationFeatureIdField, relationRelatedIdField,
                         relatedIdField, relatedDisplayField, fieldList, relatedForeignKeys,
-                        attEnableWidget)
+                        attEnableWidget, whereClause)
 
                 try:
                     skip.index(ddAtt.name)

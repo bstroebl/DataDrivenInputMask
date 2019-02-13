@@ -39,7 +39,7 @@ General rules:
 """
 from builtins import str
 from builtins import object
-from qgis.PyQt import QtGui, QtCore
+from qgis.PyQt import QtWidgets, QtCore
 
 class DdTable(object):
     '''holds all information for a DB table relation'''
@@ -131,7 +131,7 @@ class DdAttribute(object):
                     self.max = None
 
     def debug(self, msg):
-        QtGui.QMessageBox.information(None, "Debug", msg)
+        QtWidgets.QMessageBox.information(None, "Debug", msg)
 
 class DdLayerAttribute(DdAttribute):
     '''a DdAttribute for a field in a QGIS layer'''
@@ -266,9 +266,6 @@ class DdTableAttribute(DdManyToManyAttribute):
         self.pkAttName = pkAttName
 
         for anAtt in self.attributes:
-
-            #if relationTable.tableName == "auslegungsStartDatum":
-                #QtGui.QMessageBox.information(None, "", anAtt.name + " " + self.relationFeatureIdField)
             if anAtt.name == self.relationFeatureIdField:
                 self.attributes.remove(anAtt)
                 break
@@ -282,7 +279,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
     def __init__(self, relationTable, relatedTable, subType, comment , label,
             relationFeatureIdField, relationRelatedIdField, relatedIdField,
             relatedDisplayField, fieldList = [], relatedForeignKeys = [],
-            enableWidget = True):
+            enableWidget = True, whereClause = ""):
         super().__init__(relationTable, "n2m",
             relationFeatureIdField, comment, label, enableWidget)
 
@@ -293,6 +290,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
         self.relatedDisplayField = relatedDisplayField
         self.fieldList = fieldList # an array with fields names
         self.relatedForeignKeys = relatedForeignKeys
+        self.whereClause = whereClause
         # init statements
         self.setDisplayStatement()
         self.setInsertStatement()
@@ -302,7 +300,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
         return "<ddattribute.DdN2mAttribute %s>" % str(self.name)
 
     def buildDisplayStatement(self, relationSchema, relationTable, relatedSchema, relatedTable, relationFeatureIdField, \
-                              relatedIdField, relatedDisplayField, relationRelatedIdField, fieldList):
+                              relatedIdField, relatedDisplayField, relationRelatedIdField, fieldList, whereClause):
 
         displayStatement ="SELECT disp.\"" + relatedIdField + "\", disp.\"" + relatedDisplayField + "\","
         displayStatement += " CASE COALESCE(lnk.\"" + relationFeatureIdField + "\", 0) WHEN 0 THEN 0 ELSE 2 END as checked"
@@ -311,6 +309,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
         #SELECT disp."id", disp."eigenschaft", CASE COALESCE(lnk."polygon_gid", 0) WHEN 0 THEN 0 ELSE 2 END as checked
         #FROM "alchemy"."eigenschaft" disp
         #LEFT JOIN (SELECT * FROM "alchemy"."polygon_has_eigenschaft" WHERE "polygon_gid" = :featureId) lnk ON disp."id" = lnk."eigenschaft_id"
+        # optional, example WHERE disp.id IN (x,y)
         #ORDER BY disp."eigenschaft"
 
         if self.subType ==  "tree":
@@ -333,6 +332,9 @@ class DdN2mAttribute(DdManyToManyAttribute):
         displayStatement += " WHERE \"" + relationFeatureIdField + "\" = :featureId) lnk"
         displayStatement += " ON disp.\"" + relatedIdField + "\" = lnk.\"" + relationRelatedIdField + "\""
 
+        if whereClause != "":
+            displayStatement += " WHERE disp." + whereClause
+
         if len(self.relatedForeignKeys) > 0:
             for aKey, aValue in list(self.relatedForeignKeys.items()):
                 fkSelectStatement = aValue[1]
@@ -341,7 +343,6 @@ class DdN2mAttribute(DdManyToManyAttribute):
                 displayStatement += " LEFT JOIN (" + fkSelectStatement + ") fk_" + aKey + " ON disp.\""  + aKey + "\" = fk_" + aKey + ".key"
 
         displayStatement +=  " ORDER BY checked DESC, disp.\"" + relatedDisplayField + "\" NULLS LAST"
-        #QtGui.QMessageBox.information(None, "displayStatement", displayStatement)
         return displayStatement
 
     def buildInsertStatement(self, relationSchema, relationTable, relationFeatureIdField, relationRelatedIdField, fieldList):
@@ -363,7 +364,7 @@ class DdN2mAttribute(DdManyToManyAttribute):
         if not displayStatement:
             displayStatement = self.buildDisplayStatement(self.table.schemaName, self.table.tableName, self.relatedTable.schemaName, \
                                                           self.relatedTable.tableName, self.relationFeatureIdField, self.relatedIdField, self.relatedDisplayField, \
-                                                          self.relationRelatedIdField, self.fieldList)
+                                                          self.relationRelatedIdField, self.fieldList, self.whereClause)
 
         self.displayStatement = displayStatement
 
@@ -412,9 +413,6 @@ class DdCheckableTableAttribute(DdN2mAttribute):
         self.pkAttName = None
 
         for anAtt in self.attributes:
-
-            #if relationTable.tableName == "auslegungsStartDatum":
-                #QtGui.QMessageBox.information(None, "", anAtt.name + " " + self.relationFeatureIdField)
             if anAtt.name == self.relationFeatureIdField:
                 self.attributes.remove(anAtt)
                 break
