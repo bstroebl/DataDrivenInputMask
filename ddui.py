@@ -3253,7 +3253,7 @@ class DdN2mListWidget(DdN2mWidget):
                     feat = self.createFeature()
                     feat.setAttribute(featureIdField, anId)
                     feat.setAttribute(relatedIdField, itemId)
-                    self.tableLayer.addFeature(feat, False)
+                    self.tableLayer.addFeature(feat)
             else:
                 self.uncheckedItems[itemId] = itemText
                 self.applySubsetString(False)
