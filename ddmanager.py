@@ -67,6 +67,8 @@ class DdManager(object):
         self.rubberBandColor = QtGui.QColor(r, g, b, a)
         self.rubberBandWidth = lw
         self.showConfigInfo = True
+        self.latestConfigTablesVersion = False
+        # is set to true if config tabels are created or updated
 
     def __debug(self,  title,  str):
         QgsMessageLog.logMessage(title + "\n" + str)
@@ -188,6 +190,8 @@ class DdManager(object):
                             self.iface.messageBar().pushMessage(QtWidgets.QApplication.translate("DdInfo",
                                 "Config tables either not found or not accessible, loading default mask"))
                             self.showConfigInfo = False
+                    else:
+                        readConfigTables = self.updateConfigTables(db)
 
                     # we want at least one automatically created mask
                     ddui = DataDrivenUi(self.iface)
@@ -1083,8 +1087,12 @@ class DdManager(object):
 
         return None
 
-    def changeConfigTables(self,  db):
+    def updateConfigTables(self,  db):
         '''function to update the config tables if anything changes'''
+
+        if self.latestConfigTablesVersion:
+            return True # do not check if it has already been checked
+
         changeToVersion060 = False
         sQuery = "SELECT t.typname as typ \
         FROM pg_attribute att \
@@ -1334,6 +1342,7 @@ class DdManager(object):
             else:
                 return False
 
+        self.latestConfigTablesVersion = True
         return True
 
     def createConfigTables(self,  db):
@@ -1420,6 +1429,7 @@ class DdManager(object):
             query.finish()
             self.iface.messageBar().pushMessage(QtWidgets.QApplication.translate("DdInfo",
                     "Config tables created! SELECT has been granted to \"public\"."))
+            self.latestConfigTablesVersion = True
             return True
         else:
             return False
