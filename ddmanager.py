@@ -722,12 +722,79 @@ class DdManager(object):
                 self.showQueryError(query,  True)
             return False
 
+    def shuffleGroup(self, groupName, toTop = True):
+        '''move position of group in layer panel to top or bottom'''
+
+        group = self.getGroup(groupName)
+
+        if group != None:
+            root = QgsProject.instance().layerTreeRoot()
+
+            if toTop:
+                group2 = root.insertGroup(0, groupName)
+            else:
+                group2 = root.addGroup(groupName)
+
+            root.removeChildNode(group)
+
+            return group2
+        else:
+            return None
+
+    def createGroup(self, groupName, atTop = True):
+        '''create group in layer panel'''
+
+        group = self.getGroup(groupName)
+
+        if group == None:
+            root = QgsProject.instance().layerTreeRoot()
+
+            if atTop:
+                return root.insertGroup(0, groupName)
+            else:
+                return root.addGroup(groupName)
+        else:
+            return self.shuffleGroup(groupName, atTop)
+
+    def getGroup(self, groupName):
+        '''Find group groupName in layer panel'''
+
+        return QgsProject.instance().layerTreeRoot().findGroup(groupName)
+
+    def moveLayerToGroup(self, layer, groupName):
+        '''move layer to group in layer panel'''
+        group = self.getGroup(groupName)
+
+        if group == None:
+            atTop = groupName != "DataDrivenInputMask"
+            group = self.createGroup(groupName, atTop)
+        else:
+            if group.findLayer(layer.id()) != None:
+                return True
+
+        if group != None:
+            root = QgsProject.instance().layerTreeRoot()
+            layerTreeLayer = root.findLayer(layer.id())
+
+            if layerTreeLayer != None:
+                wasVisible = layerTreeLayer.itemVisibilityChecked()
+                newLayerTreeLayer = group.addLayer(layer)
+                newLayerTreeLayer.setItemVisibilityChecked(wasVisible)
+
+                if root.removeLayer(layer) == None: # if layer in Root
+                    try:
+                        layerTreeLayer.parent().removeLayer(layer)
+                        # if layer in root, crashed QGIS when calling parent() :-(
+                    except:
+                        pass
+                return True
+            else:
+                return False
+        else:
+            return False
+
     def moveLayerintoDdGroup(self, layer):
-        layerTreeRoot = QgsProject.instance().layerTreeRoot()
-        ddGroup = layerTreeRoot.findGroup("DataDrivenInputMask")
-        if ddGroup == None:
-            ddGroup = layerTreeRoot.addGroup("DataDrivenInputMask")
-        ddGroup.addLayer(layer)
+        self.moveLayerToGroup(layer, "DataDrivenInputMask")
 
     def loadPostGISLayer(self,  db, ddTable, displayName = None,
         geomColumn = None, whereClause = None, keyColumn = None,
@@ -797,6 +864,8 @@ class DdManager(object):
         if not vlayer.dataProvider().isValid():
             DdError(QtWidgets.QApplication.translate("DdError", "Cannot not load table: ") +
             ddTable.schemaName + "." + ddTable.tableName,  fatal = True,  iface = self.iface)
+
+        QgsProject.instance().addMapLayer(vlayer)
 
         if intoDdGroup:
             self.moveLayerintoDdGroup(vlayer)

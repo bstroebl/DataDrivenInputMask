@@ -152,5 +152,3 @@ def getDoubleValidator(parent, attribute, min = None, max = None):
 
 
 
-
-
