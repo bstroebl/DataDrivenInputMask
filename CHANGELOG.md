@@ -1,12 +1,18 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...develop)
+
+## [2.3.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...v2.3.0) - 2019-04-05
 ### Added
 - Establish configurable filter option for values being displayed in DdN2mTableWidget and DdN2mTreeWidget
+- New functions for layer group handling
 
 ### Fixed
 - Fix field search in DdN2mCheckableTableWidget
+- Properly load layer in Project
+- Check if config tables need update at least once per session
+- Replace calls to QGIS2 api with calls to QGIS3 api
 
 ## [2.2.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.1.0...v2.2.0) - 2019-01-17
 ### Added
