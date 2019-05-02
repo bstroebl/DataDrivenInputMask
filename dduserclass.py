@@ -546,7 +546,7 @@ class DdRelatedComboBox(DdComboBox):
     '''
 
     def __init__(self, attribute, listenToCombo):
-        Dsuper().__init__(attribute)
+        super().__init__(attribute)
         self.listenToCombo = listenToCombo
 
     def __str__(self):
