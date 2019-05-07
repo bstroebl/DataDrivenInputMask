@@ -2,6 +2,9 @@
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...develop)
+### Fixed
+- initialize parent class correctly
+- define bpchar as char type
 
 ## [2.3.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...v2.3.0) - 2019-04-05
 ### Added
