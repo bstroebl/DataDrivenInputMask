@@ -77,7 +77,8 @@ class DdAttribute(object):
         return (self.type == "float4") or (self.type == "float8")
 
     def isTypeChar(self):
-        return (self.type == "char") or (self.type == "varchar")
+        return (self.type == "char") or (self.type == "varchar") or (self.type == "bpchar")
+        # bpchar "blank-padded char" = internal name of char type
 
     def getLabel(self):
         if self.label:
