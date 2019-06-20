@@ -450,7 +450,6 @@ class DdN2mCheckableTableWidget(DdN2mTableWidget):
             self.columnWidths.append(None)
 
     # Slots
-    @QtCore.pyqtSlot(int)
     def catalogChanged(self,  thisIndex):
         catalogId = self.catalogCbx.itemData(thisIndex)
         self.catalogIndex = thisIndex
