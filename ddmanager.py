@@ -113,7 +113,7 @@ class DdManager(object):
                 marker.setColor(self.rubberBandColor)
                 marker.setIconSize(12)
                 marker.setPenWidth (3)
-                marker.setCenter(feature.geometry().asPoint())
+                marker.setCenter(feature.geometry().centroid().asPoint())
                 return marker
             else:
                 rubberBand = QgsRubberBand(self.iface.mapCanvas())
