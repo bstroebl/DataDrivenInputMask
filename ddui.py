@@ -3090,7 +3090,10 @@ class DdN2mWidget(DdInputWidget):
         elif self.mode == 2: #disable for multi-edit mode
             self.forEdit = False
         else:
-            self.forEdit = self.featureId[0] > 0
+            try:
+                self.forEdit = self.featureId[0] > 0
+            except:
+                self.forEdit = False
 
             if self.forEdit:
                 self.forEdit = layer.isEditable()
