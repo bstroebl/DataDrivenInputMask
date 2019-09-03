@@ -312,7 +312,8 @@ class DdManager(object):
                 else:
                     return thisTable
 
-    def addAction(self, layer, actionName = u'showDdForm', ddManagerName = "ddManager"):
+    def addAction(self, layer, actionName = u'showDdForm', ddManagerName = "ddManager",
+        newIcon = None):
         '''api method to add an action to the layer with a self defined name'''
 
         defaultTitle = QtWidgets.QApplication.translate("DdLabel", "Show Input Form")
@@ -349,7 +350,9 @@ class DdManager(object):
             if actionToRemove != None:
                 self.removeAction(layer, actionToRemove)
 
-            newIcon = os.path.abspath(os.path.dirname(__file__) + '/datadriveninputmask.png')
+            if not QtCore.QFile(newIcon).exists():
+                newIcon = os.path.abspath(os.path.dirname(__file__) + '/datadriveninputmask.png')
+
             newAction = QgsAction(1,  actionName, # actionType 1: Python
                 "app=QgsApplication.instance();ddManager=app." + ddManagerName +
                 ";ddManager.showDdForm([% $id %]);", newIcon, False, newTitle, {'Field', 'Feature', 'Canvas'})
