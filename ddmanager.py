@@ -1047,6 +1047,7 @@ class DdManager(object):
         if not ok:
             DdError(QtWidgets.QApplication.translate("DdError", "Could not connect to PostgreSQL database: ") +
             database,  iface = self.iface)
+            self.showError(db.lastError())
             return None
         else:
             return db
