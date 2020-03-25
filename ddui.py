@@ -3105,16 +3105,16 @@ class DdN2mWidget(DdInputWidget):
         self.initializeTableLayer(self, db, doShowParents, withMask, skip)
 
     def initializeRelatedLayer(self, db, doShowParents = True, withMask = True, skip = []):
-        initResult = self.initializeAnyLayer(db, self.attribute.relatedTable, doShowParents, withMask, skip)
+        initResult = self.initializeAnyLayer(db, self.attribute.relatedTable, doShowParents, withMask, skip, False)
         self.relatedLayer = initResult[0]
 
     def initializeTableLayer(self, db, doShowParents = False, withMask = False, skip = []):
         skip.append(self.attribute.relationFeatureIdField)
-        initResult = self.initializeAnyLayer(db, self.attribute.table, doShowParents, withMask, skip)
+        initResult = self.initializeAnyLayer(db, self.attribute.table, doShowParents, withMask, skip, True)
         self.tableLayer = initResult[0]
         self.oldSubsetString = initResult[1]
 
-    def initializeAnyLayer(self, db, thisTable, doShowParents, withMask, skip):
+    def initializeAnyLayer(self, db, thisTable, doShowParents, withMask, skip, setEditable):
         # find the layer in the project
         anyLayer = self.parentDialog.ddManager.findPostgresLayer(db, thisTable)
 
@@ -3136,7 +3136,7 @@ class DdN2mWidget(DdInputWidget):
 
         oldSubsetString = anyLayer.subsetString()
 
-        if self.mode != 1: #not search ui
+        if self.mode != 1 and setEditable: #not search ui
             if self.forEdit:
                 self.forEdit = anyLayer.isEditable()
 
