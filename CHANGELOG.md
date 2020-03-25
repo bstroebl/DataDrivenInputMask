@@ -2,9 +2,20 @@
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...develop)
+### Added
+- Tool to get a feature for its PK value
+- Double click on a top-level item in TreeWidget to show its mask
+- Optionally use another icon than default for action
+
+### Changed
+- Show DB error if connection fails
+
 ### Fixed
 - initialize parent class correctly
 - define bpchar as char type
+- Remove slot decorator causing trouble in newer Qt
+- Show marker for multipoint features
+- Catch error if no feature exists
 
 ## [2.3.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...v2.3.0) - 2019-04-05
 ### Added
