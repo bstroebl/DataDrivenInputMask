@@ -33,6 +33,23 @@ from qgis.gui import *
 from .dderror import DbError
 from .ddattribute import *
 
+def getFeatureForId(layer,  fid,  withGeom = True):
+    feat = QgsFeature()
+    retValue = None
+    request = QgsFeatureRequest()
+    uri = QgsDataSourceUri(layer.dataProvider().dataSourceUri())
+    pkFieldName = uri.keyColumn()
+    request = request.setFilterExpression(
+        pkFieldName + " = " + str(fid))
+
+    if not withGeom:
+        request = request.setFlags(QgsFeatureRequest.NoGeometry)
+
+    if layer.getFeatures(request).nextFeature(feat):
+        retValue = feat
+
+    return retValue
+
 def getOid(thisTable,  db):
     ''' query the DB to get a table's oid'''
     query = QtSql.QSqlQuery(db)
