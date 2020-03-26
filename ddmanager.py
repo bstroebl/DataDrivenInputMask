@@ -377,10 +377,10 @@ class DdManager(object):
             layer.actions().removeAction(actionToRemove)
 
     def showFeatureForm(self, layer, feature, showParents = True,
-            title = None, askForSave = True, multiEdit = False):
+            title = None, askForSave = True, multiEdit = False, forEdit = True):
         '''
         api method showFeatureForm: show the data-driven input mask for a layer and a feature
-        if the data provider allows editing the layer is turned into editing mode
+        if the data provider allows editing and for Edit is True, the layer is turned into editing mode
         if the user clicks OK all changes to the feature are committed (no undo!)
         if askForSave is true and the layer has pending changes the user is asked if the changes
         shall be commited before the mask is opened
@@ -404,36 +404,37 @@ class DdManager(object):
             result = 1
             wasEditable = layer.isEditable()
 
-            if wasEditable:
-                if layer.isModified() and askForSave:
-                    #ask user to save or discard changes
-                    reply = QtWidgets.QMessageBox.question(None, QtWidgets.QApplication.translate("DdInfo", "Unsaved changes"),
-                        QtWidgets.QApplication.translate("DdInfo", "Do you want to save the changes to layer ") +
-                        layer.name() + "?",
-                        QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel | QtWidgets.QMessageBox.Save)
+            if forEdit:
+                if wasEditable:
+                    if layer.isModified() and askForSave:
+                        #ask user to save or discard changes
+                        reply = QtWidgets.QMessageBox.question(None, QtWidgets.QApplication.translate("DdInfo", "Unsaved changes"),
+                            QtWidgets.QApplication.translate("DdInfo", "Do you want to save the changes to layer ") +
+                            layer.name() + "?",
+                            QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel | QtWidgets.QMessageBox.Save)
 
-                    if reply == QtWidgets.QMessageBox.Cancel:
-                        result = 0
-                    else:
-                        if reply == QtWidgets.QMessageBox.Discard:
-                            if not layer.rollBack():
-                                DdError(QtWidgets.QApplication.translate("DdError", "Could not discard changes for layer: ") +
-                                layer.name(),  iface = self.iface)
-                                result = 0
-                            else:
-                                if feature.id() <= 0: # new feature discarded
+                        if reply == QtWidgets.QMessageBox.Cancel:
+                            result = 0
+                        else:
+                            if reply == QtWidgets.QMessageBox.Discard:
+                                if not layer.rollBack():
+                                    DdError(QtWidgets.QApplication.translate("DdError", "Could not discard changes for layer: ") +
+                                    layer.name(),  iface = self.iface)
                                     result = 0
-                        elif reply == QtWidgets.QMessageBox.Save:
-                            if not layer.commitChanges():
-                                DdError(QtWidgets.QApplication.translate("DdError", "Could not save changes for layer: ")  +
-                                layer.name(),  iface = self.iface)
-                                result = 0
+                                else:
+                                    if feature.id() <= 0: # new feature discarded
+                                        result = 0
+                            elif reply == QtWidgets.QMessageBox.Save:
+                                if not layer.commitChanges():
+                                    DdError(QtWidgets.QApplication.translate("DdError", "Could not save changes for layer: ")  +
+                                    layer.name(),  iface = self.iface)
+                                    result = 0
 
-                        if result == 1:
-                            layer.startEditing()
-            else:
-                if self.isEditable(layer):
-                    layer.startEditing()
+                            if result == 1:
+                                layer.startEditing()
+                else:
+                    if self.isEditable(layer):
+                        layer.startEditing()
 
             if result == 1:
                 if multiEdit:
