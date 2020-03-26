@@ -3513,7 +3513,8 @@ class DdN2mTreeWidget(DdN2mWidget):
                 return None # child has been double clicked
 
             feat = ddtools.getFeatureForId(self.relatedLayer, itemId, withGeom = False)
-            self.parentDialog.ddManager.showFeatureForm(self.relatedLayer, feat, showParents = True)
+            self.parentDialog.ddManager.showFeatureForm(self.relatedLayer, feat, showParents = True,
+            forEdit = (self.mode == 0))
 
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
