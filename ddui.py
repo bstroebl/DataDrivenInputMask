@@ -1021,7 +1021,7 @@ class DataDrivenUi(object):
         CASE att.attlen WHEN -1 THEN att.atttypmod -4 ELSE att.attlen END as length, \
         t.typname as typ, \
         COALESCE(d.description, '') as comment, \
-        COALESCE(ad.adsrc, '') as default, \
+        COALESCE(pg_get_expr(ad.adbin,ad.adrelid), '') as default, \
         COALESCE(con.contype, '') as contype, \
         COALESCE(con.conkey, ARRAY[]::smallint[]) as constrained_columns, \
         t.typcategory, \
