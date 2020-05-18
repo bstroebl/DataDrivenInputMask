@@ -1,21 +1,29 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.4.0...develop)
+
+## [2.4.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...v2.4.0) - 2020-05-19
 ### Added
+- Optionally use another icon than default for action
 - Tool to get a feature for its PK value
 - Double click on a top-level item in TreeWidget to show its mask
 - Optionally use another icon than default for action
 
 ### Changed
 - Show DB error if connection fails
+- Use parameter to decide whether showing mask puts layer into editing mode
 
 ### Fixed
 - initialize parent class correctly
 - define bpchar as char type
 - Remove slot decorator causing trouble in newer Qt
+- adapt to new api
 - Show marker for multipoint features
 - Catch error if no feature exists
+- do not set related table of TreeWidget editable
+- Do not put related table of TreeWidget in editing mode when double clicking in search mode
+- Fix query to also work with PostgreSQL 12
 
 ## [2.3.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...v2.3.0) - 2019-04-05
 ### Added
