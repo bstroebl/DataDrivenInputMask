@@ -3104,39 +3104,50 @@ class DdN2mWidget(DdInputWidget):
             DeprecationWarning)
         self.initializeTableLayer(self, db, doShowParents, withMask, skip)
 
-    def initializeTableLayer(self, db, doShowParents = False, withMask = False, skip = []):
-        # find the layer in the project
-        self.tableLayer = self.parentDialog.ddManager.findPostgresLayer(db,  self.attribute.table)
+    def initializeRelatedLayer(self, db, doShowParents = True, withMask = True, skip = []):
+        initResult = self.initializeAnyLayer(db, self.attribute.relatedTable, doShowParents, withMask, skip, False)
+        self.relatedLayer = initResult[0]
 
-        if self.tableLayer == None:
+    def initializeTableLayer(self, db, doShowParents = False, withMask = False, skip = []):
+        skip.append(self.attribute.relationFeatureIdField)
+        initResult = self.initializeAnyLayer(db, self.attribute.table, doShowParents, withMask, skip, True)
+        self.tableLayer = initResult[0]
+        self.oldSubsetString = initResult[1]
+
+    def initializeAnyLayer(self, db, thisTable, doShowParents, withMask, skip, setEditable):
+        # find the layer in the project
+        anyLayer = self.parentDialog.ddManager.findPostgresLayer(db, thisTable)
+
+        if anyLayer == None:
             # load the layer into the project
-            self.tableLayer = self.parentDialog.ddManager.loadPostGISLayer(db, self.attribute.table, intoDdGroup = False)
-            self.parentDialog.ddManager.moveLayerintoDdGroup(self.tableLayer)
+            anyLayer = self.parentDialog.ddManager.loadPostGISLayer(db, thisTable, intoDdGroup = False)
+            self.parentDialog.ddManager.moveLayerintoDdGroup(anyLayer)
 
         if withMask:
             # create a DdUi for the layer without the featureIdField it it has not yet been created
             try:
-                self.parentDialog.ddManager.ddLayers[self.tableLayer.id()]
+                self.parentDialog.ddManager.ddLayers[anyLayer.id()]
             except KeyError:
-                skip.append(self.attribute.relationFeatureIdField)
-                self.parentDialog.ddManager.initLayer(self.tableLayer,  skip = skip,  \
+                self.parentDialog.ddManager.initLayer(anyLayer,  skip = skip,  \
                                                 showParents = doShowParents,  searchMask = True,  \
                                                 labels = {},  fieldOrder = [],  fieldGroups = {},  minMax = {},  noSearchFields = [],  \
                                                 createAction = True,  db = None,  inputMask = True,   \
                                                 inputUi = None,  searchUi = None,  helpText = "") # reinitialize inputMask only
 
-        self.oldSubsetString = self.tableLayer.subsetString()
+        oldSubsetString = anyLayer.subsetString()
 
-        if self.mode != 1: #not search ui
+        if self.mode != 1 and setEditable: #not search ui
             if self.forEdit:
-                self.forEdit = self.tableLayer.isEditable()
+                self.forEdit = anyLayer.isEditable()
 
                 if not self.forEdit:
-                    self.forEdit = self.tableLayer.startEditing()
+                    self.forEdit = anyLayer.startEditing()
 
                     if not self.forEdit:
                         DdError(QtWidgets.QApplication.translate("DdInfo", "Layer cannot be edited: ") +
-                            self.tableLayer.name(),  showInLog = True)
+                            anyLayer.name(),  showInLog = True)
+
+        return [anyLayer, oldSubsetString]
 
     def keyForChild(self, parentId):
         return self.childs[parentId][0].lower()
@@ -3481,18 +3492,36 @@ class DdN2mTreeWidget(DdN2mWidget):
 
     def createInputWidget(self,  parent):
         inputWidget = QtWidgets.QTreeWidget(parent)
-        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        inputWidget.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked)
+        inputWidget.itemDoubleClicked.connect(self.onItemDoubleClicked)
         inputWidget.setHeaderHidden(True)
         inputWidget.setColumnCount(1)
         inputWidget.setObjectName("tre" + parent.objectName() + self.attribute.name)
         inputWidget.itemChanged.connect(self.registerChange)
         return [inputWidget,  None]
 
+    def onItemDoubleClicked(self, thisItem, thisColumn):
+        if thisColumn == 0:
+            if thisItem.isExpanded():
+                self.inputWidget.collapseItem(thisItem)
+            else:
+                self.inputWidget.expandItem(thisItem)
+
+            try:
+                itemId = thisItem.id
+            except:
+                return None # child has been double clicked
+
+            feat = ddtools.getFeatureForId(self.relatedLayer, itemId, withGeom = False)
+            self.parentDialog.ddManager.showFeatureForm(self.relatedLayer, feat, showParents = True,
+            forEdit = (self.mode == 0))
+
     def initialize(self, layer, feature, db, mode = 0):
         DdN2mWidget.initialize(self, layer, feature, db, mode)
 
         if feature != None:
             self.initializeTableLayer(db)
+            self.initializeRelatedLayer(db, skip = [self.attribute.name])
             query = QtSql.QSqlQuery(db)
             dispStatement = self.attribute.displayStatement
 
