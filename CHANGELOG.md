@@ -24,6 +24,9 @@ All notable changes to this project since Version 1.0.0 will be documented in th
 - do not set related table of TreeWidget editable
 - Do not put related table of TreeWidget in editing mode when double clicking in search mode
 - Fix query to also work with PostgreSQL 12
+- use error text instead of object
+- catch error if marker does not exist
+- set filter even if layer is editable by stopping edit session before and restarting if after
 
 ## [2.3.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.2.0...v2.3.0) - 2019-04-05
 ### Added
