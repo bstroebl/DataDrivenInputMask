@@ -3138,16 +3138,21 @@ class DdN2mWidget(DdInputWidget):
 
         if self.mode != 1 and setEditable: #not search ui
             if self.forEdit:
-                self.forEdit = anyLayer.isEditable()
-
-                if not self.forEdit:
-                    self.forEdit = anyLayer.startEditing()
-
-                    if not self.forEdit:
-                        DdError(QtWidgets.QApplication.translate("DdInfo", "Layer cannot be edited: ") +
-                            anyLayer.name(),  showInLog = True)
+                self.forEdit = self.setLayerEditable(anyLayer)
 
         return [anyLayer, oldSubsetString]
+
+    def setLayerEditable(self, anyLayer):
+        forEdit = anyLayer.isEditable()
+
+        if not forEdit:
+            forEdit = anyLayer.startEditing()
+
+            if not forEdit:
+                DdError(QtWidgets.QApplication.translate("DdInfo", "Layer cannot be edited: ") +
+                    anyLayer.name(),  showInLog = True)
+
+        return forEdit
 
     def keyForChild(self, parentId):
         return self.childs[parentId][0].lower()
@@ -3165,11 +3170,24 @@ class DdN2mWidget(DdInputWidget):
         return idList
 
     def applySubsetString(self,  reset = True):
+        retValue = False
+
         if self.tableLayer != None:
+            wasEditable = self.tableLayer.isEditable()
+
+            if wasEditable:
+                if self.tableLayer.isModified():
+                    if not self.tableLayer.commitChanges():
+                        DdError(QtWidgets.QApplication.translate("DdError", "Could not save changes for layer: ") +
+                            self.tableLayer.name())
+                        self.tableLayer.rollBack()
+                else:
+                    self.tableLayer.rollBack()
+
             if reset:
-                    if self.tableLayer.setSubsetString(self.oldSubsetString):
-                        self.tableLayer.reload()
-                        return True
+                if self.tableLayer.setSubsetString(self.oldSubsetString):
+                    self.tableLayer.reload()
+                    retValue = True
             else:
                 # reduce the features in self.tableLayer to those related to feature
                 idList = self.prepareFeatureIdForSubsetString()
@@ -3177,9 +3195,12 @@ class DdN2mWidget(DdInputWidget):
 
                 if self.tableLayer.setSubsetString(subsetString):
                     self.tableLayer.reload()
-                    return True
+                    retValue = True
 
-        return False
+        if wasEditable:
+            self.setLayerEditable(self.tableLayer)
+
+        return retValue
 
     def createFeature(self, fid = None, sourceFeature = None):
         '''
@@ -3270,17 +3291,15 @@ class DdN2mListWidget(DdN2mWidget):
                     self.tableLayer.addFeature(feat)
             else:
                 self.uncheckedItems[itemId] = itemText
-                self.applySubsetString(False)
-                self.tableLayer.selectAll()
+                idList = self.prepareFeatureIdForSubsetString()
+                subsetString = self.attribute.subsetString + "(" + idList + ")"
 
-                for aFeature in self.tableLayer.selectedFeatures():
+                for aFeature in self.tableLayer.getFeatures(subsetString):
                     for anId in self.featureId:
                         if aFeature[featureIdField] == anId:
                             if aFeature[relatedIdField] == itemId:
                                 idToDelete = aFeature.id()
                                 self.tableLayer.deleteFeature(idToDelete)
-
-                self.applySubsetString(True)
 
             self.hasChanges = True
         else: # do not show any changes
@@ -3468,17 +3487,16 @@ class DdN2mTreeWidget(DdN2mWidget):
                         self.tableLayer.addFeature(feat)
                 else:
                     self.uncheckedItems[itemId] = parent
-                    self.applySubsetString(False)
-                    self.tableLayer.selectAll()
+                    idList = self.prepareFeatureIdForSubsetString()
+                    subsetString = self.attribute.subsetString + "(" + idList + ")"
 
-                    for aFeature in self.tableLayer.selectedFeatures():
+                    for aFeature in self.tableLayer.getFeatures(subsetString):
                         for anId in self.featureId:
                             if aFeature[featureIdField] == anId:
                                 if aFeature[relatedIdField] == itemId:
                                     idToDelete = aFeature.id()
                                     self.tableLayer.deleteFeature(idToDelete)
 
-                    self.applySubsetString(True)
                 self.hasChanges = True
             else: # do not show any changes
                 self.inputWidget.itemChanged.disconnect(self.registerChange)
