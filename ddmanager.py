@@ -694,14 +694,15 @@ class DdManager(object):
         for aTreeLayer in QgsProject.instance().layerTreeRoot().findLayers():
             layer = aTreeLayer.layer()
 
-            if 0 == layer.type(): # vectorLayer
-                src = layer.source()
+            if layer != None:
+                if 0 == layer.type(): # vectorLayer
+                    src = layer.source()
 
-                if ("table=\"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\"" in src) and \
-                    (db.databaseName() in src) and \
-                    (db.hostName() in src):
-                    procLayer = layer
-                    break
+                    if ("table=\"" + ddTable.schemaName + "\".\"" + ddTable.tableName + "\"" in src) and \
+                        (db.databaseName() in src) and \
+                        (db.hostName() in src):
+                        procLayer = layer
+                        break
 
         return procLayer
 
