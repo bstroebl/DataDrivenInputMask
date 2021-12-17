@@ -12,7 +12,7 @@ from __future__ import absolute_import
  Applies a data-driven input mask to any PostGIS-Layer
                               -------------------
         begin                : 2012-06-21
-        copyright            : (C) 2012 by Bernhard Strรถbl / Kommunale Immobilien Jena
+        copyright            : (C) 2012 by Bernhard Ströbl / Kommunale Immobilien Jena
         email                : bernhard.stroebl@jena.de
  ***************************************************************************/
 
@@ -27,13 +27,42 @@ from __future__ import absolute_import
 """
 
 # Import the PyQt and QGIS libraries
-from qgis.PyQt import QtSql, QtCore, QtGui, QtWidgets
-from qgis.core import *
-from qgis.gui import *
+from qgis.PyQt import QtSql, QtCore, QtGui
+from qgis.PyQt.QtGui import QValidator
+from qgis.core import QgsFeature, QgsFeatureRequest, QgsDataSourceUri
 from .dderror import DbError
-from .ddattribute import *
 
-def getFeatureForId(layer,  fid,  withGeom = True):
+import re
+
+
+class DDIMIntValidator(QValidator):
+    def __init__(self, parent, min=None, max=None):
+        QValidator.__init__(parent)
+        self.min = min
+        self.max = max
+
+    def fixup(self, input):
+        return re.sub('\\D', '', input)
+
+    def validate(self, input, pos):
+        if input == '':
+            return QValidator.Intermediate, input, pos
+
+        try:
+            v = int(input)
+
+            if self.min is not None and v < self.min:
+                return QValidator.Invalid, input, pos
+
+            if self.max is not None and v > self.max:
+                return QValidator.Invalid, input, pos
+
+            return QValidator.Acceptable, input, pos
+        except ValueError:
+            return QValidator.Invalid, input, pos
+
+
+def getFeatureForId(layer, fid, withGeom=True):
     feat = QgsFeature()
     retValue = None
     request = QgsFeatureRequest()
@@ -50,7 +79,8 @@ def getFeatureForId(layer,  fid,  withGeom = True):
 
     return retValue
 
-def getOid(thisTable,  db):
+
+def getOid(thisTable, db):
     ''' query the DB to get a table's oid'''
     query = QtSql.QSqlQuery(db)
     sQuery = "SELECT c.oid FROM pg_class c \
@@ -76,7 +106,8 @@ def getOid(thisTable,  db):
 
     return oid
 
-def getIntValidator(parent, attribute, min = None, max = None):
+
+def getIntValidator(parent, attribute, min=None, max=None):
     '''
     make an Integer validator for this DdAttribute's min and max values
     '''
@@ -84,8 +115,8 @@ def getIntValidator(parent, attribute, min = None, max = None):
     thisMin = attribute.min
     # integer attributes always have a min and max corresponding to the min/max values of the pg data type
 
-    if min != None:
-        if thisMin != None:
+    if min is not None:
+        if thisMin is not None:
             if isinstance(min, int):
                 if min < thisMin:
                     thisMin = min
@@ -95,8 +126,8 @@ def getIntValidator(parent, attribute, min = None, max = None):
 
     thisMax = attribute.max
 
-    if max != None:
-        if thisMax != None:
+    if max is not None:
+        if thisMax is not None:
             if isinstance(max, int):
                 if max > thisMax:
                     thisMax = max
@@ -109,15 +140,18 @@ def getIntValidator(parent, attribute, min = None, max = None):
     loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
     validator.setLocale(loc)
 
-    if isinstance(thisMin,  int):
-        validator.setBottom(thisMin)
-
-    if isinstance(thisMax,  int):
-        validator.setTop(thisMax)
+    try:
+        if isinstance(thisMin, int):
+            validator.setBottom(thisMin)
+        if isinstance(thisMax, int):
+            validator.setTop(thisMax)
+    except OverflowError:
+        validator = DDIMIntValidator(parent, thisMin, thisMax)
 
     return validator
 
-def getDoubleValidator(parent, attribute, min = None, max = None):
+
+def getDoubleValidator(parent, attribute, min=None, max=None):
     '''
     make a double validator for this DdAttribute's mi and max values
     '''
@@ -127,16 +161,16 @@ def getDoubleValidator(parent, attribute, min = None, max = None):
     # if locale and database decimal separator differ and a db default has been inserted into
     # a new feature we run into trouble if not making sure that min and max are floats
 
-    if attribute.min != None:
+    if attribute.min is not None:
         thisMin = attribute.min
 
-        if min != None:
+        if min is not None:
             success = True
 
             try:
                 min = float(min)
             except ValueError:
-                min,  succcess = loc.toFloat(min)
+                min, success = loc.toFloat(min)
 
             if success:
                 if min < thisMin:
@@ -144,16 +178,16 @@ def getDoubleValidator(parent, attribute, min = None, max = None):
 
         validator.setBottom(thisMin)
 
-    if attribute.max != None:
+    if attribute.max is not None:
         thisMax = attribute.max
 
-        if max != None:
+        if max is not None:
             success = True
 
             try:
                 max = float(max)
             except ValueError:
-                max,  succcess = loc.toFloat(max)
+                max, success = loc.toFloat(max)
 
             if success:
                 if max > thisMax:
@@ -165,7 +199,3 @@ def getDoubleValidator(parent, attribute, min = None, max = None):
     loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
     validator.setLocale(loc)
     return validator
-
-
-
-
