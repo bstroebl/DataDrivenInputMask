@@ -2,6 +2,9 @@
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
 ## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.4.0...develop)
+### Fixed
+- catch orphan embedded layers
+- add validation for big ints
 
 ## [2.4.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...v2.4.0) - 2020-05-19
 ### Added
