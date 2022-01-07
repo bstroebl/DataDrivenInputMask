@@ -37,7 +37,7 @@ import re
 
 class DDIMIntValidator(QValidator):
     def __init__(self, parent, min=None, max=None):
-        QValidator.__init__(parent)
+        super().__init__(parent)
         self.min = min
         self.max = max
 
