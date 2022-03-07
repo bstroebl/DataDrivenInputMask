@@ -1868,6 +1868,11 @@ class DdLineEdit(DdInputWidget):
             else:
                 self.searchCbx.setVisible(False)
                 thisValue = self.getFeatureValue(layer,  feature)
+
+                # fixes that if thisValue is NULL that the ddtools.getDoubleValidator thiks it is a QVariant
+                if thisValue == None:
+                    thisValue = None
+
                 self.setValue(thisValue)
                 self.setValidator(min = thisValue,  max = thisValue)
                 # make sure the validator does not kick out an already existing value
