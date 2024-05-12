@@ -36,5 +36,5 @@ experimental=False
 deprecated=False
 
 # Author contact information
-author=Bernhard Ströbl, Kommunale Immobilien Jena
-email=bernhard.stroebl@jena.de
+author=Bernhard Ströbl
+email=nospam@stroweb.de
