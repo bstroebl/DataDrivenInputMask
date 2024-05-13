@@ -1,10 +1,18 @@
 # Change Log
 All notable changes to this project since Version 1.0.0 will be documented in this file.
 
-## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.4.0...develop)
+## [Unreleased](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.5.0...develop)
+
+## [2.5.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.4.0...v2.5.0) - 2024-05-13
 ### Fixed
 - catch orphan embedded layers
 - add validation for big ints
+- Initialize parent
+- handle NULL value in doubleValidator properly
+
+### Changed
+- Update author and contact information
+- Update to new api for creating the layer actio
 
 ## [2.4.0](https://github.com/bstroebl/DataDrivenInputMask/compare/v2.3.0...v2.4.0) - 2020-05-19
 ### Added
