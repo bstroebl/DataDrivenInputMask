@@ -356,7 +356,12 @@ class DdManager(object):
             if not QtCore.QFile(newIcon).exists():
                 newIcon = os.path.abspath(os.path.dirname(__file__) + '/datadriveninputmask.png')
 
-            newAction = QgsAction(1,  actionName, # actionType 1: Python
+            if qgis.core.Qgis.QGIS_VERSION_INT >= 33000:
+                actionType = QgsAction.GenericPython
+            else:
+                actionType = 1 # actionType 1: Python
+
+            newAction = QgsAction(actionType, actionName,
                 "app=QgsApplication.instance();ddManager=app." + ddManagerName +
                 ";ddManager.showDdForm([% $id %]);", newIcon, False, newTitle, {'Field', 'Feature', 'Canvas'})
             layer.actions().addAction(newAction)
